@@ -24,6 +24,8 @@
   --line:#DDD3B4;
   --ok:#2F6B44;
   --warn:#A8452F;
+  --muted:#5F6E62;
+  --muted-label:#7A6A45;
   --shadow: 0 1px 2px rgba(19,32,25,.06), 0 6px 16px rgba(19,32,25,.06);
   --radius:10px;
 }
@@ -40,6 +42,8 @@ html[data-theme="dark"]{
   --line:#33463A;
   --ok:#6FBE86;
   --warn:#E0836A;
+  --muted:#AAB8AC;
+  --muted-label:#C9B37E;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
 }
 html[data-theme="dark"] body{ background:var(--parchment); }
@@ -107,13 +111,13 @@ input,select,textarea{font-family:inherit;}
 .auth-dots span.active{ background:var(--brass-light); width:18px; border-radius:4px; transition:all .3s;}
 .auth-foot{ font-size:11px; color:#8fa290; position:relative; z-index:2;}
 
-.auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:40px 30px;}
+.auth-form-side{ flex:1; display:flex; align-items:flex-start; justify-content:center; padding:48px 30px 60px;}
 .auth-box{ width:100%; max-width:380px;}
 .auth-tabs{ display:flex; gap:4px; background:var(--parchment-dim); border-radius:9px; padding:4px; margin-bottom:24px;}
-.auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:#7a6a45;}
+.auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:var(--muted-label);}
 .auth-tabs button.active{ background:var(--card); color:var(--forest); box-shadow:var(--shadow);}
 .auth-box h2{ font-size:22px; margin-bottom:6px;}
-.auth-box .sub{ font-size:12.5px; color:#7d8a7d; margin-bottom:22px;}
+.auth-box .sub{ font-size:12.5px; color:var(--muted); margin-bottom:22px;}
 .auth-box .field{ margin-bottom:14px;}
 .auth-box .field input, .auth-box .field select{ width:100%; padding:11px 12px; font-size:13.5px;}
 .role-choice{ display:flex; gap:10px;}
@@ -123,7 +127,7 @@ input,select,textarea{font-family:inherit;}
 .auth-error{ background:#F4E1DC; color:var(--terracotta); padding:9px 12px; border-radius:7px; font-size:12.5px; margin-bottom:14px; display:none;}
 .auth-error.show{ display:block;}
 .auth-submit{ width:100%; padding:12px; font-size:14px;}
-.auth-hint{ font-size:11.5px; color:#8a9188; margin-top:16px; line-height:1.6;}
+.auth-hint{ font-size:11.5px; color:var(--muted); margin-top:16px; line-height:1.6;}
 @media (max-width:820px){ .auth-info{display:none;} }
 
 /* ===== Layout ===== */
@@ -138,8 +142,9 @@ input,select,textarea{font-family:inherit;}
 .brand .mark .stamp-badge{
   width:38px;height:38px;border-radius:50%;border:2px solid var(--brass-light);
   display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;
-  color:var(--brass-light); font-size:14px; flex:none;
+  color:var(--brass-light); font-size:14px; flex:none; overflow:hidden;
 }
+.brand .mark .stamp-badge img{ width:100%; height:100%; object-fit:cover;}
 .brand h1{ font-size:16px; color:#fff; line-height:1.15;}
 .brand p{ margin:4px 0 0; font-size:11px; color:#B9C4B4; letter-spacing:.5px;}
 nav.navlist{ padding:10px 10px; flex:1;}
@@ -160,13 +165,13 @@ nav.navlist button.active{ background:var(--brass); color:#221704; font-weight:6
   background:var(--parchment); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; gap:16px;
 }
 .topbar .titles h2{ font-size:20px;}
-.topbar .titles p{ margin:2px 0 0; font-size:12.5px; color:#5b6b5f;}
-.topbar .today{ font-size:12px; color:#5b6b5f; text-align:right;}
+.topbar .titles p{ margin:2px 0 0; font-size:12.5px; color:var(--muted);}
+.topbar .today{ font-size:12px; color:var(--muted); text-align:right;}
 .topbar-right{ display:flex; align-items:center; gap:14px;}
 .account-chip{ display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--line); border-radius:30px; padding:5px 14px 5px 5px; cursor:pointer;}
 .account-chip .av{ width:30px;height:30px;border-radius:50%; background:var(--forest); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; font-family:Georgia,serif;}
 .account-chip .nm{ font-size:12.5px; font-weight:600; line-height:1.2;}
-.account-chip .rl{ font-size:10px; color:#8a9188; text-transform:uppercase; letter-spacing:.4px;}
+.account-chip .rl{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
 .content{ padding:22px 26px 60px; flex:1;}
 
 /* ===== Components ===== */
@@ -174,19 +179,19 @@ nav.navlist button.active{ background:var(--brass); color:#221704; font-weight:6
 .kpis{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:18px;}
 .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
 .kpi{ padding:16px 18px; position:relative; overflow:hidden;}
-.kpi .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#7a6a45;}
+.kpi .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted-label);}
 .kpi .val{ font-family:Georgia,serif; font-size:30px; margin-top:6px; color:var(--forest-dark);}
-.kpi .sub{ font-size:11.5px; color:#7d8a7d; margin-top:2px;}
+.kpi .sub{ font-size:11.5px; color:var(--muted); margin-top:2px;}
 .kpi::after{ content:""; position:absolute; right:-10px; top:-10px; width:60px;height:60px;border-radius:50%; background:var(--parchment-dim); z-index:0;}
 
 .panel{ padding:18px 20px; margin-bottom:18px;}
 .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
 .panel-head h3{ font-size:15.5px;}
-.panel-head .hint{ font-size:11.5px; color:#7d8a7d;}
+.panel-head .hint{ font-size:11.5px; color:var(--muted);}
 .charts-row{ grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
 .chart-box{ padding:16px 18px 14px; height:340px; display:flex; flex-direction:column;}
 .chart-box h4{ flex:none;}
-.chart-caption{ flex:none; font-size:11px; color:#7d8a7d; margin:2px 0 10px; line-height:1.4;}
+.chart-caption{ flex:none; font-size:11px; color:var(--muted); margin:2px 0 10px; line-height:1.4;}
 .chart-box .chart-canvas-wrap{ position:relative; flex:1; min-height:0;}
 .chart-box canvas{ position:absolute; inset:0; width:100% !important; height:100% !important;}
 
@@ -207,19 +212,19 @@ nav.navlist button.active{ background:var(--brass); color:#221704; font-weight:6
 
 table.datatable{ width:100%; border-collapse:collapse; font-size:12.8px;}
 table.datatable th{
-  text-align:left; padding:9px 10px; background:var(--parchment-dim); color:#5c4a25; font-size:11px;
+  text-align:left; padding:9px 10px; background:var(--parchment-dim); color:var(--muted-label); font-size:11px;
   text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid var(--line); white-space:nowrap;position:sticky;top:0;
 }
 table.datatable td{ padding:8px 10px; border-bottom:1px solid #efe8d4; vertical-align:top;}
 table.datatable tr:hover td{ background:#fbf8ee;}
 .table-wrap{ overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:8px;}
-.table-count{ font-size:11.5px; color:#7d8a7d; margin-top:8px;}
+.table-count{ font-size:11.5px; color:var(--muted); margin-top:8px;}
 
 .badge{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;}
 .badge.green{ background:#E4EEE1; color:var(--ok);}
 .badge.red{ background:#F4E1DC; color:var(--warn);}
-.badge.gold{ background:#F3E6C9; color:#8C6414;}
-.badge.grey{ background:#e9e5da; color:#6b6b5f;}
+.badge.gold{ background:#F3E6C9; color:var(--brass);}
+.badge.grey{ background:#e9e5da; color:var(--muted);}
 
 .stamp{
   display:inline-flex; align-items:center; justify-content:center; border:2px solid currentColor;
@@ -235,23 +240,27 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .modal{ background:var(--card); border-radius:12px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.3);}
 .modal-head{ padding:16px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
 .modal-head h3{ font-size:16px;}
-.modal-head button{ background:none;border:none;font-size:18px;color:#8a8a7a;}
+.modal-head button{ background:none;border:none;font-size:18px;color:var(--muted);}
 .modal-body{ padding:18px 22px;}
 .modal-foot{ padding:14px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;}
 .field{ margin-bottom:12px; display:flex; flex-direction:column; gap:5px;}
-.field label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#7a6a45;}
+.field label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted-label);}
 .field input,.field select,.field textarea{
   padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; background:#fffef9;
 }
 .field textarea{ resize:vertical; min-height:60px;}
 .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-.field-hint{ font-size:11px; color:#8a9188; margin-top:2px;}
+.field-hint{ font-size:11px; color:var(--muted); margin-top:2px;}
+.pw-wrap{ position:relative;}
+.pw-wrap input{ padding-right:36px; width:100%;}
+.pw-toggle{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:var(--muted); padding:4px;}
+.pw-toggle:hover{ color:var(--forest);}
 
 .toast{ position:fixed; bottom:20px; right:20px; background:var(--forest-dark); color:#fff; padding:12px 18px; border-radius:8px;
   font-size:13px; box-shadow:var(--shadow); z-index:200; opacity:0; transform:translateY(10px); transition:all .25s;}
 .toast.show{ opacity:1; transform:translateY(0);}
 
-.empty{ text-align:center; padding:40px 20px; color:#8a9188;}
+.empty{ text-align:center; padding:40px 20px; color:var(--muted);}
 .empty .big{ font-size:30px; margin-bottom:8px;}
 
 .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px;}
@@ -269,13 +278,13 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .qlink:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(19,32,25,.12);}
 .qlink .ico{ font-size:20px;}
 .qlink h4{ font-size:14px; margin-top:8px;}
-.qlink p{ font-size:11.5px; color:#7d8a7d; margin:4px 0 0;}
+.qlink p{ font-size:11.5px; color:var(--muted); margin:4px 0 0;}
 .activity-row{ display:flex; gap:10px; padding:9px 0; border-bottom:1px solid #efe8d4; font-size:12.5px; align-items:center;}
 .activity-row .dot{ width:7px;height:7px;border-radius:50%; flex:none;}
-.activity-row .meta{ color:#8a9188; font-size:11px;}
+.activity-row .meta{ color:var(--muted); font-size:11px;}
 
 .week-grid{ display:grid; grid-template-columns:110px repeat(5,1fr); gap:6px;}
-.week-grid .wh{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#7a6a45; padding:6px; text-align:center;}
+.week-grid .wh{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted-label); padding:6px; text-align:center;}
 .week-cell{ background:#fffef9; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:11.5px; min-height:52px;}
 .week-cell .p{ font-weight:700; color:var(--forest);}
 .period-label{ background:var(--parchment-dim); border-radius:6px; padding:6px 8px; font-size:11.5px; font-weight:600; display:flex; flex-direction:column; justify-content:center;}
@@ -295,7 +304,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .picked-card{ margin-top:8px; padding:10px 12px; background:var(--parchment-dim); border-radius:8px; font-size:12px; display:none;}
 .picked-card.show{ display:block;}
 
-.guest-lock{ font-size:11.5px; color:#8a9188; background:var(--parchment-dim); padding:8px 12px; border-radius:8px; margin-bottom:12px;}
+.guest-lock{ font-size:11.5px; color:var(--muted); background:var(--parchment-dim); padding:8px 12px; border-radius:8px; margin-bottom:12px;}
 
 /* ===== print ===== */
 #printArea{ display:none; }
@@ -320,18 +329,20 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 /* ===== batch staging (Register) ===== */
 .stage-toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;}
 .stage-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:10px;}
-.stage-table th{ text-align:left; padding:7px 8px; background:var(--parchment-dim); font-size:10.5px; text-transform:uppercase; color:#5c4a25;}
+.stage-table th{ text-align:left; padding:7px 8px; background:var(--parchment-dim); font-size:10.5px; text-transform:uppercase; color:var(--muted-label);}
 .stage-table td{ padding:6px 8px; border-bottom:1px solid #efe8d4;}
-.stage-empty{ text-align:center; padding:24px; color:#8a9188; font-size:12.5px;}
+.stage-empty{ text-align:center; padding:24px; color:var(--muted); font-size:12.5px;}
 .stage-badge{ background:var(--brass); color:#221704; border-radius:20px; padding:1px 8px; font-size:11px; font-weight:700;}
 
 /* ===== digital clock ===== */
 .clock-chip{ font-family:Georgia,serif; font-size:13px; color:var(--forest-dark); text-align:right; line-height:1.25;}
 .clock-chip .time{ font-size:15px; font-weight:700; letter-spacing:.5px;}
-.clock-chip .date{ font-size:10.5px; color:#7d8a7d; text-transform:uppercase; letter-spacing:.4px;}
-.auth-clock{ font-family:Georgia,serif; color:#F3EEDD; margin-bottom:18px;}
-.auth-clock .time{ font-size:40px; font-weight:700; letter-spacing:1px;}
-.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:2px;}
+.clock-chip .date{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
+.auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-bottom:18px;}
+.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:baseline; gap:6px;}
+.auth-clock .time .secs{ font-size:20px; font-weight:700; color:#B9C4B4;}
+.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:-apple-system,sans-serif; letter-spacing:1px;}
+.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:-apple-system,sans-serif; font-weight:400;}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -422,7 +433,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="mark">
-        <div class="stamp-badge">AL</div>
+        <div class="stamp-badge" id="sidebarLogo">AL</div>
         <div>
           <h1>ALCMS</h1>
           <p id="brandSubtitle">ACCESS LIBRARY</p>
@@ -484,6 +495,14 @@ const $ = (sel,root=document)=>root.querySelector(sel);
 const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
 const esc = s => (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = p => p+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
+function sortedClasses(){
+  return [...(DB && DB.setup ? DB.setup.userClasses : [])].sort((a,b)=>{
+    const na = parseInt((a.match(/\d+/)||['0'])[0],10);
+    const nb = parseInt((b.match(/\d+/)||['0'])[0],10);
+    if(na!==nb) return na-nb;
+    return a.localeCompare(b);
+  });
+}
 function nextSequentialId(prefix, existingIds){
   let max = 0;
   existingIds.forEach(id=>{
@@ -492,6 +511,14 @@ function nextSequentialId(prefix, existingIds){
   });
   const next = max+1;
   return prefix+'-'+String(next).padStart(3,'0');
+}
+function sortClassesChrono(list){
+  return [...list].sort((a,b)=>{
+    const na = parseInt((String(a).match(/YEAR\s*(\d+)/i)||[])[1]||'999',10);
+    const nb = parseInt((String(b).match(/YEAR\s*(\d+)/i)||[])[1]||'999',10);
+    if(na!==nb) return na-nb;
+    return String(a).localeCompare(String(b));
+  });
 }
 const todayISO = ()=> new Date().toISOString().slice(0,10);
 function parseAnyDate(v){
@@ -529,13 +556,23 @@ function initials(name){
   if(!name) return '?';
   const p = name.trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||'');
 }
+function pwFieldHtml(id, placeholder){
+  return `<div class="pw-wrap"><input id="${id}" type="password" placeholder="${esc(placeholder||'')}">
+    <button type="button" class="pw-toggle" id="pwt_${id}" onclick="togglePwVisibility('${id}')">👁</button></div>`;
+}
+function togglePwVisibility(id){
+  const el = document.getElementById(id), btn = document.getElementById('pwt_'+id);
+  if(!el) return;
+  if(el.type==='password'){ el.type='text'; if(btn) btn.textContent='🙈'; }
+  else { el.type='password'; if(btn) btn.textContent='👁'; }
+}
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system'};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest'};
 async function loadPrefs(){
   try{ const v = await storeGet(PREFS_KEY); if(v) PREFS = Object.assign(PREFS, JSON.parse(v)); }catch(e){}
-  applyTheme();
+  applyTheme(); applyPalette(PREFS.palette);
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
 function applyTheme(){
@@ -580,7 +617,11 @@ function tickClocks(){
   const top = $('#topClock');
   if(top) top.innerHTML = `<div class="time">${time}</div><div class="date">${date}</div>`;
   const auth = $('#authClock');
-  if(auth) auth.innerHTML = `<div class="time">${time}</div><div class="date">${date}</div>`;
+  if(auth){
+    let h = now.getHours(); const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
+    const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
+    auth.innerHTML = `<div class="time">${h}:${m}<span class="secs">:${s}</span><span class="ampm">${ampm}</span></div><div class="date">${date}</div>`;
+  }
 }
 setInterval(tickClocks, 1000);
 
@@ -632,13 +673,23 @@ async function loadAccounts(){
   try{
     const v = await storeGet(ACCOUNTS_KEY);
     if(v){ const p = JSON.parse(v); if(Array.isArray(p) && p.length) return p; }
-  }catch(e){ console.warn('Could not read saved accounts, reseeding.', e); }
-  const seeded = seedAccounts();
-  await storeSet(ACCOUNTS_KEY, JSON.stringify(seeded));
-  return seeded;
+  }catch(e){ console.warn('Could not read saved accounts — using defaults for this session only.', e); }
+  // IMPORTANT: never write the seed back here. If the read above failed or was
+  // transiently empty, writing a fresh seed would permanently wipe out any real
+  // accounts already saved in storage. Seed accounts are only ever persisted
+  // once something actually calls saveAccounts() (e.g. a real signup).
+  return seedAccounts();
 }
 async function saveAccounts(accounts){
   await storeSet(ACCOUNTS_KEY, JSON.stringify(accounts));
+  // verify the write actually landed — if not, warn instead of silently losing data
+  try{
+    const check = await storeGet(ACCOUNTS_KEY);
+    const parsed = check ? JSON.parse(check) : null;
+    if(!parsed || parsed.length !== accounts.length){
+      toast('Warning: account changes may not have saved permanently — try again in a moment.');
+    }
+  }catch(e){ /* verification itself is best-effort */ }
 }
 let ACCOUNTS = [];
 
@@ -707,7 +758,7 @@ function renderAuthForm(){
       <h2>Welcome back</h2>
       <div class="sub">Sign in to the circulation desk</div>
       <div class="field"><label>Username</label><input id="siUser" placeholder="admin"></div>
-      <div class="field"><label>Password</label><input id="siPass" type="password" placeholder="••••••••"></div>
+      <div class="field"><label>Password</label>${pwFieldHtml('siPass','••••••••')}</div>
       <button class="btn auth-submit" onclick="doSignin()">Sign in</button>
       <p class="field-hint" style="margin-top:14px">Try <strong>admin / admin123</strong> for full access, or <strong>guest / guest123</strong> to browse.</p>
       <p class="field-hint" style="margin-top:8px"><a href="#" onclick="authTab='forgot';renderAuthForm();return false;" style="color:var(--forest);font-weight:600">Forgot your password?</a></p>
@@ -736,7 +787,7 @@ function renderAuthForm(){
         const step3 = $('#fpStep3');
         if(answer !== (acc.securityAnswer||'').trim().toLowerCase()){ step3.innerHTML = `<p class="field-hint" style="color:var(--terracotta);margin-top:8px">That answer doesn't match. Try again.</p>`; return; }
         step3.innerHTML = `
-          <div class="field" style="margin-top:10px"><label>New password</label><input id="fpNewPass" type="password" placeholder="Choose a new password"></div>
+          <div class="field" style="margin-top:10px"><label>New password</label>${pwFieldHtml('fpNewPass','Choose a new password')}</div>
           <button class="btn auth-submit" id="fpResetBtn">Set new password &amp; sign in</button>`;
         $('#fpResetBtn').onclick = async ()=>{
           const np = $('#fpNewPass').value;
@@ -753,7 +804,7 @@ function renderAuthForm(){
       <div class="field"><label>Full name</label><input id="suName" placeholder="e.g. Jane Okafor"></div>
       <div class="field-row">
         <div class="field"><label>Username</label><input id="suUser" placeholder="Choose a username"></div>
-        <div class="field"><label>Password</label><input id="suPass" type="password" placeholder="Choose a password"></div>
+        <div class="field"><label>Password</label>${pwFieldHtml('suPass','Choose a password')}</div>
       </div>
       <div class="field-row">
         <div class="field"><label>Email</label><input id="suEmail" type="email" placeholder="you@example.com"></div>
@@ -764,12 +815,13 @@ function renderAuthForm(){
       <div class="field">
         <label>Access level</label>
         <div class="role-choice">
-          <div class="role-opt ${signupRole==='GUEST'?'selected':''}" onclick="signupRole='GUEST'; renderAuthForm();"><span class="ic">👁</span>Guest<br><span style="color:#8a9188">View only</span></div>
-          <div class="role-opt ${signupRole==='ADMIN'?'selected':''}" onclick="signupRole='ADMIN'; renderAuthForm();"><span class="ic">🔑</span>Admin<br><span style="color:#8a9188">Full access</span></div>
+          <div class="role-opt ${signupRole==='GUEST'?'selected':''}" onclick="signupRole='GUEST'; renderAuthForm();"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
+          <div class="role-opt ${signupRole==='ADMIN'?'selected':''}" onclick="signupRole='ADMIN'; renderAuthForm();"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
         </div>
       </div>
       <button class="btn auth-submit" onclick="doSignup()">Create account</button>
       <p class="field-hint" style="margin-top:12px">Email and phone are stored for account recovery and aren't sent anywhere by this app.</p>
+      <p class="field-hint" style="margin-top:8px"><a href="#" onclick="authTab='signin';renderAuthForm();return false;" style="color:var(--forest);font-weight:600">← Back to sign in</a></p>
     `;
   }
 }
@@ -886,6 +938,7 @@ async function loadDB(){
     if(v){
       const parsed = JSON.parse(v);
       if(parsed && Array.isArray(parsed.catalogue) && parsed.catalogue.length > 0){
+        if(parsed.setup && Array.isArray(parsed.setup.userClasses)) parsed.setup.userClasses = sortClassesChrono(parsed.setup.userClasses);
         return parsed;
       }
     }
@@ -944,10 +997,13 @@ function buildSeedDB(){
   });
   registerLog.sort((a,b)=> (parseAnyDate(b.date)||0) - (parseAnyDate(a.date)||0));
 
+  const setup = JSON.parse(JSON.stringify(SEED_SETUP));
+  setup.userClasses = sortClassesChrono(setup.userClasses);
+
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup: JSON.parse(JSON.stringify(SEED_SETUP)), reminders: [], versions: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], versions: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -980,6 +1036,7 @@ const NAV = [
   ]},
   {group:'Admin', items:[
     {id:'setup', label:'Setup', ico:'⚙'},
+    {id:'settings', label:'Settings', ico:'◈'},
   ]},
 ];
 const PAGE_META = {
@@ -993,12 +1050,15 @@ const PAGE_META = {
   register:['Register','Desk sign-ins and class period visits, in one place'],
   schedule:['Schedule','Weekly library timetable'],
   feedback:['Feedback','Suggestions, complaints and requests'],
-  setup:['Setup','Configure classes, teachers and reference lists'],
+  setup:['Setup','Classes, subjects, shelves and other library configuration'],
+  settings:['Settings','Institution branding, appearance, accounts and backup'],
 };
 
 function renderNav(){
   const brandSub = $('#brandSubtitle');
   if(brandSub) brandSub.textContent = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName.toUpperCase() : 'ACCESS LIBRARY';
+  const logo = $('#sidebarLogo');
+  if(logo) logo.innerHTML = (DB && DB.setup && DB.setup.institutionLogo) ? `<img src="${DB.setup.institutionLogo}">` : 'AL';
   const el = $('#navlist'); el.innerHTML='';
   NAV.forEach(g=>{
     const lab=document.createElement('div'); lab.className='navgroup-label'; lab.textContent=g.group; el.appendChild(lab);
@@ -1073,6 +1133,9 @@ function fieldHtml(f,values){
     input = `<select id="f_${f.key}">${(f.options||[]).map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   } else if(f.type==='textarea'){
     input = `<textarea id="f_${f.key}">${esc(val)}</textarea>`;
+  } else if(f.type==='password'){
+    input = `<div class="pw-wrap"><input id="f_${f.key}" type="password" value="${esc(val)}">
+      <button type="button" class="pw-toggle" onclick="togglePwVisibility('f_${f.key}')">👁</button></div>`;
   } else {
     input = `<input id="f_${f.key}" type="${f.type||'text'}" value="${esc(val)}" ${f.readonly?'readonly':''}>`;
   }
@@ -1105,7 +1168,7 @@ function bindQuickPicker(id, {items, formatSuggestion, formatPicked, onPick}){
     else{
       matches = items.filter(it=> it.id.toLowerCase().includes(q) || it.label.toLowerCase().includes(q)).slice(0,25);
     }
-    if(!matches.length){ sugg.innerHTML = `<div class="sugg-item" style="color:#8a9188">No match for "${esc(input.value)}"</div>`; sugg.classList.add('show'); return; }
+    if(!matches.length){ sugg.innerHTML = `<div class="sugg-item" style="color:var(--muted)">No match for "${esc(input.value)}"</div>`; sugg.classList.add('show'); return; }
     sugg.innerHTML = matches.map(it=>`<div class="sugg-item" data-id="${esc(it.id)}"><b>${esc(it.id)}</b> — ${esc(it.label)}</div>`).join('');
     sugg.classList.add('show');
     if(exact && matches.length===1) pick(exact);
@@ -1623,7 +1686,7 @@ function pageCatalogue(){
     ],
     columns:[
       {key:'acc', label:'Acc. No'},
-      {key:'title', label:'Title', render:r=>`<strong>${esc(r.title)}</strong><div style="color:#8a8a7a;font-size:11px">${esc(r.author)}</div>`},
+      {key:'title', label:'Title', render:r=>`<strong>${esc(r.title)}</strong><div style="color:var(--muted);font-size:11px">${esc(r.author)}</div>`},
       {key:'mainClass', label:'Main class', render:r=>esc((r.mainClass||'').replace(/^\d+\s*–\s*/,''))},
       {key:'shelf', label:'Shelf'},
       {key:'year', label:'Year'},
@@ -1689,7 +1752,7 @@ function pageUsers(){
     searchKeys:['id','name','cls','teacher'],
     filters:[
       {key:'category', label:'Category', options:DB.setup.userCategories},
-      {key:'cls', label:'Class / Designation', options:[...DB.setup.userClasses, ...DB.setup.staffDesignations]},
+      {key:'cls', label:'Class / Designation', options:[...sortedClasses(), ...DB.setup.staffDesignations]},
       {key:'status', label:'Status', options:['ACTIVE','SUSPENDED','INACTIVE']},
     ],
     columns:[
@@ -1721,7 +1784,7 @@ function userFields(u={}){
     {key:'name', label:'Full name', required:true, default:u.name},
     {row:[
       {key:'category',label:'Category', type:'select', options:DB.setup.userCategories, default:u.category||'STUDENT'},
-      {key:'cls',label:'Class / Designation', type:'select', options: isStaff? DB.setup.staffDesignations : DB.setup.userClasses, default:u.cls|| (isStaff? DB.setup.staffDesignations[0] : DB.setup.userClasses[0])},
+      {key:'cls',label:'Class / Designation', type:'select', options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls|| (isStaff? DB.setup.staffDesignations[0] : sortedClasses()[0])},
     ]},
     {row:[{key:'teacher',label:'Phone / contact', default:u.teacher},{key:'maxAllowed',label:'Max books allowed', type:'number', default:u.maxAllowed??2}]},
     {row:[
@@ -1748,7 +1811,7 @@ function openUserForm(id){
   if(catSel && clsSel){
     catSel.addEventListener('change', ()=>{
       const isStaff = catSel.value === 'STAFF';
-      const opts = isStaff ? DB.setup.staffDesignations : DB.setup.userClasses;
+      const opts = isStaff ? DB.setup.staffDesignations : sortedClasses();
       clsSel.innerHTML = opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
     });
   }
@@ -1834,7 +1897,10 @@ function pageCirculation(){
   </div>
   <div class="panel-head" style="margin:0 0 -6px 4px">
     <div></div>
-    <button class="btn secondary" onclick="openCirculationPrintModal()">🖨 Print transactions</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn secondary" onclick="openCirculationPrintModal()">🖨 Print transactions</button>
+      ${isAdmin()? `<button class="btn danger" onclick="clearAllCirculation()">🗑 Clear all</button>`:''}
+    </div>
   </div>
   <div id="mod_circulation"></div>`;
 }
@@ -1950,7 +2016,7 @@ function pageCirculationTable(){
       {key:'trxId', label:'Transaction', render:r=>`<span style="font-size:10.5px">${esc(r.trxId.slice(0,22))}</span>`},
       {key:'acc', label:'Acc. No'},
       {key:'title', label:'Title'},
-      {key:'name', label:'Borrower', render:r=>`${esc(r.name)}<div style="color:#8a8a7a;font-size:11px">${esc(r.userId)}</div>`},
+      {key:'name', label:'Borrower', render:r=>`${esc(r.name)}<div style="color:var(--muted);font-size:11px">${esc(r.userId)}</div>`},
       {key:'dateBorrowed', label:'Borrowed', render:r=>fmtDate(r.dateBorrowed)},
       {key:'dueDate', label:'Due', render:r=>fmtDate(r.dueDate)},
       {key:'returnDate', label:'Returned', render:r=>r.returnDate?fmtDate(r.returnDate):'—'},
@@ -1996,6 +2062,15 @@ function returnBook(){
   saveDB(); render();
   toast(isMissing ? `${book?book.title:'Title'} recorded as MISSING — catalogue updated` : `Return recorded${wasOverdue?' — loan was overdue, strike added':''}`);
 }
+function clearAllCirculation(){
+  if(!isAdmin()) return requireAdmin('clear circulation records');
+  if(!confirm('Clear ALL circulation transactions? Books currently marked ISSUED will be set back to AVAILABLE and every member active-loan count will reset to 0. Titles marked MISSING stay missing. This cannot be undone — consider a checkpoint first.')) return;
+  DB.catalogue.forEach(b=>{ if(b.available==='ISSUED') b.available='AVAILABLE'; });
+  DB.users.forEach(u=>{ u.borrowed = 0; });
+  DB.circulation = [];
+  DB.reminders = [];
+  saveDB(); render(); toast('All circulation transactions cleared — ready for a new session');
+}
 
 /* ================= PAGE: REMINDERS ================= */
 let remindersModule;
@@ -2034,7 +2109,7 @@ function pageRegister(){
     data:()=>DB.registerLog,
     searchKeys:['id','name','purpose','cls','verifiedBy'],
     filters:[
-      {key:'cls', label:'Class', options:DB.setup.userClasses},
+      {key:'cls', label:'Class', options:sortedClasses()},
     ],
     columns:[
       {key:'date', label:'Date', render:r=>fmtDate(r.date)},
@@ -2062,7 +2137,10 @@ function pageRegister(){
   </div>
   <div class="panel-head" style="margin:0 0 -6px 4px">
     <div></div>
-    <button class="btn secondary" onclick="openRegisterPrintModal()">🖨 Print register</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn secondary" onclick="openRegisterPrintModal()">🖨 Print register</button>
+      ${isAdmin()? `<button class="btn danger" onclick="clearAllRegister()">🗑 Clear all</button>`:''}
+    </div>
   </div>
   <div id="mod_register"></div>`;
 }
@@ -2111,6 +2189,12 @@ function openRegisterPrintModal(){
     }
   });
 }
+function clearAllRegister(){
+  if(!isAdmin()) return requireAdmin('clear the register');
+  if(!confirm('Clear ALL register entries (desk sign-ins and class visits)? This cannot be undone — consider a checkpoint first.')) return;
+  DB.registerLog = [];
+  saveDB(); render(); toast('Register cleared — ready for a new session');
+}
 
 
 /* ---- batch check-in staging (Register) ---- */
@@ -2128,7 +2212,7 @@ function renderBatchStagingHtml(){
     </div>
     <div class="field">
       <label>Add a whole class</label>
-      <select id="batchClassSelect">${DB.setup.userClasses.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
+      <select id="batchClassSelect">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select>
     </div>
     <button class="btn secondary" onclick="addClassToBatch()">+ Add class</button>
     <div class="spacer"></div>
@@ -2140,6 +2224,10 @@ function renderBatchStagingHtml(){
       <label>Time in</label>
       <input type="time" id="batchTimeIn" value="${new Date().toTimeString().slice(0,5)}">
     </div>
+  </div>
+  <div class="field" style="margin-bottom:12px">
+    <label>Note (applies to all — optional)</label>
+    <input type="text" id="batchNote" placeholder="e.g. Came for the reading club session">
   </div>
   ${batchStaging.length? `
   <table class="stage-table">
@@ -2175,13 +2263,14 @@ function submitBatch(){
   if(!isAdmin()) return requireAdmin('submit check-ins');
   const purpose = document.getElementById('batchPurpose').value;
   const timeIn = document.getElementById('batchTimeIn').value;
+  const note = (document.getElementById('batchNote').value || '').trim();
   const selected = batchStaging.filter(s=>batchChecked[s.id]);
   if(!selected.length){ toast('Select at least one student to submit'); return; }
   selected.forEach(s=>{
     DB.registerLog.unshift({
       entryId: uid('REG'), source:'DESK', date:todayISO(), timeIn, timeOut:'', period:'',
       id:s.id, name:s.name, category:s.category, cls:s.cls, purpose,
-      conduct:'NONE', action:'NONE', borrow:'NO', verifiedBy:SESSION.fullName, note:'Batch check-in',
+      conduct:'NONE', action:'NONE', borrow:'NO', verifiedBy:SESSION.fullName, note: note || 'Batch check-in',
       offense:'', offenseOther:'', consequence:'', consequenceOther:''
     });
   });
@@ -2274,7 +2363,7 @@ function pageSchedule(){
       ${isAdmin()? `<button class="btn" onclick="openScheduleForm()">+ Add period</button>`:''}
     </div>
     ${days.filter(d=>byDay[d]).map(d=>`
-      <h4 style="margin:14px 0 8px;font-size:13px;color:#7a6a45;letter-spacing:.5px">${d}</h4>
+      <h4 style="margin:14px 0 8px;font-size:13px;color:var(--muted-label);letter-spacing:.5px">${d}</h4>
       <div class="table-wrap" style="margin-bottom:10px"><table class="datatable"><thead><tr><th>Period</th><th>Time</th><th>Expected class</th><th>Notes</th>${isAdmin()?'<th></th>':''}</tr></thead>
       <tbody>${byDay[d].map(r=>`<tr><td>${esc(r[1]||'')}</td><td>${esc((r[2]||'').slice(0,5))}</td><td>${esc(r[3]||'')}</td><td>${esc(r[4]||'')}</td>
         ${isAdmin()? `<td><button class="btn secondary small" onclick="openScheduleForm(${r.__i})">Edit</button> <button class="btn danger small" onclick="deleteScheduleEntry(${r.__i})">Delete</button></td>`:''}</tr>`).join('')}</tbody></table></div>
@@ -2294,7 +2383,7 @@ function scheduleFields(r){
     ]},
     {row:[
       {key:'time', label:'Time', type:'time', default:r? (r[2]||'').slice(0,5):''},
-      {key:'cls', label:'Expected class', type:'select', options:DB.setup.userClasses, default:r? r[3]:DB.setup.userClasses[0]},
+      {key:'cls', label:'Expected class', type:'select', options:sortedClasses(), default:r? r[3]:sortedClasses()[0]},
     ]},
     {row:[
       {key:'noteType', label:'Notes', type:'select', options:SCHEDULE_NOTE_TYPES, default: isKnown? existingNote : (existingNote? 'OTHER':'LIBRARY PERIOD')},
@@ -2385,7 +2474,7 @@ function pageSetup(){
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>Student classes &amp; class teachers</h3><div class="hint">Every class starts with "YEAR" · teacher is picked from registered staff</div></div>
-      <div id="classList">${DB.setup.userClasses.map(c=>{
+      <div id="classList">${sortedClasses().map(c=>{
         const ct = DB.setup.classTeachers[c];
         const label = ct ? (ct.staffId ? (DB.users.find(u=>u.id===ct.staffId)||{}).name || ct.name : ct.name) : 'no teacher set';
         return `<div class="list-editor-row"><span><strong>${esc(c)}</strong> — ${esc(label)}</span>
@@ -2407,13 +2496,20 @@ function pageSetup(){
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Promote students</h3><div class="hint">Move every student from one class into another — e.g. end-of-year promotion</div></div>
+    <div class="panel-head"><h3>Promote students</h3><div class="hint">Stage students from one or more classes, then move them all together</div></div>
     <div class="field-row">
-      <div class="field"><label>From class</label><select id="promoteFrom" onchange="updatePromoteCount()">${DB.setup.userClasses.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-      <div class="field"><label>To class</label><select id="promoteTo" onchange="updatePromoteCount()">${DB.setup.userClasses.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>From class</label><select id="promoteFrom" onchange="onPromoteFromChange()">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>Move to</label><select id="promoteTo">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
     </div>
-    <p class="field-hint" id="promoteCount">${DB.users.filter(u=>u.cls===DB.setup.userClasses[0]).length} student(s) currently in ${esc(DB.setup.userClasses[0])}</p>
-    <button class="btn secondary" onclick="promoteStudents()">Promote students</button>
+    <p class="field-hint">Students in the selected "From class" not already staged:</p>
+    <div id="promoteSourceList"></div>
+    <button class="btn secondary" style="margin-top:8px" onclick="addSelectedToPromoteBatch()">+ Add selected to batch</button>
+    <p class="field-hint" style="margin-top:16px">Staged for promotion (<span id="promoteStageCount">0</span>) — you can switch "From class" above and keep adding more before moving them all</p>
+    <div id="promoteStagingList"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="commitPromotion()">Move all staged students</button>
+      <button class="btn secondary" onclick="clearPromoteStaging()">Clear staging</button>
+    </div>
   </div>
   <div class="grid two-col">
     <div class="card panel">
@@ -2442,7 +2538,7 @@ function pageSetup(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Class subject distribution</h3><div class="hint">Default subjects auto-assigned to every student in a class — override per-student from Members → Subjects</div></div>
-    ${DB.setup.userClasses.map(c=>`
+    ${sortedClasses().map(c=>`
       <div style="margin-bottom:14px">
         <p class="field-hint" style="margin-bottom:6px"><strong>${esc(c)}</strong></p>
         <div class="subject-pill-grid">
@@ -2455,27 +2551,77 @@ function pageSetup(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Schedule management</h3><div class="hint">Add, edit or remove weekly periods</div></div>
-    <p style="font-size:12.5px;color:#5b6b5f">Manage the weekly timetable and per-student subject combinations from the <a href="#" onclick="route='schedule';render();return false;" style="color:var(--forest);font-weight:600">Schedule page</a> — every row there has Edit/Delete when you're signed in as admin.</p>
+    <p style="font-size:12.5px;color:var(--muted)">Manage the weekly timetable and per-student subject combinations from the <a href="#" onclick="route='schedule';render();return false;" style="color:var(--forest);font-weight:600">Schedule page</a> — every row there has Edit/Delete when you're signed in as admin.</p>
   </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>System</h3></div>
+    <p style="font-size:12.5px;color:var(--muted)">Catalogue: <strong>${DB.catalogue.length}</strong> titles · Members: <strong>${DB.users.length}</strong> · Loan records: <strong>${DB.circulation.length}</strong> · Register entries: <strong>${DB.registerLog.length}</strong></p>
+    <p class="field-hint" style="margin-top:6px">Institution branding, theme, colours and account management now live in <a href="#" onclick="route='settings';render();return false;" style="color:var(--forest);font-weight:600">Settings</a>.</p>
+    <button class="btn danger" onclick="resetAllData()">Reset to original data</button>
+  </div>`;
+}
+
+/* ================= PAGE: SETTINGS (app-level, non-library config) ================= */
+const COLOR_PALETTES = {
+  forest: {label:'Forest & Brass (default)', forest:'#1F3A2E', forestDark:'#122419', brass:'#B8863E', brassLight:'#D9A94F', terracotta:'#A8452F'},
+  ocean:  {label:'Ocean Blue', forest:'#1B4B66', forestDark:'#0E2A3A', brass:'#3E8FB8', brassLight:'#6FB4D9', terracotta:'#C9622F'},
+  royal:  {label:'Royal Purple', forest:'#3B2A6B', forestDark:'#211640', brass:'#8A63C9', brassLight:'#B79CE0', terracotta:'#C9427A'},
+  crimson:{label:'Crimson', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B'},
+  slate:  {label:'Slate Grey', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A'},
+};
+function applyPalette(name){
+  const p = COLOR_PALETTES[name] || COLOR_PALETTES.forest;
+  const root = document.documentElement.style;
+  root.setProperty('--forest', p.forest);
+  root.setProperty('--forest-dark', p.forestDark);
+  root.setProperty('--brass', p.brass);
+  root.setProperty('--brass-light', p.brassLight);
+  root.setProperty('--terracotta', p.terracotta);
+}
+function pageSettings(){
+  if(!isAdmin()){
+    return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Settings are only available to admin accounts.</div></div>`;
+  }
+  return `
   <div class="card panel">
     <div class="panel-head"><h3>Institution</h3><div class="hint">Displayed on the sidebar, sign-in screen and printed reports</div></div>
     <div class="field"><label>Institution / school name</label><input id="setInstitution" value="${esc(DB.setup.institutionName||'')}" placeholder="e.g. Access International School"></div>
+    <div class="avatar-upload" style="margin-top:10px">
+      <div class="avatar-preview" id="logoPreview" style="border-radius:8px">${DB.setup.institutionLogo? `<img src="${DB.setup.institutionLogo}">` : 'AL'}</div>
+      <div>
+        <label class="btn secondary small" style="cursor:pointer">Upload school logo<input type="file" accept="image/*" id="logoInput" style="display:none"></label>
+        ${DB.setup.institutionLogo? `<button class="btn danger small" id="logoRemove" style="margin-left:6px">Remove</button>`:''}
+        <p class="field-hint">Replaces the library icon in the sidebar. Under 800KB.</p>
+      </div>
+    </div>
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Preferences</h3></div>
+    <div class="panel-head"><h3>Appearance</h3></div>
     <div class="field-row">
       <div class="field"><label>Theme</label><select id="setTheme"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark</option></select></div>
-      <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
+      <div class="field"><label>Colour palette</label><select id="setPalette">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
     </div>
+    <div class="field-row" id="paletteSwatches">${Object.entries(COLOR_PALETTES).map(([k,p])=>`
+      <div class="role-opt ${PREFS.palette===k?'selected':''}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">
+        <div style="display:flex;gap:3px"><span style="width:14px;height:14px;border-radius:50%;background:${p.forest}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.brass}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.terracotta}"></span></div>
+        <span style="font-size:10.5px">${esc(p.label)}</span>
+      </div>`).join('')}</div>
+    <button class="btn secondary" style="margin-top:10px" onclick="saveClockPrefs()">Save appearance</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Clock, date &amp; term</h3></div>
     <div class="field-row">
+      <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
       <div class="field"><label>Date format</label><select id="setDateFormat">
         ${['DD MMM YYYY','MM/DD/YYYY','DD/MM/YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Current term</label><select id="setTerm">${['TERM 1','TERM 2','TERM 3'].map(t=>`<option ${DB.setup.currentTerm===t?'selected':''}>${t}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label>Current session</label><input id="setSession" value="${esc(DB.setup.currentSession||'')}" placeholder="e.g. 2025/2026"></div>
-    <button class="btn secondary" onclick="saveClockPrefs()">Save preferences</button>
+    <div class="field-row">
+      <div class="field"><label>Current term</label><select id="setTerm">${['TERM 1','TERM 2','TERM 3'].map(t=>`<option ${DB.setup.currentTerm===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>Current session</label><input id="setSession" value="${esc(DB.setup.currentSession||'')}" placeholder="e.g. 2025/2026"></div>
+    </div>
+    <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Accounts</h3><div class="hint">${ACCOUNTS.length} account(s)</div></div>
@@ -2484,7 +2630,7 @@ function pageSetup(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Data &amp; backup</h3><div class="hint">Your changes save automatically to your Claude account</div></div>
-    <p style="font-size:12.5px;color:#5b6b5f;line-height:1.6">Everything you add or edit here is saved automatically and will be here the next time you open this app on this account. For an extra copy — e.g. to keep on your own Google Drive — download a backup file below. You can restore from that file at any time, on any device.</p>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Everything you add or edit here is saved automatically and will be here the next time you open this app on this account. For an extra copy — e.g. to keep on your own Google Drive — download a backup file below. You can restore from that file at any time, on any device.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
       <button class="btn secondary" onclick="downloadBackup()">⭳ Download full backup (.json)</button>
       <label class="btn secondary" style="cursor:pointer">
@@ -2492,12 +2638,20 @@ function pageSetup(){
         <input type="file" accept="application/json" onchange="restoreBackup(this.files[0])" style="display:none">
       </label>
     </div>
-  </div>
-  <div class="card panel">
-    <div class="panel-head"><h3>System</h3></div>
-    <p style="font-size:12.5px;color:#5b6b5f">Catalogue: <strong>${DB.catalogue.length}</strong> titles · Members: <strong>${DB.users.length}</strong> · Loan records: <strong>${DB.circulation.length}</strong> · Register entries: <strong>${DB.registerLog.length}</strong></p>
-    <button class="btn danger" onclick="resetAllData()">Reset to original data</button>
   </div>`;
+}
+function previewPalette(name){ applyPalette(name); }
+function bindSettingsUploaders(){
+  const logoInput = document.getElementById('logoInput');
+  if(logoInput) logoInput.onchange = (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    if(file.size > 800*1024){ toast('Please choose an image under 800KB'); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{ DB.setup.institutionLogo = reader.result; saveDB(); render(); toast('Logo updated'); };
+    reader.readAsDataURL(file);
+  };
+  const logoRemove = document.getElementById('logoRemove');
+  if(logoRemove) logoRemove.onclick = ()=>{ DB.setup.institutionLogo = null; saveDB(); render(); toast('Logo removed'); };
 }
 function openEditClass(oldName){
   const staff = DB.users.filter(u=>u.category==='STAFF');
@@ -2527,6 +2681,7 @@ function openEditClass(oldName){
         const su = staff.find(s=>s.id===vals.teacherId);
         DB.setup.classTeachers[newName] = {staffId:su.id, name:su.name};
       }
+      DB.setup.userClasses = sortClassesChrono(DB.setup.userClasses);
       saveDB(); render(); toast('Class updated everywhere it appears');
     }
   });
@@ -2536,19 +2691,72 @@ function openEditClass(oldName){
     sel.innerHTML = `<option value="">— none —</option>` + staff.map(s=>`<option value="${esc(s.id)}" ${ct&&ct.staffId===s.id?'selected':''}>${esc(s.id)} — ${esc(s.name)}</option>`).join('');
   }
 }
-function updatePromoteCount(){
-  const from = $('#promoteFrom').value;
-  const n = DB.users.filter(u=>u.cls===from && u.category==='STUDENT').length;
-  $('#promoteCount').textContent = `${n} student(s) currently in ${from}`;
+function sortedClasses(){ return DB.setup.userClasses; } // always kept chronological (YEAR 7 → up) by sortClassesChrono
+let promoteBatch = []; // {id,name,cls}
+let promoteSourceChecked = {};
+function onPromoteFromChange(){ promoteSourceChecked = {}; renderPromoteSourceList(); }
+function renderPromoteSourceList(){
+  const el = document.getElementById('promoteSourceList');
+  if(!el) return;
+  const from = $('#promoteFrom') ? $('#promoteFrom').value : DB.setup.userClasses[0];
+  const already = new Set(promoteBatch.map(s=>s.id));
+  const students = DB.users.filter(u=>u.cls===from && u.category==='STUDENT' && !already.has(u.id));
+  if(!students.length){ el.innerHTML = `<div class="stage-empty">No unstaged students left in ${esc(from)}.</div>`; return; }
+  el.innerHTML = `
+  <table class="stage-table">
+    <thead><tr><th><input type="checkbox" id="promoteSelectAll"></th><th>ID</th><th>Name</th></tr></thead>
+    <tbody>${students.map(u=>`<tr>
+      <td><input type="checkbox" class="promoteSrcCheck" data-id="${esc(u.id)}" ${promoteSourceChecked[u.id]?'checked':''}></td>
+      <td>${esc(u.id)}</td><td>${esc(u.name)}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+  const selAll = document.getElementById('promoteSelectAll');
+  if(selAll) selAll.onchange = e=>{ students.forEach(u=>promoteSourceChecked[u.id]=e.target.checked); renderPromoteSourceList(); };
+  document.querySelectorAll('.promoteSrcCheck').forEach(cb=>{
+    cb.onchange = e=>{ promoteSourceChecked[e.target.dataset.id]=e.target.checked; };
+  });
 }
-function promoteStudents(){
-  const from = $('#promoteFrom').value, to = $('#promoteTo').value;
-  if(from===to){ toast('Choose two different classes'); return; }
-  const affected = DB.users.filter(u=>u.cls===from && u.category==='STUDENT');
-  if(!affected.length){ toast('No students found in '+from); return; }
-  if(!confirm(`Move ${affected.length} student(s) from ${from} to ${to}?`)) return;
-  affected.forEach(u=>{ u.cls = to; delete u.subjects; }); // drop subject override so they pick up the new class's defaults
-  saveDB(); render(); toast(`${affected.length} student(s) promoted to ${to}`);
+function addSelectedToPromoteBatch(){
+  const from = $('#promoteFrom').value;
+  const chosenIds = Object.keys(promoteSourceChecked).filter(id=>promoteSourceChecked[id]);
+  if(!chosenIds.length){ toast('Tick at least one student to add'); return; }
+  chosenIds.forEach(id=>{
+    const u = DB.users.find(x=>x.id===id);
+    if(u && !promoteBatch.some(s=>s.id===id)) promoteBatch.push({id:u.id, name:u.name, cls:u.cls});
+  });
+  promoteSourceChecked = {};
+  renderPromoteSourceList(); renderPromoteStaging();
+  toast(`${chosenIds.length} student(s) added to the promotion batch`);
+}
+function removeFromPromoteBatch(id){
+  promoteBatch = promoteBatch.filter(s=>s.id!==id);
+  renderPromoteSourceList(); renderPromoteStaging();
+}
+function renderPromoteStaging(){
+  const el = document.getElementById('promoteStagingList');
+  const countEl = document.getElementById('promoteStageCount');
+  if(countEl) countEl.textContent = promoteBatch.length;
+  if(!el) return;
+  if(!promoteBatch.length){ el.innerHTML = `<div class="stage-empty">Nothing staged yet — tick students above and add them to the batch.</div>`; return; }
+  el.innerHTML = `
+  <table class="stage-table">
+    <thead><tr><th>ID</th><th>Name</th><th>Current class</th><th></th></tr></thead>
+    <tbody>${promoteBatch.map(s=>`<tr><td>${esc(s.id)}</td><td>${esc(s.name)}</td><td>${esc(s.cls)}</td>
+      <td><button class="btn danger small" onclick="removeFromPromoteBatch('${esc(s.id)}')">Remove</button></td></tr>`).join('')}</tbody>
+  </table>`;
+}
+function clearPromoteStaging(){ promoteBatch=[]; promoteSourceChecked={}; renderPromoteSourceList(); renderPromoteStaging(); }
+function commitPromotion(){
+  if(!promoteBatch.length){ toast('Stage at least one student first'); return; }
+  const to = $('#promoteTo').value;
+  if(!confirm(`Move ${promoteBatch.length} student(s) to ${to}?`)) return;
+  promoteBatch.forEach(s=>{
+    const u = DB.users.find(x=>x.id===s.id);
+    if(u){ u.cls = to; delete u.subjects; } // drop subject override so they pick up the new class's defaults
+  });
+  const n = promoteBatch.length;
+  promoteBatch = []; promoteSourceChecked = {};
+  saveDB(); render(); toast(`${n} student(s) promoted to ${to}`);
 }
 function addDesignation(){
   const s = $('#newDesignation').value.trim().toUpperCase();
@@ -2578,12 +2786,14 @@ function saveClassSubjects(){
   saveDB(); render(); toast('Class subject distribution saved');
 }
 function saveClockPrefs(){
-  DB.setup.clockFormat = $('#setClockFormat').value;
-  DB.setup.dateFormat = $('#setDateFormat').value;
-  DB.setup.currentTerm = $('#setTerm').value;
-  DB.setup.currentSession = $('#setSession').value.trim();
+  if($('#setClockFormat')) DB.setup.clockFormat = $('#setClockFormat').value;
+  if($('#setDateFormat')) DB.setup.dateFormat = $('#setDateFormat').value;
+  if($('#setTerm')) DB.setup.currentTerm = $('#setTerm').value;
+  if($('#setSession')) DB.setup.currentSession = $('#setSession').value.trim();
   PREFS.clockFormat = DB.setup.clockFormat; PREFS.dateFormat = DB.setup.dateFormat;
-  PREFS.theme = $('#setTheme').value; applyTheme();
+  if($('#setTheme')) PREFS.theme = $('#setTheme').value;
+  if($('#setPalette')) PREFS.palette = $('#setPalette').value;
+  applyTheme(); applyPalette(PREFS.palette);
   savePrefs(); saveDB(); render(); toast('Preferences saved');
 }
 function saveInstitution(){
@@ -2616,6 +2826,7 @@ function addClass(){
   if(!name.startsWith('YEAR')){ toast('Student classes should start with "YEAR"'); return; }
   if(!DB.setup.userClasses.includes(name)) DB.setup.userClasses.push(name);
   if(!DB.setup.classSubjects[name]) DB.setup.classSubjects[name] = [];
+  DB.setup.userClasses = sortClassesChrono(DB.setup.userClasses);
   saveDB(); render(); toast('Class added');
 }
 function removeClass(c){
@@ -2708,6 +2919,7 @@ function render(){
     case 'schedule': html = pageSchedule(); break;
     case 'feedback': html = pageFeedback(); break;
     case 'setup': html = pageSetup(); break;
+    case 'settings': html = pageSettings(); break;
     default: html = pageHome();
   }
   el.innerHTML = html;
@@ -2718,6 +2930,8 @@ function render(){
   if(route==='register' && registerModule){ $('#mod_register').innerHTML = registerModule.render(); MODULE_CONTAINERS.register={host:{render:()=>{ $('#mod_register').innerHTML=registerModule.render(); registerModule.bind(); }}}; registerModule.bind(); mountBatchStaging(); mountCheckoutStaging(); }
   if(route==='feedback' && feedbackModule){ $('#mod_feedback').innerHTML = feedbackModule.render(); MODULE_CONTAINERS.feedback={host:{render:()=>{ $('#mod_feedback').innerHTML=feedbackModule.render(); feedbackModule.bind(); }}}; feedbackModule.bind(); }
   if(route==='schedule'){ $('#mod_roster').innerHTML = pageRosterTable(); MODULE_CONTAINERS.roster={host:{render:()=>{ $('#mod_roster').innerHTML=pageRosterTable(); rosterModule.bind(); }}}; rosterModule.bind(); }
+  if(route==='setup' && isAdmin()){ renderPromoteSourceList(); renderPromoteStaging(); }
+  if(route==='settings' && isAdmin()){ bindSettingsUploaders(); }
   if(route==='circulation'){ bindCirculationPickers(); }
 
   if(route==='dashboard') requestAnimationFrame(drawDashboardCharts);
@@ -2739,7 +2953,7 @@ async function enterApp(){
     console.error('Boot failed', e);
     $('#content').innerHTML =
       '<div class="card panel"><h3>Something went wrong loading your data</h3>' +
-      '<p style="font-size:12.5px;color:#7d8a7d">'+esc(e.message||String(e))+'</p>' +
+      '<p style="font-size:12.5px;color:var(--muted)">'+esc(e.message||String(e))+'</p>' +
       '<button class="btn" onclick="resetAllData()">Reset to original data</button></div>';
   }
 }
