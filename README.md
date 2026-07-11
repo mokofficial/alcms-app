@@ -1,2 +1,2 @@
 # alcms-app
-Library Software
+Library Management System
