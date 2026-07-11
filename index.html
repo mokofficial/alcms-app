@@ -55,7 +55,7 @@ html[data-theme="dark"] .quickpick .suggestions{ background:var(--card);}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  font-family:var(--app-font,"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif);
   background:var(--parchment);
   color:var(--ink);
   min-height:100vh;
@@ -112,6 +112,7 @@ input,select,textarea{font-family:inherit;}
 .auth-foot{ font-size:11px; color:#8fa290; position:relative; z-index:2;}
 
 .auth-form-side{ flex:1; display:flex; align-items:flex-start; justify-content:center; padding:48px 30px 60px;}
+.auth-form-side{ align-items:safe center;}
 .auth-box{ width:100%; max-width:380px;}
 .auth-tabs{ display:flex; gap:4px; background:var(--parchment-dim); border-radius:9px; padding:4px; margin-bottom:24px;}
 .auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:var(--muted-label);}
@@ -325,9 +326,10 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 
 /* ===== print ===== */
 #printArea{ display:none; }
-.print-header{ margin-bottom:16px;}
-.print-header h1{ font-size:20px;}
-.print-header p{ font-size:12px; color:#555; margin-top:4px;}
+.print-header{ margin-bottom:16px; display:flex; align-items:center; gap:12px;}
+.print-header img.print-logo{ width:44px; height:44px; object-fit:cover; border-radius:6px; flex:none;}
+.print-header .print-header-text h1{ font-size:20px;}
+.print-header .print-header-text p{ font-size:12px; color:#555; margin-top:4px;}
 .print-table{ width:100%; border-collapse:collapse; font-size:11.5px;}
 .print-table th,.print-table td{ border:1px solid #ccc; padding:5px 7px; text-align:left;}
 .print-table th{ background:#eee;}
@@ -356,10 +358,11 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .clock-chip .time{ font-size:15px; font-weight:700; letter-spacing:.5px;}
 .clock-chip .date{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
 .auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-bottom:18px;}
-.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:baseline; gap:6px;}
-.auth-clock .time .secs{ font-size:20px; font-weight:700; color:#B9C4B4;}
-.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px;}
-.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:"Segoe UI",-apple-system,sans-serif; font-weight:400;}
+.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:center; gap:10px;}
+.auth-clock .time .stack{ display:flex; flex-direction:column; align-items:flex-start; line-height:1; gap:2px;}
+.auth-clock .time .secs{ font-size:16px; font-weight:700; color:#B9C4B4; font-family:'Montserrat','Arial Black',Impact,sans-serif;}
+.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:'Montserrat','Arial Black',Impact,sans-serif; letter-spacing:1px;}
+.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:'Montserrat','Arial Black',Impact,sans-serif; font-weight:400;}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -587,10 +590,10 @@ function togglePwVisibility(id){
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest'};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', font:'segoe', customFont:'', customPalette:null};
 async function loadPrefs(){
   try{ const v = await storeGet(PREFS_KEY); if(v) PREFS = Object.assign(PREFS, JSON.parse(v)); }catch(e){}
-  applyTheme(); applyPalette(PREFS.palette);
+  applyTheme(); applyPalette(); applyFont();
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
 
@@ -616,11 +619,11 @@ function applyTheme(){
 function cycleTheme(){
   const order = ['system','light','dark'];
   const next = order[(order.indexOf(PREFS.theme)+1) % order.length];
-  PREFS.theme = next; applyTheme(); applyPalette(PREFS.palette); savePrefs();
+  PREFS.theme = next; applyTheme(); applyPalette(); savePrefs();
   toast('Theme: '+next.charAt(0).toUpperCase()+next.slice(1));
 }
 if(window.matchMedia){
-  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(PREFS.palette); } }); }catch(e){}
+  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(); } }); }catch(e){}
 }
 function formatClockTime(d){
   if(PREFS.clockFormat==='12h') return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
@@ -649,7 +652,11 @@ function tickClocks(){
   if(auth){
     let h = now.getHours(); const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
     const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
-    auth.innerHTML = `<div class="time">${h}:${m}<span class="secs">:${s}</span><span class="ampm">${ampm}</span></div><div class="date">${date}</div>`;
+    const weekday = now.toLocaleDateString('en-GB',{weekday:'long'});
+    const day = String(now.getDate()).padStart(2,'0');
+    const month = now.toLocaleDateString('en-GB',{month:'long'});
+    const authDate = `${weekday}, ${day}/${month}/${now.getFullYear()}`;
+    auth.innerHTML = `<div class="time">${h}:${m}<span class="stack"><span class="secs">:${s}</span><span class="ampm">${ampm}</span></span></div><div class="date">${authDate}</div>`;
   }
 }
 setInterval(tickClocks, 1000);
@@ -1331,9 +1338,12 @@ const PALETTE = ['#1F3A2E','#B8863E','#A8452F','#4C7C5E','#D9A94F','#6E5A3C','#7
 function printReport(title, subtitle, columns, rows){
   const html = `
     <div class="print-header">
-      <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
-      <p>${esc(subtitle)}</p>
-      <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
+      ${DB.setup.institutionLogo? `<img class="print-logo" src="${DB.setup.institutionLogo}">` : ''}
+      <div class="print-header-text">
+        <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
+        <p>${esc(subtitle)}</p>
+        <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
+      </div>
     </div>
     <table class="print-table">
       <thead><tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
@@ -1348,9 +1358,12 @@ window.addEventListener('afterprint', ()=> document.body.classList.remove('print
 function printMultiSection(title, subtitle, sections){
   const html = `
     <div class="print-header">
-      <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
-      <p>${esc(subtitle)}</p>
-      <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
+      ${DB.setup.institutionLogo? `<img class="print-logo" src="${DB.setup.institutionLogo}">` : ''}
+      <div class="print-header-text">
+        <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
+        <p>${esc(subtitle)}</p>
+        <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
+      </div>
     </div>
     ${sections.map(sec=>`
       <h3 style="margin:18px 0 8px;font-size:14px;border-bottom:1px solid #999;padding-bottom:4px">${esc(sec.heading)}</h3>
@@ -1496,24 +1509,41 @@ function csvEscape(v){
   const s = v===null||v===undefined? '' : String(v);
   return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
 }
-function exportCSV(filename, columns, rows){
-  const lines = [columns.map(c=>csvEscape(c.label)).join(',')];
+function exportCSV(filename, title, columns, rows){
+  const lines = [];
+  if(DB.setup.institutionName) lines.push(csvEscape(DB.setup.institutionName));
+  lines.push(csvEscape('ALCMS — '+title));
+  lines.push(csvEscape('Generated '+new Date().toLocaleString('en-GB')));
+  lines.push('');
+  lines.push(columns.map(c=>csvEscape(c.label)).join(','));
   rows.forEach(r=> lines.push(columns.map(c=>csvEscape(c.get(r))).join(',')));
   downloadBlob(filename+'.csv', new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'}));
 }
-function exportExcel(filename, sheetName, columns, rows){
-  const data = rows.map(r=>{ const o={}; columns.forEach(c=> o[c.label]=c.get(r)); return o; });
-  const ws = XLSX.utils.json_to_sheet(data, {header:columns.map(c=>c.label)});
+function exportExcel(filename, title, sheetName, columns, rows){
+  const aoa = [];
+  if(DB.setup.institutionName) aoa.push([DB.setup.institutionName]);
+  aoa.push(['ALCMS — '+title]);
+  aoa.push(['Generated '+new Date().toLocaleString('en-GB')]);
+  aoa.push([]);
+  aoa.push(columns.map(c=>c.label));
+  rows.forEach(r=> aoa.push(columns.map(c=>c.get(r))));
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = columns.map(()=>({wch:18}));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0,31));
   XLSX.writeFile(wb, filename+'.xlsx');
 }
 function exportPDF(filename, title, columns, rows){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
-  doc.setFontSize(14); doc.text(title, 14, 16);
-  doc.setFontSize(9); doc.text('Generated '+new Date().toLocaleString('en-GB'), 14, 22);
+  let y = 16, textX = 14;
+  if(DB.setup.institutionLogo){
+    try{ doc.addImage(DB.setup.institutionLogo, 'PNG', 14, 8, 16, 16); textX = 34; }catch(e){ /* unsupported image format — skip logo, keep exporting */ }
+  }
+  if(DB.setup.institutionName){ doc.setFontSize(12); doc.text(DB.setup.institutionName, textX, y); y+=6; }
+  doc.setFontSize(14); doc.text('ALCMS — '+title, textX, y); y+=6;
+  doc.setFontSize(9); doc.text('Generated '+new Date().toLocaleString('en-GB'), textX, y); y+=6;
   doc.autoTable({
-    startY:28, head:[columns.map(c=>c.label)], body:rows.map(r=>columns.map(c=>String(c.get(r)??''))),
+    startY:Math.max(y,26), head:[columns.map(c=>c.label)], body:rows.map(r=>columns.map(c=>String(c.get(r)??''))),
     styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:[31,58,46]}, margin:{left:10,right:10},
   });
   doc.save(filename+'.pdf');
@@ -1524,7 +1554,7 @@ function openExportModal(title, filenameBase, columns, getRows){
     <div class="modal">
       <div class="modal-head"><h3>Export ${esc(title)}</h3><button id="mClose">✕</button></div>
       <div class="modal-body">
-        <p class="field-hint" style="margin-bottom:10px">Choose a format. This exports the currently filtered view.</p>
+        <p class="field-hint" style="margin-bottom:10px">Choose a format. This exports the currently filtered view, with your institution name and logo on the header.</p>
         <div class="format-choice">
           <div class="format-opt" id="fmtCsv"><span class="ic">📄</span>CSV</div>
           <div class="format-opt" id="fmtXlsx"><span class="ic">📊</span>Excel</div>
@@ -1537,8 +1567,8 @@ function openExportModal(title, filenameBase, columns, getRows){
   const close = ()=> $('#modalRoot').innerHTML='';
   $('#mClose').onclick=close;
   $('#mb').addEventListener('click', e=>{ if(e.target.id==='mb') close(); });
-  $('#fmtCsv').onclick = ()=>{ exportCSV(filenameBase, columns, getRows()); close(); toast('CSV downloaded'); };
-  $('#fmtXlsx').onclick = ()=>{ exportExcel(filenameBase, title, columns, getRows()); close(); toast('Excel file downloaded'); };
+  $('#fmtCsv').onclick = ()=>{ exportCSV(filenameBase, title, columns, getRows()); close(); toast('CSV downloaded'); };
+  $('#fmtXlsx').onclick = ()=>{ exportExcel(filenameBase, title, title, columns, getRows()); close(); toast('Excel file downloaded'); };
   $('#fmtPdf').onclick = ()=>{ exportPDF(filenameBase, title, columns, getRows()); close(); toast('PDF downloaded'); };
 }
 
@@ -2126,23 +2156,35 @@ function reminderRecipient(trx){
   const user = DB.users.find(u=>u.id===trx.userId);
   if(!user) return null;
   if(user.category==='STAFF'){
-    return user.teacher ? {phone:user.teacher, label:user.name+' (staff, own number)'} : null;
+    return user.teacher ? {phone:user.teacher, label:user.name+' (staff, own number)', teacherName:user.name} : null;
   }
   // student — route to their class teacher
   const ct = DB.setup.classTeachers[user.cls];
   if(ct && ct.staffId){
     const teacher = DB.users.find(u=>u.id===ct.staffId);
-    if(teacher && teacher.teacher) return {phone:teacher.teacher, label:teacher.name+' (class teacher of '+user.cls+')'};
+    if(teacher && teacher.teacher) return {phone:teacher.teacher, label:teacher.name+' (class teacher of '+user.cls+')', teacherName:teacher.name};
   }
   return null;
+}
+function buildReminderMessage(trx, kind, recipient, isStaff){
+  const status = kind==='overdue'
+    ? `is now overdue by ${daysBetween(parseAnyDate(trx.dueDate), new Date())} day(s)`
+    : `is due back on ${fmtDate(trx.dueDate)}`;
+  let body;
+  if(isStaff){
+    body = `Dear ${trx.name},\n\nThis is a reminder regarding your library loan of "${trx.title}" (Accession No: ${trx.acc}), borrowed on ${fmtDate(trx.dateBorrowed)} and due ${fmtDate(trx.dueDate)}. This title ${status}. Kindly return it to the library at your earliest convenience.`;
+  } else {
+    body = `Dear ${recipient.teacherName},\n\nThis is to report that ${trx.name} of ${trx.cls} has a library loan of "${trx.title}" (Accession No: ${trx.acc}), borrowed on ${fmtDate(trx.dateBorrowed)} and due ${fmtDate(trx.dueDate)}, which ${status}. Kindly encourage the student to return it to the library as soon as possible.`;
+  }
+  return `*LIBRARY REMINDER*\n\n${body}\n\nBest Regards,\nLibrarian`;
 }
 function waButtonHtml(trx, kind){
   const recipient = reminderRecipient(trx);
   if(!recipient) return `<span class="field-hint">no phone on file</span>`;
-  const msg = kind==='overdue'
-    ? `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} was due ${fmtDate(trx.dueDate)} and is now overdue. Please return it as soon as possible.`
-    : `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} is due back ${fmtDate(trx.dueDate)}. A friendly heads-up before it becomes overdue.`;
-  return `<a class="btn small secondary" href="${whatsAppLink(recipient.phone, msg)}" target="_blank" rel="noopener" title="To: ${esc(recipient.label)}">📱 WhatsApp</a>`;
+  const user = DB.users.find(u=>u.id===trx.userId);
+  const isStaff = user && user.category==='STAFF';
+  const msg = buildReminderMessage(trx, kind, recipient, isStaff);
+  return `<a class="btn small secondary" href="${whatsAppLink(recipient.phone, msg)}" target="_blank" rel="noopener" title="To: ${esc(recipient.label)}">📨 Send Reminder</a>`;
 }
 function pageReminders(){
   const overdue = DB.circulation.filter(x=>txnStatus(x)==='OVERDUE');
@@ -2257,26 +2299,76 @@ function openRegisterEdit(entryId){
   }
 }
 function openRegisterPrintModal(){
-  openModal({
-    title:'Print register',
-    fields:[
-      {row:[{key:'from',label:'From date', type:'date'},{key:'to',label:'To date', type:'date'}]},
-      {key:'source', label:'Type', type:'select', options:['ALL','DESK','CLASS']},
-    ],
-    onSave:(vals)=>{
-      let rows = DB.registerLog;
-      if(vals.source && vals.source!=='ALL') rows = rows.filter(r=>r.source===vals.source);
-      if(vals.from) rows = rows.filter(r=> (parseAnyDate(r.date)||0) >= parseAnyDate(vals.from));
-      if(vals.to) rows = rows.filter(r=> (parseAnyDate(r.date)||0) <= parseAnyDate(vals.to));
-      const subtitle = `${vals.source&&vals.source!=='ALL'? vals.source+' entries':'All entries'}${vals.from||vals.to? ' · '+(vals.from?fmtDate(vals.from):'earliest')+' to '+(vals.to?fmtDate(vals.to):'latest') : ' · full history'} — ${rows.length} record(s)`;
-      printReport('Register', subtitle, [
-        {label:'Date', get:r=>fmtDate(r.date)}, {label:'Type', get:r=>r.source},
-        {label:'Time in', get:r=>fmtTime(r.timeIn)}, {label:'Time out', get:r=>fmtTime(r.timeOut)},
-        {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
-        {label:'Purpose', get:r=>r.purpose}, {label:'Borrowed', get:r=>r.borrow}, {label:'Note', get:r=>r.note},
-      ], rows);
+  let scope = 'ALL';
+  const html = `
+  <div class="modal-backdrop" id="mb">
+    <div class="modal">
+      <div class="modal-head"><h3>Print register</h3><button id="mClose">✕</button></div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field"><label>From date</label><input id="rpFrom" type="date"></div>
+          <div class="field"><label>To date</label><input id="rpTo" type="date"></div>
+        </div>
+        <div class="field">
+          <label>Scope</label>
+          <select id="rpScope">
+            <option value="ALL">All members</option>
+            <option value="MEMBER">Single member</option>
+            <option value="CLASS">Class</option>
+          </select>
+        </div>
+        <div id="rpExtra"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary" id="mCancel">Cancel</button>
+        <button class="btn" id="mPrintReg">Print</button>
+      </div>
+    </div>
+  </div>`;
+  $('#modalRoot').innerHTML = html;
+  const close = ()=> $('#modalRoot').innerHTML='';
+  $('#mClose').onclick=close; $('#mCancel').onclick=close;
+  $('#mb').addEventListener('click', e=>{ if(e.target.id==='mb') close(); });
+  let memberPicker;
+  function renderExtra(){
+    const area = $('#rpExtra');
+    if(scope==='MEMBER'){
+      area.innerHTML = `<div class="field"><label>Member</label>${quickPickerHtml('rpMember','Type a member ID…')}</div>`;
+      memberPicker = bindQuickPicker('rpMember', {
+        items: DB.users.map(u=>({id:u.id, label:u.name})),
+        formatPicked: it=>`<strong>${esc(it.id)}</strong> — ${esc(it.label)}`,
+      });
+    } else if(scope==='CLASS'){
+      area.innerHTML = `<div class="field"><label>Class</label><select id="rpClass">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`;
+    } else { area.innerHTML=''; }
+  }
+  renderExtra();
+  $('#rpScope').onchange = e=>{ scope=e.target.value; renderExtra(); };
+  $('#mPrintReg').onclick = ()=>{
+    let rows = DB.registerLog;
+    let subtitle = 'All members';
+    if(scope==='MEMBER'){
+      const pick = memberPicker && memberPicker.value;
+      if(!pick){ toast('Pick a member first'); return; }
+      rows = rows.filter(r=>r.id===pick.id);
+      subtitle = `${pick.id} — ${pick.label}`;
+    } else if(scope==='CLASS'){
+      const cls = $('#rpClass').value;
+      rows = rows.filter(r=>r.cls===cls);
+      subtitle = `Class: ${cls}`;
     }
-  });
+    const from = $('#rpFrom').value, to = $('#rpTo').value;
+    if(from) rows = rows.filter(r=> (parseAnyDate(r.date)||0) >= parseAnyDate(from));
+    if(to) rows = rows.filter(r=> (parseAnyDate(r.date)||0) <= parseAnyDate(to));
+    subtitle += `${from||to? ' · '+(from?fmtDate(from):'earliest')+' to '+(to?fmtDate(to):'latest') : ' · full history'} — ${rows.length} record(s)`;
+    close();
+    printReport('Register', subtitle, [
+      {label:'Date', get:r=>fmtDate(r.date)}, {label:'Type', get:r=>r.source==='DESK'?'Desk sign-in':'Class visit'},
+      {label:'Time in', get:r=>fmtTime(r.timeIn)}, {label:'Time out', get:r=>fmtTime(r.timeOut)},
+      {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+      {label:'Purpose', get:r=>r.purpose}, {label:'Borrowed', get:r=>r.borrow}, {label:'Note', get:r=>r.note},
+    ], rows);
+  };
 }
 function clearAllRegister(){
   if(!isAdmin()) return requireAdmin('clear the register');
@@ -2658,57 +2750,68 @@ function pageSetup(){
 
 /* ================= PAGE: SETTINGS (app-level, non-library config) ================= */
 const COLOR_PALETTES = {
-  forest: {label:'Forest & Brass (default)', forest:'#1F3A2E', forestDark:'#122419', brass:'#B8863E', brassLight:'#D9A94F', terracotta:'#A8452F'},
-  ocean:  {label:'Ocean Blue', forest:'#1B4B66', forestDark:'#0E2A3A', brass:'#3E8FB8', brassLight:'#6FB4D9', terracotta:'#C9622F'},
-  royal:  {label:'Royal Purple', forest:'#3B2A6B', forestDark:'#211640', brass:'#8A63C9', brassLight:'#B79CE0', terracotta:'#C9427A'},
-  crimson:{label:'Crimson', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B'},
-  slate:  {label:'Slate Blue', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A'},
-  grey:   {label:'Grey (monochrome)', forest:'#43474B', forestDark:'#232527', brass:'#8A8E93', brassLight:'#B4B8BC', terracotta:'#75797D'},
+  forest:  {label:'Forest & Brass (default)', ink:'#132019', parchment:'#F6F1E2', parchmentDim:'#EDE5CE', card:'#FFFDF6', forest:'#1F3A2E', forestDark:'#122419', brass:'#B8863E', brassLight:'#D9A94F', terracotta:'#A8452F', line:'#DDD3B4'},
+  ocean:   {label:'Ocean Blue', ink:'#12222C', parchment:'#EAF3F7', parchmentDim:'#DCEAF0', card:'#FFFFFF', forest:'#1B4B66', forestDark:'#0E2A3A', brass:'#3E8FB8', brassLight:'#6FB4D9', terracotta:'#C9622F', line:'#CBDEE6'},
+  royal:   {label:'Royal Purple', ink:'#211A33', parchment:'#F2EEF9', parchmentDim:'#E6DFF2', card:'#FFFFFF', forest:'#3B2A6B', forestDark:'#211640', brass:'#8A63C9', brassLight:'#B79CE0', terracotta:'#C9427A', line:'#DCD0EE'},
+  crimson: {label:'Crimson', ink:'#2B1315', parchment:'#FAEDEA', parchmentDim:'#F3DDD8', card:'#FFFFFF', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B', line:'#EAC9C2'},
+  slate:   {label:'Slate Blue', ink:'#1B242B', parchment:'#EEF1F3', parchmentDim:'#E1E6E9', card:'#FFFFFF', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A', line:'#D6DCE0'},
+  grey:    {label:'Grey (light, monochrome)', ink:'#26282A', parchment:'#F1F1F1', parchmentDim:'#E4E4E4', card:'#FFFFFF', forest:'#43474B', forestDark:'#232527', brass:'#8A8E93', brassLight:'#B4B8BC', terracotta:'#75797D', line:'#D8D8D8'},
+  midnight:{label:'Midnight (the original dark look)', ink:'#E9E4D2', parchment:'#141E19', parchmentDim:'#1C2921', card:'#1B2A22', forest:'#3C6B52', forestDark:'#0C1712', brass:'#D9A94F', brassLight:'#EACB7C', terracotta:'#E0836A', line:'#33463A'},
 };
-/* ---- small HSL helpers so every palette's dark mode is a genuine, complementary reversal ---- */
-function hexToHsl(hex){
-  hex = hex.replace('#','');
-  const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,l=(max+min)/2;
-  if(max===min){ h=s=0; } else {
-    const d=max-min; s = l>0.5? d/(2-max-min) : d/(max+min);
-    switch(max){ case r: h=(g-b)/d+(g<b?6:0); break; case g: h=(b-r)/d+2; break; default: h=(r-g)/d+4; }
-    h/=6;
-  }
-  return [h*360, s*100, l*100];
-}
-function hslToHex(h,s,l){
-  h/=360; s/=100; l/=100; let r,g,b;
-  if(s===0){ r=g=b=l; } else {
-    const hue2rgb=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; };
-    const q = l<0.5? l*(1+s) : l+s-l*s, p = 2*l-q;
-    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
-  }
-  const toHex = x=>Math.round(Math.max(0,Math.min(1,x))*255).toString(16).padStart(2,'0');
-  return '#'+toHex(r)+toHex(g)+toHex(b);
-}
-function deriveDarkSet(light){
-  const [fh,fs] = hexToHsl(light.forest);
-  const [bh,bs] = hexToHsl(light.brass);
-  const [th,ts] = hexToHsl(light.terracotta);
-  return {
-    forest: hslToHex(fh, Math.min(fs+8,65), 50),      // brightened, same hue — becomes the accent on dark backgrounds
-    forestDark: hslToHex(fh, Math.min(fs+12,35), 9),  // near-black background, tinted with the palette's own hue
-    brass: hslToHex(bh, bs, 58),
-    brassLight: hslToHex(bh, Math.max(bs-6,25), 74),
-    terracotta: hslToHex(th, ts, 64),
-  };
-}
-function applyPalette(name){
-  const p = COLOR_PALETTES[name] || COLOR_PALETTES.forest;
+// The universal Dark theme is ALWAYS this fixed grey scale, regardless of which colour palette is
+// selected — palettes only apply when the theme resolves to Light. This keeps Dark mode calm and
+// consistent, and keeps every palette's own identity purely a Light-mode thing.
+const UNIVERSAL_DARK = {ink:'#EDEDED', parchment:'#19191B', parchmentDim:'#232326', card:'#222224', forest:'#5A5D62', forestDark:'#0E0E10', brass:'#B9BDC2', brassLight:'#D6D9DC', terracotta:'#9C6F6A', line:'#3A3A3D'};
+const CSS_VAR_MAP = {ink:'--ink', parchment:'--parchment', parchmentDim:'--parchment-dim', card:'--card', forest:'--forest', forestDark:'--forest-dark', brass:'--brass', brassLight:'--brass-light', terracotta:'--terracotta', line:'--line'};
+function getActivePaletteSet(){
   const effective = document.documentElement.getAttribute('data-theme') || 'light';
-  const set = effective==='dark' ? deriveDarkSet(p) : p;
+  if(effective === 'dark') return UNIVERSAL_DARK;
+  if(PREFS.palette === 'custom') return Object.assign({}, COLOR_PALETTES.forest, PREFS.customPalette||{});
+  return COLOR_PALETTES[PREFS.palette] || COLOR_PALETTES.forest;
+}
+function applyPalette(){
+  const set = getActivePaletteSet();
   const root = document.documentElement.style;
-  root.setProperty('--forest', set.forest);
-  root.setProperty('--forest-dark', set.forestDark);
-  root.setProperty('--brass', set.brass);
-  root.setProperty('--brass-light', set.brassLight);
-  root.setProperty('--terracotta', set.terracotta);
+  Object.entries(CSS_VAR_MAP).forEach(([key,cssVar])=>{ if(set[key]) root.setProperty(cssVar, set[key]); });
+}
+
+/* ---- font presets — applied globally via a CSS variable, so desktop and mobile always match ---- */
+const FONT_PRESETS = {
+  segoe:    {label:'Segoe UI', stack:'"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif'},
+  system:   {label:'System default', stack:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'},
+  georgia:  {label:'Georgia (serif)', stack:'Georgia, "Times New Roman", Times, serif'},
+  verdana:  {label:'Verdana', stack:'Verdana, Geneva, sans-serif'},
+  trebuchet:{label:'Trebuchet MS', stack:'"Trebuchet MS", Helvetica, sans-serif'},
+};
+function getActiveFontStack(){
+  if(PREFS.font==='custom') return PREFS.customFont || FONT_PRESETS.segoe.stack;
+  return (FONT_PRESETS[PREFS.font] || FONT_PRESETS.segoe).stack;
+}
+function applyFont(){
+  document.documentElement.style.setProperty('--app-font', getActiveFontStack());
+}
+function previewFont(name){
+  PREFS.font = name;
+  document.getElementById('customFontBuilder').style.display = name==='custom' ? '' : 'none';
+  applyFont();
+}
+function onThemeSelectChange(){
+  PREFS.theme = document.getElementById('setTheme').value;
+  applyTheme(); applyPalette();
+}
+function saveCustomPalette(){
+  PREFS.customPalette = {
+    forest: document.getElementById('cpForest').value,
+    forestDark: document.getElementById('cpForestDark').value,
+    brass: document.getElementById('cpBrass').value,
+    brassLight: document.getElementById('cpBrassLight').value,
+    terracotta: document.getElementById('cpTerracotta').value,
+    parchment: document.getElementById('cpParchment').value,
+    parchmentDim: COLOR_PALETTES.forest.parchmentDim, card: '#FFFFFF', ink: COLOR_PALETTES.forest.ink, line: COLOR_PALETTES.forest.line,
+  };
+  PREFS.palette = 'custom';
+  applyPalette(); savePrefs();
+  toast('Custom palette saved');
 }
 function pageSettings(){
   if(!isAdmin()){
@@ -2729,16 +2832,40 @@ function pageSettings(){
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Appearance</h3></div>
+    <div class="panel-head"><h3>Appearance</h3><div class="hint">Colour palettes apply in Light mode — Dark mode is always the neutral grey below</div></div>
     <div class="field-row">
-      <div class="field"><label>Theme</label><select id="setTheme"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark</option></select></div>
-      <div class="field"><label>Colour palette</label><select id="setPalette">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Theme</label><select id="setTheme" onchange="onThemeSelectChange()"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark (grey)</option></select></div>
+      <div class="field"><label>Colour palette</label><select id="setPalette" onchange="previewPalette(this.value)">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}<option value="custom" ${PREFS.palette==='custom'?'selected':''}>Custom…</option></select></div>
     </div>
     <div class="field-row" id="paletteSwatches">${Object.entries(COLOR_PALETTES).map(([k,p])=>`
       <div class="role-opt ${PREFS.palette===k?'selected':''}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">
         <div style="display:flex;gap:3px"><span style="width:14px;height:14px;border-radius:50%;background:${p.forest}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.brass}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.terracotta}"></span></div>
         <span style="font-size:10.5px">${esc(p.label)}</span>
       </div>`).join('')}</div>
+    <div id="customPaletteBuilder" style="${PREFS.palette==='custom'?'':'display:none'};margin-top:14px">
+      <p class="field-hint" style="margin-bottom:8px">Pick your own colours and save them as your Custom preset</p>
+      <div class="field-row">
+        <div class="field"><label>Primary (buttons, sidebar)</label><input type="color" id="cpForest" value="${esc((PREFS.customPalette&&PREFS.customPalette.forest)||COLOR_PALETTES.forest.forest)}"></div>
+        <div class="field"><label>Primary — dark shade</label><input type="color" id="cpForestDark" value="${esc((PREFS.customPalette&&PREFS.customPalette.forestDark)||COLOR_PALETTES.forest.forestDark)}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Accent</label><input type="color" id="cpBrass" value="${esc((PREFS.customPalette&&PREFS.customPalette.brass)||COLOR_PALETTES.forest.brass)}"></div>
+        <div class="field"><label>Accent — light shade</label><input type="color" id="cpBrassLight" value="${esc((PREFS.customPalette&&PREFS.customPalette.brassLight)||COLOR_PALETTES.forest.brassLight)}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Warning / danger</label><input type="color" id="cpTerracotta" value="${esc((PREFS.customPalette&&PREFS.customPalette.terracotta)||COLOR_PALETTES.forest.terracotta)}"></div>
+        <div class="field"><label>Page background</label><input type="color" id="cpParchment" value="${esc((PREFS.customPalette&&PREFS.customPalette.parchment)||COLOR_PALETTES.forest.parchment)}"></div>
+      </div>
+      <button class="btn secondary small" onclick="saveCustomPalette()">Save as my Custom preset</button>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Font style</label>
+      <select id="setFont" onchange="previewFont(this.value)">${Object.entries(FONT_PRESETS).map(([k,f])=>`<option value="${k}" ${PREFS.font===k?'selected':''}>${esc(f.label)}</option>`).join('')}<option value="custom" ${PREFS.font==='custom'?'selected':''}>Custom…</option></select>
+    </div>
+    <div id="customFontBuilder" style="${PREFS.font==='custom'?'':'display:none'};margin-top:8px">
+      <div class="field"><label>Custom font stack (CSS font-family value)</label><input id="cpFontStack" value="${esc(PREFS.customFont||'')}" placeholder='e.g. "Trebuchet MS", sans-serif'></div>
+    </div>
+    <p class="field-hint" style="margin-top:4px">Applies the same way on desktop and mobile.</p>
     <button class="btn secondary" style="margin-top:10px" onclick="saveClockPrefs()">Save appearance</button>
   </div>
   <div class="card panel">
@@ -2785,12 +2912,26 @@ function pageSettings(){
     </div>
   </div>
   <div class="card panel">
+    <div class="panel-head"><h3>Cloud backup (Google Drive)</h3><div class="hint">A static page can't sign in to your Drive on its own — here's the closest one-click flow, and the honest reason why</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Uploading straight to Google Drive from inside this page would need Google sign-in (OAuth) wired up on a real server — something a single self-contained HTML file can't safely do. The practical workaround below gets you 90% of the way there in two clicks:</p>
+    <ol style="font-size:12.5px;color:var(--muted);line-height:1.9;padding-left:20px">
+      <li>Click <strong>"☁ Cloud backup now"</strong> — it downloads today's backup file <em>and</em> opens Google Drive in a new tab.</li>
+      <li>Drag the downloaded file from your Downloads folder into that Drive tab.</li>
+    </ol>
+    <p class="field-hint">Tip: if you install Google Drive for Desktop and point your browser's download folder at your synced Drive folder, this becomes fully automatic — every backup lands in Drive the moment it downloads, with no drag-and-drop needed.</p>
+    <button class="btn secondary" onclick="cloudBackupNow()">☁ Cloud backup now</button>
+  </div>
+  <div class="card panel">
     <div class="panel-head"><h3>Write data into the app itself</h3><div class="hint">Bakes everything currently here into a fresh copy of ALCMS.html</div></div>
     <p style="font-size:12.5px;color:var(--muted);line-height:1.6">A file on its own can't rewrite itself while it's running — but this generates a brand-new ALCMS.html with all of today's catalogue, members, circulation and settings baked in as its starting data. Use it to hand off an up-to-date copy, or to replace this file with one that opens straight into today's state.</p>
     <button class="btn secondary" onclick="downloadUpdatedApp()">⭳ Download updated ALCMS.html</button>
   </div>`;
 }
-function previewPalette(name){ applyPalette(name); }
+function previewPalette(name){
+  PREFS.palette = name; applyPalette();
+  const builder = document.getElementById('customPaletteBuilder');
+  if(builder) builder.style.display = name==='custom' ? '' : 'none';
+}
 function bindSettingsUploaders(){
   const logoInput = document.getElementById('logoInput');
   if(logoInput) logoInput.onchange = (e)=>{
@@ -3013,7 +3154,9 @@ function saveClockPrefs(){
   PREFS.clockFormat = DB.setup.clockFormat; PREFS.dateFormat = DB.setup.dateFormat;
   if($('#setTheme')) PREFS.theme = $('#setTheme').value;
   if($('#setPalette')) PREFS.palette = $('#setPalette').value;
-  applyTheme(); applyPalette(PREFS.palette);
+  if($('#setFont')) PREFS.font = $('#setFont').value;
+  if($('#cpFontStack')) PREFS.customFont = $('#cpFontStack').value.trim();
+  applyTheme(); applyPalette(); applyFont();
   savePrefs(); saveDB(); render(); toast('Preferences saved');
 }
 function saveInstitution(){
@@ -3060,6 +3203,11 @@ function downloadBackup(){
   const payload = { exportedAt:new Date().toISOString(), db:DB, accounts:ACCOUNTS };
   downloadBlob('alcms_backup_'+todayISO()+'.json', new Blob([JSON.stringify(payload)], {type:'application/json'}));
   toast('Backup downloaded — save it to your Drive');
+}
+function cloudBackupNow(){
+  downloadBackup();
+  setTimeout(()=>{ window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener'); }, 300);
+  toast('Backup downloaded — drop it into the Google Drive tab that just opened');
 }
 function restoreBackup(file){
   if(!file) return;
