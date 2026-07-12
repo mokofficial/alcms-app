@@ -44,9 +44,9 @@ html[data-theme="dark"]{
 }
 html[data-theme="dark"] body{ background:var(--parchment); }
 html[data-theme="dark"] .stamp.missing{ background:#3a1f1f; color:#f0a08c;}
-html[data-theme="dark"] table.datatable tr:hover td{ background:#22322a;}
+html[data-theme="dark"] table.datatable tr:hover td{ background:rgba(255,255,255,.05);}
 html[data-theme="dark"] .field input,html[data-theme="dark"] .field select,html[data-theme="dark"] .field textarea,
-html[data-theme="dark"] .toolbar input,html[data-theme="dark"] .toolbar select{ background:#20302680; color:var(--ink);}
+html[data-theme="dark"] .toolbar input,html[data-theme="dark"] .toolbar select{ background:rgba(255,255,255,.06); color:var(--ink);}
 html[data-theme="dark"] .quickpick .suggestions{ background:var(--card);}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -65,19 +65,20 @@ input,select,textarea{font-family:inherit;}
 
 /* ===== Splash ===== */
 #splash{
-  position:fixed; inset:0; background:radial-gradient(circle at 30% 20%, #24422f 0%, #122419 65%);
+  position:fixed; inset:0; background:radial-gradient(circle at 30% 20%, var(--forest) 0%, var(--forest-dark) 65%);
   display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:1000;
-  color:#F3EEDD; transition:opacity .5s ease, visibility .5s;
+  color:#F3EEDD; transition:opacity .5s ease, visibility .5s, background .3s ease;
 }
 #splash.hide{ opacity:0; visibility:hidden; pointer-events:none;}
 .splash-badge{
   width:96px;height:96px;border-radius:50%;border:3px solid var(--brass-light); display:flex; align-items:center; justify-content:center;
   font-family:Georgia,serif; font-size:34px; font-weight:700; color:var(--brass-light); margin-bottom:18px;
-  animation: pop .7s cubic-bezier(.2,1.4,.4,1);
+  animation: pop .7s cubic-bezier(.2,1.4,.4,1); overflow:hidden;
 }
+.splash-badge img{ width:100%; height:100%; object-fit:cover; border-radius:50%;}
 @keyframes pop{ from{ transform:scale(.6); opacity:0;} to{ transform:scale(1); opacity:1;} }
 .splash-title{ font-size:26px; letter-spacing:1px;}
-.splash-sub{ font-size:12.5px; color:#B9C4B4; margin-top:8px; letter-spacing:2px; text-transform:uppercase;}
+.splash-sub{ font-size:12.5px; color:rgba(255,255,255,.65); margin-top:8px; letter-spacing:2px; text-transform:uppercase;}
 .splash-bar{ width:180px; height:3px; background:rgba(255,255,255,.15); border-radius:3px; margin-top:26px; overflow:hidden;}
 .splash-bar::after{ content:""; display:block; height:100%; width:40%; background:var(--brass-light); border-radius:3px; animation:load 1.4s ease-in-out infinite;}
 @keyframes load{ 0%{ transform:translateX(-100%);} 100%{ transform:translateX(350%);} }
@@ -93,19 +94,20 @@ input,select,textarea{font-family:inherit;}
 .auth-info::before{ content:""; position:absolute; right:-80px; bottom:-80px; width:280px;height:280px;border-radius:50%; border:1px solid rgba(255,255,255,.08);}
 .auth-info::after{ content:""; position:absolute; right:-40px; bottom:-40px; width:180px;height:180px;border-radius:50%; border:1px solid rgba(255,255,255,.1);}
 .auth-brand{ display:flex; align-items:center; gap:12px;}
-.auth-brand .stamp-badge{ width:44px;height:44px;border-radius:50%;border:2px solid var(--brass-light); display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:var(--brass-light);}
+.auth-brand .stamp-badge{ width:44px;height:44px;border-radius:50%;border:2px solid var(--brass-light); display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:var(--brass-light); overflow:hidden;}
+.auth-brand .stamp-badge img{ width:100%; height:100%; object-fit:cover;}
 .auth-brand h1{ color:#fff; font-size:19px;}
 .auth-carousel{ min-height:150px; position:relative; z-index:2;}
 .auth-slide{ display:none; animation:fadeSlide .6s ease;}
 .auth-slide.active{ display:block;}
 @keyframes fadeSlide{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 .auth-slide .big{ font-family:Georgia,serif; font-size:34px; color:var(--brass-light);}
-.auth-slide .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:#9db096; margin-top:4px;}
-.auth-slide p{ font-size:13.5px; line-height:1.6; color:#dfe6d9; max-width:380px; margin-top:14px;}
+.auth-slide .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,.55); margin-top:4px;}
+.auth-slide p{ font-size:13.5px; line-height:1.6; color:rgba(255,255,255,.82); max-width:380px; margin-top:14px;}
 .auth-dots{ display:flex; gap:6px; margin-top:20px; position:relative; z-index:2;}
 .auth-dots span{ width:6px;height:6px;border-radius:50%; background:rgba(255,255,255,.25);}
 .auth-dots span.active{ background:var(--brass-light); width:18px; border-radius:4px; transition:all .3s;}
-.auth-foot{ font-size:11px; color:#8fa290; position:relative; z-index:2;}
+.auth-foot{ font-size:11px; color:rgba(255,255,255,.5); position:relative; z-index:2;}
 
 .auth-form-side{ flex:1; display:flex; align-items:flex-start; justify-content:center; padding:48px 30px 60px;}
 .auth-box{ width:100%; max-width:380px;}
@@ -127,7 +129,8 @@ input,select,textarea{font-family:inherit;}
 @media (max-width:820px){
   .auth-wrap{ flex-direction:column;}
   .auth-info{ padding:22px 20px 18px; flex:none;}
-  .auth-info::before, .auth-info::after{ display:none;}
+  .auth-info::before{ width:160px; height:160px; right:-50px; bottom:-50px;}
+  .auth-info::after{ width:100px; height:100px; right:-25px; bottom:-25px;}
   .auth-clock{ margin-bottom:10px;}
   .auth-clock .time{ font-size:32px;}
   .auth-carousel{ min-height:auto;}
@@ -153,18 +156,18 @@ input,select,textarea{font-family:inherit;}
 }
 .brand .mark .stamp-badge img{ width:100%; height:100%; object-fit:cover;}
 .brand h1{ font-size:16px; color:#fff; line-height:1.15;}
-.brand p{ margin:4px 0 0; font-size:11px; color:#B9C4B4; letter-spacing:.5px;}
+.brand p{ margin:4px 0 0; font-size:11px; color:rgba(255,255,255,.62); letter-spacing:.5px;}
 nav.navlist{ padding:10px 10px; flex:1;}
-nav.navlist .navgroup-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:#8FA290; padding:14px 10px 6px;}
+nav.navlist .navgroup-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:rgba(255,255,255,.5); padding:14px 10px 6px;}
 nav.navlist button{
   display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px;
-  background:transparent; border:none; color:#DDE6D8; border-radius:8px; font-size:13.5px; margin-bottom:2px;
+  background:transparent; border:none; color:rgba(255,255,255,.88); border-radius:8px; font-size:13.5px; margin-bottom:2px;
   transition:background .15s;
 }
 nav.navlist button .ico{ width:18px;text-align:center;font-size:14px; flex:none;}
 nav.navlist button:hover{ background:rgba(255,255,255,.08);}
 nav.navlist button.active{ background:var(--brass); color:#221704; font-weight:600;}
-.sidebar-foot{ padding:12px 18px 18px; font-size:10.5px; color:#87996f; border-top:1px solid rgba(255,255,255,.1);}
+.sidebar-foot{ padding:12px 18px 18px; font-size:10.5px; color:rgba(255,255,255,.45); border-top:1px solid rgba(255,255,255,.1);}
 
 .main{ flex:1; min-width:0; display:flex; flex-direction:column; height:100vh; overflow-y:auto;}
 .topbar{
@@ -355,9 +358,9 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .clock-chip .date{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
 .auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-bottom:18px;}
 .auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:baseline; gap:6px;}
-.auth-clock .time .secs{ font-size:20px; font-weight:700; color:#B9C4B4;}
+.auth-clock .time .secs{ font-size:20px; font-weight:700; color:rgba(255,255,255,.7);}
 .auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px;}
-.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:"Segoe UI",-apple-system,sans-serif; font-weight:400;}
+.auth-clock .date{ font-size:12px; color:rgba(255,255,255,.75); letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:"Segoe UI",-apple-system,sans-serif; font-weight:400;}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -411,8 +414,8 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 <body>
 
 <div id="splash">
-  <div class="splash-badge">AL</div>
-  <div class="splash-title stamp-font">ALCMS</div>
+  <div class="splash-badge" id="splashBadge">AL</div>
+  <div class="splash-title stamp-font" id="splashTitle">ALCMS</div>
   <div class="splash-sub">Access Library · Circulation Desk</div>
   <div class="splash-bar"></div>
 </div>
@@ -421,8 +424,8 @@ table.datatable tr:hover td{ background:#fbf8ee;}
   <div class="auth-wrap">
     <div class="auth-info">
       <div class="auth-brand">
-        <div class="stamp-badge">AL</div>
-        <h1>ALCMS</h1>
+        <div class="stamp-badge" id="authBrandBadge">AL</div>
+        <h1 id="authBrandTitle">ALCMS</h1>
       </div>
       <div class="auth-clock" id="authClock"></div>
       <div class="auth-carousel" id="authCarousel"></div>
@@ -780,27 +783,50 @@ function requireAdmin(actionLabel){
 }
 
 /* ---- auth carousel content ---- */
-const AUTH_SLIDES = [
-  {big:'1,957', lbl:'Titles catalogued', text:'Every accessioned book in the Access Library collection, organised by Dewey main class and shelf location.'},
-  {big:'166', lbl:'Registered members', text:'Students and staff who can borrow, with per-category limits and discipline tracking.'},
-  {big:'7 days', lbl:'Standard loan period', text:'Every title issued is due back in a week — the desk will flag it automatically if it runs late.'},
-  {big:'“', lbl:'A library quote', text:'A room without books is like a body without a soul. — Marcus Tullius Cicero'},
+const LOAN_PERIOD_DAYS = 7;
+const LIBRARY_QUOTES = [
+  {q:'Books are for use.', a:"Ranganathan — First Law of Library Science"},
+  {q:'Every reader his or her book.', a:"Ranganathan — Second Law of Library Science"},
+  {q:'Every book its reader.', a:"Ranganathan — Third Law of Library Science"},
+  {q:'Save the time of the reader.', a:"Ranganathan — Fourth Law of Library Science"},
+  {q:'A library is a growing organism.', a:"Ranganathan — Fifth Law of Library Science"},
+  {q:'A room without books is like a body without a soul.', a:'Marcus Tullius Cicero'},
+  {q:'The only thing that you absolutely have to know is the location of the library.', a:'Albert Einstein'},
+  {q:'A library is not a luxury but one of the necessities of life.', a:'Henry Ward Beecher'},
+  {q:'Libraries store the energy that fuels the imagination.', a:'Sidney Sheldon'},
+  {q:'What in the world is better than to be reading a book?', a:'Kate DiCamillo'},
 ];
+function getAuthSlides(){
+  const ready = DB && Array.isArray(DB.catalogue) && Array.isArray(DB.users);
+  const orgWord = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'the library';
+  const stats = ready ? [
+    {big: DB.catalogue.length.toLocaleString(), lbl:'Titles catalogued', text:`Every accessioned book in ${orgWord}'s collection, organised by Dewey main class and shelf location.`},
+    {big: DB.users.length.toLocaleString(), lbl:'Registered members', text:'Students and staff who can borrow, with per-category limits and discipline tracking.'},
+    {big: LOAN_PERIOD_DAYS+' days', lbl:'Standard loan period', text:`Every title issued is due back in ${LOAN_PERIOD_DAYS} days — the desk will flag it automatically if it runs late.`},
+  ] : [
+    {big:'···', lbl:'Titles catalogued', text:'Loading the catalogue…'},
+    {big:'···', lbl:'Registered members', text:'Loading members…'},
+  ];
+  const quotes = LIBRARY_QUOTES.map(x=>({big:'“', lbl:'A library quote', text:`${x.q} — ${x.a}`}));
+  return [...stats, ...quotes];
+}
 let authSlideIdx = 0, authSlideTimer = null;
 function renderAuthCarousel(){
   const wrap = $('#authCarousel'), dots = $('#authDots');
-  wrap.innerHTML = AUTH_SLIDES.map((s,i)=>`
+  const slides = getAuthSlides();
+  if(authSlideIdx >= slides.length) authSlideIdx = 0;
+  wrap.innerHTML = slides.map((s,i)=>`
     <div class="auth-slide ${i===authSlideIdx?'active':''}">
       <div class="big">${esc(s.big)}</div>
       <div class="lbl">${esc(s.lbl)}</div>
       <p>${esc(s.text)}</p>
     </div>`).join('');
-  dots.innerHTML = AUTH_SLIDES.map((_,i)=>`<span class="${i===authSlideIdx?'active':''}"></span>`).join('');
+  dots.innerHTML = slides.map((_,i)=>`<span class="${i===authSlideIdx?'active':''}"></span>`).join('');
 }
 function startAuthCarousel(){
   renderAuthCarousel();
   clearInterval(authSlideTimer);
-  authSlideTimer = setInterval(()=>{ authSlideIdx = (authSlideIdx+1) % AUTH_SLIDES.length; renderAuthCarousel(); }, 4200);
+  authSlideTimer = setInterval(()=>{ authSlideIdx = (authSlideIdx+1) % getAuthSlides().length; renderAuthCarousel(); }, 4200);
 }
 
 /* ---- auth forms ---- */
@@ -932,7 +958,17 @@ async function signOut(){
 function showAuthScreen(){
   authTab='signin'; setAuthTab('signin');
   $('#authScreen').classList.add('show');
+  applyAuthBranding();
   startAuthCarousel();
+}
+function applyAuthBranding(){
+  const name = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS';
+  const logo = (DB && DB.setup && DB.setup.institutionLogo) ? DB.setup.institutionLogo : null;
+  ['authBrandTitle','splashTitle'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = name; });
+  ['authBrandBadge','splashBadge'].forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = logo ? `<img src="${logo}" alt="${esc(name)} logo">` : 'AL';
+  });
 }
 function openAccountPanel(){
   const acc0 = ACCOUNTS.find(a=>a.username===SESSION.username) || {};
@@ -1215,7 +1251,14 @@ function fieldHtml(f,values){
   const val = values[f.key] ?? f.default ?? '';
   let input;
   if(f.type==='select'){
-    input = `<select id="f_${f.key}">${(f.options||[]).map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+    const opts = f.options||[];
+    const usePlaceholder = f.placeholder !== false;
+    const placeholderText = typeof f.placeholder==='string' ? f.placeholder : ('Select '+String(f.label||'').replace(/\s*\*$/,''));
+    const noneSelected = !val || !opts.includes(val);
+    input = `<select id="f_${f.key}">
+      ${usePlaceholder? `<option value="" disabled ${noneSelected?'selected':''}>${esc(placeholderText)}</option>` : ''}
+      ${opts.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}
+    </select>`;
   } else if(f.type==='textarea'){
     input = `<textarea id="f_${f.key}">${esc(val)}</textarea>`;
   } else if(f.type==='password'){
@@ -1276,21 +1319,25 @@ function bindQuickPicker(id, {items, formatSuggestion, formatPicked, onPick}){
 /* ================= generic table module ================= */
 function GenericModule(cfg){
   const state = cfg.state || (cfg.state = {q:'', filters:{}});
+  if(cfg.selectable && !state.selected) state.selected = new Set();
+  function keyOf(r){ return cfg.rowKey ? String(cfg.rowKey(r)) : JSON.stringify(r); }
+  function filteredRows(){ return filterRows(cfg.data(), state, cfg.searchKeys); }
   function resultsHtml(){
-    let rows = filterRows(cfg.data(), state, cfg.searchKeys);
+    let rows = filteredRows();
     const total = rows.length;
     const CAP = cfg.cap || 250;
     const capped = rows.length > CAP;
     if(capped) rows = rows.slice(0, CAP);
+    const selCount = cfg.selectable ? rows.filter(r=>state.selected.has(keyOf(r))).length : 0;
     return `
       <div class="table-wrap"><table class="datatable">
-        <thead><tr>${cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}${cfg.rowActions?'<th></th>':''}</tr></thead>
+        <thead><tr>${cfg.selectable?`<th style="width:28px"><input type="checkbox" id="selall_${cfg.key}" ${rows.length && selCount===rows.length?'checked':''}></th>`:''}${cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}${cfg.rowActions?'<th></th>':''}</tr></thead>
         <tbody>
-        ${rows.length? rows.map(r=>`<tr>${cfg.columns.map(c=>`<td>${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td>${isAdmin()? cfg.rowActions(r):''}</td>`:''}</tr>`).join('')
-          : `<tr><td colspan="${cfg.columns.length+(cfg.rowActions?1:0)}"><div class="empty"><div class="big">·</div>No matching records</div></td></tr>`}
+        ${rows.length? rows.map(r=>`<tr>${cfg.selectable?`<td><input type="checkbox" class="rowsel_${cfg.key}" data-k="${esc(keyOf(r))}" ${state.selected.has(keyOf(r))?'checked':''}></td>`:''}${cfg.columns.map(c=>`<td>${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td>${isAdmin()? cfg.rowActions(r):''}</td>`:''}</tr>`).join('')
+          : `<tr><td colspan="${cfg.columns.length+(cfg.rowActions?1:0)+(cfg.selectable?1:0)}"><div class="empty"><div class="big">·</div>No matching records</div></td></tr>`}
         </tbody>
       </table></div>
-      <div class="table-count">${capped? `Showing first ${CAP} of ${total} matches — refine your search to narrow it down` : `${total} of ${cfg.data().length} records`}</div>`;
+      <div class="table-count">${capped? `Showing first ${CAP} of ${total} matches — refine your search to narrow it down` : `${total} of ${cfg.data().length} records`}${cfg.selectable && selCount? ` · ${selCount} selected`:''}</div>`;
   }
   return {
     resultsHtml,
@@ -1299,8 +1346,11 @@ function GenericModule(cfg){
       <div class="card panel">
         <div class="panel-head">
           <div><h3>${esc(cfg.title)}</h3><div class="hint">${esc(cfg.hint||'')}</div></div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${cfg.exportColumns? `<button class="btn secondary" data-act="print-all-${cfg.key}">🖶 Print all (filtered)</button>`:''}
             ${cfg.exportColumns? `<button class="btn secondary" data-act="export-${cfg.key}">⭳ Export</button>`:''}
+            ${cfg.selectable && cfg.exportColumns? `<button class="btn secondary" data-act="print-sel-${cfg.key}">🖶 Print selected</button>`:''}
+            ${cfg.selectable && cfg.exportColumns? `<button class="btn secondary" data-act="export-sel-${cfg.key}">⭳ Export selected</button>`:''}
             ${cfg.onAdd && isAdmin() ? `<button class="btn" data-act="add-${cfg.key}">${cfg.addLabel||'+ Add'}</button>`:''}
             ${cfg.onAdd && !isAdmin() ? `<span class="badge grey">View only</span>`:''}
           </div>
@@ -1312,6 +1362,10 @@ function GenericModule(cfg){
               <option value="">${esc(f.label)}: All</option>
               ${f.options.map(o=>`<option value="${esc(o)}" ${state.filters[f.key]===o?'selected':''}>${esc(o)}</option>`).join('')}
             </select>`).join('')}
+          ${cfg.dateRange? `
+            <input type="date" id="dfrom_${cfg.key}" value="${esc(state.filters.__from||'')}" title="From date">
+            <input type="date" id="dto_${cfg.key}" value="${esc(state.filters.__to||'')}" title="To date">
+          `:''}
           <div class="spacer"></div>
         </div>
         <div id="results_${cfg.key}">${resultsHtml()}</div>
@@ -1322,6 +1376,7 @@ function GenericModule(cfg){
       const updateResultsOnly = ()=>{
         const el = document.getElementById('results_'+cfg.key);
         if(el) el.innerHTML = resultsHtml();
+        bindRowSelection();
       };
       const doSearch = debounce(v=>{ state.q=v; updateResultsOnly(); }, 180);
       if(qEl){
@@ -1333,19 +1388,63 @@ function GenericModule(cfg){
         const el = document.getElementById('filt_'+cfg.key+'_'+f.key);
         if(el) el.onchange = e=>{ state.filters[f.key]=e.target.value; updateResultsOnly(); };
       });
+      if(cfg.dateRange){
+        const fromEl = document.getElementById('dfrom_'+cfg.key), toEl = document.getElementById('dto_'+cfg.key);
+        if(fromEl) fromEl.onchange = e=>{ state.filters.__from = e.target.value; updateResultsOnly(); };
+        if(toEl) toEl.onchange = e=>{ state.filters.__to = e.target.value; updateResultsOnly(); };
+      }
       const addBtn = document.querySelector(`[data-act="add-${cfg.key}"]`);
       if(addBtn) addBtn.onclick = ()=> cfg.onAdd();
       const exportBtn = document.querySelector(`[data-act="export-${cfg.key}"]`);
       if(exportBtn) exportBtn.onclick = ()=>{
-        const filtered = filterRows(cfg.data(), state, cfg.searchKeys);
-        openExportModal(cfg.title, cfg.key+'_export_'+todayISO(), cfg.exportColumns, ()=>filtered);
+        openExportModal(cfg.title, cfg.key+'_export_'+todayISO(), cfg.exportColumns, ()=>filteredRows());
       };
+      const printAllBtn = document.querySelector(`[data-act="print-all-${cfg.key}"]`);
+      if(printAllBtn) printAllBtn.onclick = ()=>{
+        const rows = filteredRows();
+        if(!rows.length) return toast('No records match the current search/filters');
+        printReport(cfg.title, `${rows.length} record(s) matching current search/filters`, cfg.exportColumns, rows);
+      };
+      const exportSelBtn = document.querySelector(`[data-act="export-sel-${cfg.key}"]`);
+      if(exportSelBtn) exportSelBtn.onclick = ()=>{
+        const rows = filteredRows().filter(r=>state.selected.has(keyOf(r)));
+        if(!rows.length) return toast('Tick at least one row first');
+        openExportModal(cfg.title, cfg.key+'_selected_'+todayISO(), cfg.exportColumns, ()=>rows);
+      };
+      const printSelBtn = document.querySelector(`[data-act="print-sel-${cfg.key}"]`);
+      if(printSelBtn) printSelBtn.onclick = ()=>{
+        const rows = filteredRows().filter(r=>state.selected.has(keyOf(r)));
+        if(!rows.length) return toast('Tick at least one row first');
+        printReport(cfg.title, `${rows.length} selected record(s)`, cfg.exportColumns, rows);
+      };
+      function bindRowSelection(){
+        if(!cfg.selectable) return;
+        const selAll = document.getElementById('selall_'+cfg.key);
+        if(selAll) selAll.onchange = e=>{
+          let rows = filteredRows(); const CAP = cfg.cap || 250; if(rows.length>CAP) rows = rows.slice(0,CAP);
+          rows.forEach(r=> e.target.checked ? state.selected.add(keyOf(r)) : state.selected.delete(keyOf(r)));
+          updateResultsOnly();
+        };
+        document.querySelectorAll('.rowsel_'+cfg.key).forEach(cb=>{
+          cb.onchange = e=>{
+            if(e.target.checked) state.selected.add(e.target.dataset.k); else state.selected.delete(e.target.dataset.k);
+            const countEl = document.querySelector(`#results_${cfg.key} .table-count`);
+            if(countEl) updateResultsOnly();
+          };
+        });
+      }
+      bindRowSelection();
     }
   };
 }
 function filterRows(data, state, searchKeys){
   let rows = data;
-  Object.entries(state.filters||{}).forEach(([k,v])=>{ if(v) rows = rows.filter(r=> (r[k]||'')===v); });
+  Object.entries(state.filters||{}).forEach(([k,v])=>{
+    if(!v) return;
+    if(k==='__from'){ rows = rows.filter(r=> !r.date && !r.dateSent ? true : inRange(r.date||r.dateSent, parseAnyDate(v), null)); return; }
+    if(k==='__to'){ rows = rows.filter(r=> !r.date && !r.dateSent ? true : inRange(r.date||r.dateSent, null, parseAnyDate(v))); return; }
+    rows = rows.filter(r=> (r[k]||'')===v);
+  });
   if(state.q){
     const q = state.q.toLowerCase();
     rows = rows.filter(r=> (searchKeys||Object.keys(r)).some(k=> String(r[k]||'').toLowerCase().includes(q)));
@@ -1798,8 +1897,8 @@ function bookFields(b={}){
     {row:[{key:'publisher',label:'Publisher / Source', default:b.publisher},{key:'edition',label:'Edition', default:b.edition}]},
     {row:[{key:'category',label:'Subject / Category', default:b.category},{key:'vol',label:'Volume', default:b.vol}]},
     {row:[
-      {key:'mainClass',label:'Main class (Dewey)', type:'select', options:DB.setup.mainClasses, default:b.mainClass||DB.setup.mainClasses[0]},
-      {key:'shelf',label:'Shelf location', type:'select', options:DB.setup.shelves, default:b.shelf||DB.setup.shelves[0]},
+      {key:'mainClass',label:'Main class (Dewey)', type:'select', required:true, options:DB.setup.mainClasses, default:b.mainClass||''},
+      {key:'shelf',label:'Shelf location', type:'select', required:true, options:DB.setup.shelves, default:b.shelf||''},
     ]},
     {row:[
       {key:'condition',label:'Condition', type:'select', options:DB.setup.conditions, default:b.condition||'GOOD'},
@@ -1869,7 +1968,7 @@ function userFields(u={}){
     {key:'name', label:'Full name', required:true, default:u.name},
     {row:[
       {key:'category',label:'Category', type:'select', options:DB.setup.userCategories, default:u.category||'STUDENT'},
-      {key:'cls',label:'Class / Designation', type:'select', options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls|| (isStaff? DB.setup.staffDesignations[0] : sortedClasses()[0])},
+      {key:'cls',label:'Class / Designation', type:'select', required:true, options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls||''},
     ]},
     {row:[{key:'teacher',label:'Phone / contact', default:u.teacher},{key:'maxAllowed',label:'Max books allowed', type:'number', default:u.maxAllowed??2}]},
     {row:[
@@ -2181,11 +2280,9 @@ function reminderRecipient(trx){
 function waButtonHtml(trx, kind){
   const recipient = reminderRecipient(trx);
   if(!recipient) return `<span class="field-hint">no phone on file</span>`;
-  const msg = kind==='overdue'
-    ? `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} was due ${fmtDate(trx.dueDate)} and is now overdue. Please return it as soon as possible.`
-    : `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} is due back ${fmtDate(trx.dueDate)}. A friendly heads-up before it becomes overdue.`;
-  return `<a class="btn small secondary" href="${whatsAppLink(recipient.phone, msg)}" target="_blank" rel="noopener" title="To: ${esc(recipient.label)}">📱 WhatsApp</a>`;
+  return `<button class="btn small" onclick="sendReminderViaWhatsApp('${esc(trx.trxId)}','${kind}')" title="To: ${esc(recipient.label)}">📱 WhatsApp &amp; log</button>`;
 }
+let reminderHistoryModule;
 function pageReminders(){
   const overdue = DB.circulation.filter(x=>txnStatus(x)==='OVERDUE');
   const nearOverdue = DB.circulation.filter(x=>{
@@ -2219,17 +2316,58 @@ function pageReminders(){
       {key:'wa', label:'WhatsApp', render:r=>waButtonHtml(r,'soon')},
     ],
   });
+  reminderHistoryModule = GenericModule({
+    key:'reminderhistory', title:'Reminder history', hint:'Full detail of every reminder logged — tick rows, or use the date range, to export/print just those',
+    data:()=>DB.reminders,
+    searchKeys:['userId','name','cls','title','acc','trxId','loggedBy'],
+    dateRange:true,
+    selectable:true, rowKey:r=>r.trxId+'|'+r.dateSent+'|'+r.timeSent,
+    columns:[
+      {key:'dateSent', label:'Sent', render:r=>fmtDate(r.dateSent)+(r.timeSent?' '+r.timeSent:'')},
+      {key:'name', label:'Member'},{key:'userId', label:'Member ID'},{key:'cls', label:'Class'},
+      {key:'title', label:'Title'},{key:'acc', label:'Acc. No'},{key:'dueDate', label:'Due', render:r=>r.dueDate?fmtDate(r.dueDate):''},
+      {key:'daysOverdue', label:'Days overdue'},
+      {key:'channel', label:'Channel', render:r=>`<span class="badge ${r.channel==='WHATSAPP'?'green':'grey'}">${esc(r.channel||'LOGGED ONLY')}</span>`},
+      {key:'loggedBy', label:'Logged by'},
+    ],
+    exportColumns:[
+      {label:'Sent date', get:r=>fmtDate(r.dateSent)},{label:'Sent time', get:r=>r.timeSent||''},
+      {label:'Member', get:r=>r.name||''},{label:'Member ID', get:r=>r.userId||''},{label:'Class', get:r=>r.cls||''},
+      {label:'Title', get:r=>r.title||''},{label:'Acc. No', get:r=>r.acc||''},{label:'Due date', get:r=>r.dueDate?fmtDate(r.dueDate):''},
+      {label:'Days overdue', get:r=>r.daysOverdue ?? ''},{label:'Channel', get:r=>r.channel||'LOGGED ONLY'},
+      {label:'Recipient', get:r=>r.recipientLabel||''},{label:'Logged by', get:r=>r.loggedBy||''},
+    ],
+  });
   return `<div id="mod_reminders"></div>
   <div id="mod_nearoverdue"></div>
-  <div class="card panel">
-    <div class="panel-head"><h3>Reminder history</h3></div>
-    <div class="table-wrap"><table class="datatable"><thead><tr><th>Transaction</th><th>Sent on</th></tr></thead>
-    <tbody>${DB.reminders.slice(0,50).map(r=>`<tr><td>${esc(r.trxId)}</td><td>${fmtDate(r.dateSent)}</td></tr>`).join('')||'<tr><td colspan=2><div class="empty">No reminders logged yet</div></td></tr>'}</tbody></table></div>
-  </div>`;
+  <div id="mod_reminderhistory"></div>`;
 }
-function sendReminder(trxId){
+function sendReminder(trxId, opts={}){
   if(!isAdmin()) return requireAdmin('log reminders');
-  DB.reminders.unshift({trxId, dateSent:todayISO()}); saveDB(); render(); toast('Reminder logged');
+  const trx = DB.circulation.find(x=>x.trxId===trxId);
+  const recipient = trx ? reminderRecipient(trx) : null;
+  DB.reminders.unshift({
+    trxId, dateSent:todayISO(), timeSent:new Date().toTimeString().slice(0,5),
+    channel: opts.channel || 'LOGGED ONLY',
+    loggedBy: SESSION ? SESSION.username : '',
+    userId: trx? trx.userId:'', name: trx? trx.name:'', cls: trx? trx.cls:'',
+    acc: trx? trx.acc:'', title: trx? trx.title:'', dueDate: trx? trx.dueDate:'',
+    daysOverdue: trx? daysBetween(parseAnyDate(trx.dueDate), new Date()) : '',
+    recipientPhone: recipient? recipient.phone : '', recipientLabel: recipient? recipient.label : '',
+  });
+  saveDB(); render(); toast('Reminder logged');
+}
+function sendReminderViaWhatsApp(trxId, kind){
+  if(!isAdmin()) return requireAdmin('log reminders');
+  const trx = DB.circulation.find(x=>x.trxId===trxId);
+  if(!trx) return toast('Transaction not found');
+  const recipient = reminderRecipient(trx);
+  if(!recipient) return toast('No phone number on file for this reminder');
+  const msg = kind==='overdue'
+    ? `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} was due ${fmtDate(trx.dueDate)} and is now overdue. Please return it as soon as possible.`
+    : `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} is due back ${fmtDate(trx.dueDate)}. A friendly heads-up before it becomes overdue.`;
+  window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+  sendReminder(trxId, {channel:'WHATSAPP'});
 }
 
 /* ================= PAGE: REGISTER (desk + class visits, consolidated) ================= */
@@ -2343,13 +2481,13 @@ function renderBatchStagingHtml(){
     </div>
     <div class="field">
       <label>Add a whole class</label>
-      <select id="batchClassSelect">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select>
+      <select id="batchClassSelect"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select>
     </div>
     <button class="btn secondary" onclick="addClassToBatch()">+ Add class</button>
     <div class="spacer"></div>
     <div class="field">
       <label>Purpose (applies to all)</label>
-      <select id="batchPurpose">${['BOOK BORROWING','PRIVATE READING','INTERNET ACCESS','RESEARCH','RETURNING BOOK','OTHER'].map(p=>`<option>${esc(p)}</option>`).join('')}</select>
+      <select id="batchPurpose"><option value="" selected disabled>Select purpose</option>${['BOOK BORROWING','PRIVATE READING','INTERNET ACCESS','RESEARCH','RETURNING BOOK','OTHER'].map(p=>`<option>${esc(p)}</option>`).join('')}</select>
     </div>
     <div class="field">
       <label>Time in</label>
@@ -2380,6 +2518,7 @@ function renderBatchStagingHtml(){
 function addClassToBatch(){
   if(!isAdmin()) return requireAdmin('stage check-ins');
   const cls = document.getElementById('batchClassSelect').value;
+  if(!cls){ toast('Select a class first'); return; }
   const members = DB.users.filter(u=>u.cls===cls);
   if(!members.length){ toast('No members found in that class'); return; }
   let added = 0;
@@ -2393,6 +2532,7 @@ function clearBatch(){ batchStaging=[]; batchChecked={}; mountBatchStaging(); }
 function submitBatch(){
   if(!isAdmin()) return requireAdmin('submit check-ins');
   const purpose = document.getElementById('batchPurpose').value;
+  if(!purpose){ toast('Select a purpose first'); return; }
   const timeIn = document.getElementById('batchTimeIn').value;
   const note = (document.getElementById('batchNote').value || '').trim();
   const selected = batchStaging.filter(s=>batchChecked[s.id]);
@@ -2509,16 +2649,16 @@ function scheduleFields(r){
   const isKnown = SCHEDULE_NOTE_TYPES.slice(0,2).includes(existingNote);
   return [
     {row:[
-      {key:'day', label:'Day', type:'select', options:['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'], default:r? r[0]:'MONDAY'},
-      {key:'period', label:'Period', type:'select', options:PERIOD_OPTIONS, default:r? r[1]:PERIOD_OPTIONS[0]},
+      {key:'day', label:'Day', type:'select', required:true, options:['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'], default:r? r[0]:''},
+      {key:'period', label:'Period', type:'select', required:true, options:PERIOD_OPTIONS, default:r? r[1]:''},
     ]},
     {row:[
       {key:'time', label:'Time', type:'time', default:r? (r[2]||'').slice(0,5):''},
-      {key:'cls', label:'Expected class', type:'select', options:sortedClasses(), default:r? r[3]:sortedClasses()[0]},
+      {key:'cls', label:'Expected class', type:'select', required:true, options:sortedClasses(), default:r? r[3]:''},
     ]},
     {row:[
-      {key:'noteType', label:'Notes', type:'select', options:SCHEDULE_NOTE_TYPES, default: isKnown? existingNote : (existingNote? 'OTHER':'LIBRARY PERIOD')},
-      {key:'noteOther', label:'Custom note (if "Other")', default: isKnown? '' : existingNote},
+      {key:'noteType', label:'Purpose', type:'select', required:true, options:SCHEDULE_NOTE_TYPES, default: isKnown? existingNote : (existingNote? 'OTHER':'')},
+      {key:'noteOther', label:'Notes (only used if Purpose is "Other")', default: isKnown? '' : existingNote},
     ]},
   ];
 }
@@ -2559,15 +2699,22 @@ function pageRosterTable(){
 let feedbackModule;
 function pageFeedback(){
   feedbackModule = GenericModule({
-    key:'feedback', title:'Feedback & suggestions', hint:'Raised by members and staff',
+    key:'feedback', title:'Feedback & suggestions', hint:'Raised by members and staff — tick rows, or use the date range, to export/print just those',
     data:()=>DB.feedback,
     searchKeys:['userName','subject','text','type'],
     filters:[{key:'status', label:'Status', options:['NEW','IN REVIEW','RESOLVED']}],
+    dateRange:true,
+    selectable:true, rowKey:r=>r.entryId,
     columns:[
       {key:'date', label:'Date', render:r=>fmtDate(r.date)},
       {key:'userName', label:'From'},{key:'type', label:'Type'},{key:'subject', label:'Subject'},
       {key:'text', label:'Feedback'},{key:'priority', label:'Priority', render:r=>`<span class="badge ${r.priority==='HIGH'?'red':r.priority==='LOW'?'grey':'gold'}">${esc(r.priority)}</span>`},
       {key:'status', label:'Status', render:r=>`<span class="badge ${r.status==='RESOLVED'?'green':r.status==='IN REVIEW'?'gold':'grey'}">${esc(r.status)}</span>`},
+    ],
+    exportColumns:[
+      {label:'Date', get:r=>fmtDate(r.date)},{label:'From', get:r=>r.userName},{label:'Member ID', get:r=>r.userId||''},
+      {label:'Type', get:r=>r.type},{label:'Subject', get:r=>r.subject},{label:'Feedback', get:r=>r.text},
+      {label:'Priority', get:r=>r.priority},{label:'Status', get:r=>r.status},
     ],
     addLabel:'+ Submit feedback', onAdd:()=>openFeedbackForm(),
     rowActions:r=>`<select onchange="setFeedbackStatus('${r.entryId}',this.value)"><option ${r.status==='NEW'?'selected':''}>NEW</option><option ${r.status==='IN REVIEW'?'selected':''}>IN REVIEW</option><option ${r.status==='RESOLVED'?'selected':''}>RESOLVED</option></select>`,
@@ -2635,8 +2782,8 @@ function pageSetup(){
   <div class="card panel">
     <div class="panel-head"><h3>Promote students</h3><div class="hint">Stage students from one or more classes, then move them all together</div></div>
     <div class="field-row">
-      <div class="field"><label>From class</label><select id="promoteFrom" onchange="onPromoteFromChange()">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-      <div class="field"><label>Move to</label><select id="promoteTo">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>From class</label><select id="promoteFrom" onchange="onPromoteFromChange()"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>Move to</label><select id="promoteTo"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
     </div>
     <p class="field-hint">Students in the selected "From class" not already staged:</p>
     <div id="promoteSourceList"></div>
@@ -2706,7 +2853,11 @@ const COLOR_PALETTES = {
   crimson:{label:'Crimson', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B'},
   slate:  {label:'Slate Blue', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A'},
   grey:   {label:'Grey (monochrome)', forest:'#43474B', forestDark:'#232527', brass:'#8A8E93', brassLight:'#B4B8BC', terracotta:'#75797D'},
+  darkgrey:{label:'Dark Grey', forest:'#2E3136', forestDark:'#18191B', brass:'#A8916C', brassLight:'#CBB68F', terracotta:'#A85C4D'},
 };
+/* ---- custom, user-named palettes (saved in PREFS, alongside the built-ins above) ---- */
+function allPalettes(){ return Object.assign({}, COLOR_PALETTES, PREFS.customPalettes||{}); }
+function slugify(s){ return String(s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || ('custom_'+Date.now()); }
 /* ---- small HSL helpers so every palette's dark mode is a genuine, complementary reversal ---- */
 function hexToHsl(hex){
   hex = hex.replace('#','');
@@ -2742,7 +2893,7 @@ function deriveDarkSet(light){
   };
 }
 function applyPalette(name){
-  const p = COLOR_PALETTES[name] || COLOR_PALETTES.forest;
+  const p = allPalettes()[name] || COLOR_PALETTES.forest;
   const effective = document.documentElement.getAttribute('data-theme') || 'light';
   const set = effective==='dark' ? deriveDarkSet(p) : p;
   const root = document.documentElement.style;
@@ -2774,14 +2925,35 @@ function pageSettings(){
     <div class="panel-head"><h3>Appearance</h3></div>
     <div class="field-row">
       <div class="field"><label>Theme</label><select id="setTheme"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark</option></select></div>
-      <div class="field"><label>Colour palette</label><select id="setPalette">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Colour palette</label><select id="setPalette">${Object.entries(allPalettes()).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
     </div>
-    <div class="field-row" id="paletteSwatches">${Object.entries(COLOR_PALETTES).map(([k,p])=>`
-      <div class="role-opt ${PREFS.palette===k?'selected':''}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">
-        <div style="display:flex;gap:3px"><span style="width:14px;height:14px;border-radius:50%;background:${p.forest}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.brass}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.terracotta}"></span></div>
-        <span style="font-size:10.5px">${esc(p.label)}</span>
+    <div class="field-row" id="paletteSwatches">${Object.entries(allPalettes()).map(([k,p])=>`
+      <div class="role-opt ${PREFS.palette===k?'selected':''}" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="cursor:pointer" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">
+          <div style="display:flex;gap:3px"><span style="width:14px;height:14px;border-radius:50%;background:${p.forest}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.brass}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.terracotta}"></span></div>
+        </div>
+        <span style="font-size:10.5px;cursor:pointer" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">${esc(p.label)}</span>
+        <div style="display:flex;gap:4px">
+          <a href="#" onclick="editPalettePreset('${k}');return false;" style="font-size:9.5px;color:var(--muted);text-decoration:none" title="Edit">✎</a>
+          ${(PREFS.customPalettes && PREFS.customPalettes[k]) ? `<a href="#" onclick="deletePalettePreset('${k}');return false;" style="font-size:9.5px;color:#A8452F;text-decoration:none" title="Delete">✕</a>` : ''}
+        </div>
       </div>`).join('')}</div>
     <button class="btn secondary" style="margin-top:10px" onclick="saveClockPrefs()">Save appearance</button>
+
+    <div class="panel-head" style="margin-top:20px"><h3 style="font-size:14px">Build a custom palette</h3></div>
+    <p class="field-hint">Pick each colour below — the app updates live as you choose — then name and save it as a new preset.</p>
+    <div class="field-row">
+      <div class="field"><label>Primary (sidebar / main accent)</label><input type="color" id="cpForest" value="${esc(customPaletteDraft.forest)}" oninput="liveCustomPalettePreview()"></div>
+      <div class="field"><label>Accent (buttons / highlights)</label><input type="color" id="cpBrass" value="${esc(customPaletteDraft.brass)}" oninput="liveCustomPalettePreview()"></div>
+      <div class="field"><label>Secondary accent (badges / links)</label><input type="color" id="cpTerracotta" value="${esc(customPaletteDraft.terracotta)}" oninput="liveCustomPalettePreview()"></div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1"><label>Preset name</label><input type="text" id="cpName" placeholder="e.g. School Colours" value="${esc(customPaletteDraft.label||'')}"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn secondary" onclick="saveCustomPalette()">💾 Save as preset</button>
+      <button class="btn secondary" onclick="cancelCustomPaletteDraft()">Cancel / revert preview</button>
+    </div>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Clock, date &amp; term</h3></div>
@@ -2810,6 +2982,58 @@ function pageSettings(){
   </div>`;
 }
 function previewPalette(name){ applyPalette(name); }
+let customPaletteDraft = {forest:'#1F3A2E', brass:'#B8863E', terracotta:'#A8452F', label:''};
+function liveCustomPalettePreview(){
+  const forest = document.getElementById('cpForest').value;
+  const brass = document.getElementById('cpBrass').value;
+  const terracotta = document.getElementById('cpTerracotta').value;
+  customPaletteDraft = Object.assign(customPaletteDraft, {forest, brass, terracotta});
+  // each accent input "assumes" its colour immediately — live-apply without needing to save first
+  const effective = document.documentElement.getAttribute('data-theme') || 'light';
+  const set = effective==='dark' ? deriveDarkSet({forest,brass,terracotta}) : {forest, forestDark: forest, brass, brassLight: brass, terracotta};
+  const root = document.documentElement.style;
+  root.setProperty('--forest', set.forest);
+  root.setProperty('--brass', set.brass);
+  root.setProperty('--terracotta', set.terracotta);
+}
+function cancelCustomPaletteDraft(){ applyPalette(PREFS.palette); render(); }
+async function saveCustomPalette(){
+  const name = (document.getElementById('cpName').value||'').trim();
+  if(!name){ toast('Give this palette a name first'); return; }
+  const forest = document.getElementById('cpForest').value;
+  const brass = document.getElementById('cpBrass').value;
+  const terracotta = document.getElementById('cpTerracotta').value;
+  const key = 'custom_'+slugify(name);
+  const [fh,fs] = hexToHsl(forest);
+  const [bh,bs] = hexToHsl(brass);
+  PREFS.customPalettes = PREFS.customPalettes || {};
+  PREFS.customPalettes[key] = {
+    label:name, forest, forestDark: hslToHex(fh, Math.min(fs+10,55), 12), brass,
+    brassLight: hslToHex(bh, Math.max(bs-10,20), 74), terracotta,
+  };
+  PREFS.palette = key;
+  await savePrefs();
+  applyPalette(key);
+  toast('Palette "'+name+'" saved as a preset');
+  render();
+}
+function editPalettePreset(key){
+  const p = allPalettes()[key];
+  if(!p) return;
+  customPaletteDraft = {forest:p.forest, brass:p.brass, terracotta:p.terracotta, label:p.label};
+  render();
+  toast('Editing "'+p.label+'" below — adjust the colours and save (built-ins save as a new custom copy)');
+  setTimeout(()=>{ const el=document.getElementById('cpName'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 60);
+}
+async function deletePalettePreset(key){
+  if(!PREFS.customPalettes || !PREFS.customPalettes[key]) return;
+  if(!confirm('Delete the "'+PREFS.customPalettes[key].label+'" preset?')) return;
+  delete PREFS.customPalettes[key];
+  if(PREFS.palette===key){ PREFS.palette='forest'; applyPalette('forest'); }
+  await savePrefs();
+  toast('Preset deleted');
+  render();
+}
 function pageBackup(){
   if(!isAdmin()){
     return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Backup &amp; Restore is only available to admin accounts.</div></div>`;
@@ -3010,7 +3234,8 @@ function onPromoteFromChange(){ promoteSourceChecked = {}; renderPromoteSourceLi
 function renderPromoteSourceList(){
   const el = document.getElementById('promoteSourceList');
   if(!el) return;
-  const from = $('#promoteFrom') ? $('#promoteFrom').value : DB.setup.userClasses[0];
+  const from = $('#promoteFrom') ? $('#promoteFrom').value : '';
+  if(!from){ el.innerHTML = `<div class="stage-empty">Select a "From class" above to see its students.</div>`; return; }
   const already = new Set(promoteBatch.map(s=>s.id));
   const students = DB.users.filter(u=>u.cls===from && u.category==='STUDENT' && !already.has(u.id));
   if(!students.length){ el.innerHTML = `<div class="stage-empty">No unstaged students left in ${esc(from)}.</div>`; return; }
@@ -3030,6 +3255,7 @@ function renderPromoteSourceList(){
 }
 function addSelectedToPromoteBatch(){
   const from = $('#promoteFrom').value;
+  if(!from){ toast('Select a "From class" first'); return; }
   const chosenIds = Object.keys(promoteSourceChecked).filter(id=>promoteSourceChecked[id]);
   if(!chosenIds.length){ toast('Tick at least one student to add'); return; }
   chosenIds.forEach(id=>{
@@ -3061,6 +3287,7 @@ function clearPromoteStaging(){ promoteBatch=[]; promoteSourceChecked={}; render
 function commitPromotion(){
   if(!promoteBatch.length){ toast('Stage at least one student first'); return; }
   const to = $('#promoteTo').value;
+  if(!to){ toast('Select a "Move to" class first'); return; }
   if(!confirm(`Move ${promoteBatch.length} student(s) to ${to}?`)) return;
   promoteBatch.forEach(s=>{
     const u = DB.users.find(x=>x.id===s.id);
@@ -3495,6 +3722,7 @@ function render(){
   if(route==='users' && usersModule){ $('#mod_users').innerHTML = usersModule.render(); MODULE_CONTAINERS.users={host:{render:()=>{ $('#mod_users').innerHTML=usersModule.render(); usersModule.bind(); }}}; usersModule.bind(); }
   if(route==='reminders' && remindersModule){ $('#mod_reminders').innerHTML = remindersModule.render(); MODULE_CONTAINERS.reminders={host:{render:()=>{ $('#mod_reminders').innerHTML=remindersModule.render(); remindersModule.bind(); }}}; remindersModule.bind(); }
   if(route==='reminders' && nearOverdueModule){ $('#mod_nearoverdue').innerHTML = nearOverdueModule.render(); MODULE_CONTAINERS.nearoverdue={host:{render:()=>{ $('#mod_nearoverdue').innerHTML=nearOverdueModule.render(); nearOverdueModule.bind(); }}}; nearOverdueModule.bind(); }
+  if(route==='reminders' && reminderHistoryModule){ $('#mod_reminderhistory').innerHTML = reminderHistoryModule.render(); MODULE_CONTAINERS.reminderhistory={host:{render:()=>{ $('#mod_reminderhistory').innerHTML=reminderHistoryModule.render(); reminderHistoryModule.bind(); }}}; reminderHistoryModule.bind(); }
   if(route==='register' && registerModule){ $('#mod_register').innerHTML = registerModule.render(); MODULE_CONTAINERS.register={host:{render:()=>{ $('#mod_register').innerHTML=registerModule.render(); registerModule.bind(); }}}; registerModule.bind(); mountBatchStaging(); mountCheckoutStaging(); }
   if(route==='feedback' && feedbackModule){ $('#mod_feedback').innerHTML = feedbackModule.render(); MODULE_CONTAINERS.feedback={host:{render:()=>{ $('#mod_feedback').innerHTML=feedbackModule.render(); feedbackModule.bind(); }}}; feedbackModule.bind(); }
   if(route==='schedule'){ $('#mod_roster').innerHTML = pageRosterTable(); MODULE_CONTAINERS.roster={host:{render:()=>{ $('#mod_roster').innerHTML=pageRosterTable(); rosterModule.bind(); }}}; rosterModule.bind(); }
@@ -3535,6 +3763,7 @@ async function enterApp(){
     ACCOUNTS = await loadAccounts();
     await loadAdminKey();
     await loadAutoBackupCfg();
+    try{ DB = await loadDB(); }catch(e){ console.error('Could not pre-load data for the auth screen', e); }
     const restored = await restoreSession();
     setTimeout(async ()=>{
       clearTimeout(failsafe);
