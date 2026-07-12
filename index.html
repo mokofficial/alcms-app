@@ -25,7 +25,11 @@
   --shadow: 0 1px 2px rgba(19,32,25,.06), 0 6px 16px rgba(19,32,25,.06);
   --radius:10px;
   --clock-font:'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace;
+  --app-font:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  --heading-font:Georgia,'Times New Roman',serif;
+  --text-scale:1;
 }
+#app, #authScreen{ zoom:var(--text-scale); }
 html[data-theme="dark"]{
   --ink:#E9E4D2;
   --forest:#3C6B52;
@@ -52,12 +56,12 @@ html[data-theme="dark"] .quickpick .suggestions{ background:var(--card);}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  font-family:var(--app-font, "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif);
   background:var(--parchment);
   color:var(--ink);
   min-height:100vh;
 }
-h1,h2,h3,h4{ font-family:Georgia,'Times New Roman',serif; margin:0; letter-spacing:.2px;}
+h1,h2,h3,h4{ font-family:var(--heading-font, Georgia,'Times New Roman',serif); margin:0; letter-spacing:.2px;}
 .stamp-font{ font-family:Georgia,'Times New Roman',serif; letter-spacing:1.5px; text-transform:uppercase;}
 a{color:inherit;}
 button{font-family:inherit;cursor:pointer;}
@@ -594,24 +598,65 @@ function togglePwVisibility(id){
   if(el.type==='password'){ el.type='text'; if(btn){ btn.classList.add('revealed'); btn.setAttribute('aria-label','Hide password'); } }
   else { el.type='password'; if(btn){ btn.classList.remove('revealed'); btn.setAttribute('aria-label','Show password'); } }
 }
+async function pickContactForField(fieldId){
+  if(!('contacts' in navigator) || !('select' in navigator.contacts)){
+    toast('Your browser does not support picking from contacts — mostly available on Android Chrome'); return;
+  }
+  try{
+    const contacts = await navigator.contacts.select(['tel'], {multiple:false});
+    if(!contacts.length) return;
+    const tel = (contacts[0].tel && contacts[0].tel[0]) || '';
+    if(!tel){ toast('That contact has no phone number saved'); return; }
+    const el = document.getElementById(fieldId);
+    if(el){ el.value = tel; el.dispatchEvent(new Event('input')); }
+  }catch(e){
+    if(e.name !== 'AbortError') toast('Could not access contacts: '+e.message);
+  }
+}
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', clockFont:'digital'};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', clockFont:'digital', appFont:'default', headingFont:'default', textScale:'medium'};
 const CLOCK_FONTS = {
   digital: {label:'Digital (default)', stack:"'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace"},
   elegant: {label:'Elegant serif', stack:"Georgia,'Times New Roman',serif"},
   modern:  {label:'Modern sans', stack:"'Segoe UI',-apple-system,'Helvetica Neue',sans-serif"},
   rounded: {label:'Rounded', stack:"'Trebuchet MS','Verdana',sans-serif"},
 };
+const APP_FONTS = {
+  default: {label:'Segoe UI (default)', stack:'"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif'},
+  classic: {label:'Classic serif (Georgia)', stack:'Georgia,"Times New Roman",serif'},
+  modern:  {label:'Modern (Verdana)', stack:'Verdana,"Trebuchet MS",sans-serif'},
+  mono:    {label:'Monospace', stack:'"Consolas","Courier New",monospace'},
+  system:  {label:'System default', stack:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'},
+};
+const HEADING_FONTS = {
+  default: {label:'Georgia (default)', stack:"Georgia,'Times New Roman',serif"},
+  sans:    {label:'Sans (matches body)', stack:'inherit'},
+  classic: {label:'Times New Roman', stack:'"Times New Roman",Times,serif'},
+  rounded: {label:'Rounded sans', stack:'"Trebuchet MS",Verdana,sans-serif'},
+};
+const TEXT_SCALES = {small:{label:'Small', value:0.92}, medium:{label:'Medium (default)', value:1}, large:{label:'Large', value:1.1}, xlarge:{label:'Extra large', value:1.22}};
 function applyClockFont(key){
   PREFS.clockFont = CLOCK_FONTS[key] ? key : 'digital';
   document.documentElement.style.setProperty('--clock-font', CLOCK_FONTS[PREFS.clockFont].stack);
   savePrefs();
 }
+function applyTypography(){
+  document.documentElement.style.setProperty('--app-font', (APP_FONTS[PREFS.appFont]||APP_FONTS.default).stack);
+  document.documentElement.style.setProperty('--heading-font', (HEADING_FONTS[PREFS.headingFont]||HEADING_FONTS.default).stack);
+  document.documentElement.style.setProperty('--text-scale', (TEXT_SCALES[PREFS.textScale]||TEXT_SCALES.medium).value);
+}
+function saveTypographyForm(){
+  PREFS.appFont = document.getElementById('setAppFont')?.value || 'default';
+  PREFS.headingFont = document.getElementById('setHeadingFont')?.value || 'default';
+  PREFS.textScale = document.getElementById('setTextScale')?.value || 'medium';
+  applyTypography(); savePrefs();
+  toast('Typography updated');
+}
 async function loadPrefs(){
   try{ const v = await storeGet(PREFS_KEY); if(v) PREFS = Object.assign(PREFS, JSON.parse(v)); }catch(e){}
-  applyTheme(); applyPalette(PREFS.palette);
+  applyTheme(); applyPalette(PREFS.palette); applyTypography();
   document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[PREFS.clockFont]||CLOCK_FONTS.digital).stack);
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
@@ -960,7 +1005,7 @@ async function doSignup(){
   await completeLogin(acc);
 }
 async function completeLogin(acc){
-  SESSION = {username:acc.username, fullName:acc.fullName, role:acc.role, avatar:acc.avatar||null};
+  SESSION = {username:acc.username, fullName:acc.fullName, role:acc.role, avatar:acc.avatar||null, avatarPos:acc.avatarPos||{x:50,y:50}};
   await persistSession(SESSION);
   $('#authScreen').classList.remove('show');
   clearInterval(authSlideTimer);
@@ -981,10 +1026,11 @@ function showAuthScreen(){
 function applyAuthBranding(){
   const name = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS';
   const logo = (DB && DB.setup && DB.setup.institutionLogo) ? DB.setup.institutionLogo : null;
+  const pos = (DB && DB.setup && DB.setup.institutionLogoPos) || {x:50,y:50};
   ['authBrandTitle','splashTitle'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = name; });
   ['authBrandBadge','splashBadge'].forEach(id=>{
     const el = document.getElementById(id); if(!el) return;
-    el.innerHTML = logo ? `<img src="${logo}" alt="${esc(name)} logo">` : 'AL';
+    el.innerHTML = logo ? `<img src="${logo}" alt="${esc(name)} logo" style="object-position:${pos.x}% ${pos.y}%">` : 'AL';
   });
 }
 function openAccountPanel(){
@@ -1011,36 +1057,60 @@ function openAccountPanel(){
         acc.role = vals.role || acc.role;
         if(vals.newPassword) acc.password = vals.newPassword;
         acc.avatar = pendingAvatar;
+        acc.avatarPos = pendingAvatarPos;
         acc.email = vals.email; acc.phone = vals.phone;
         if(vals.securityAnswer){ acc.securityQuestion = vals.securityQuestion; acc.securityAnswer = vals.securityAnswer; }
         saveAccounts(ACCOUNTS);
       }
-      SESSION.fullName = acc.fullName; SESSION.role = acc.role; SESSION.avatar = acc.avatar;
+      SESSION.fullName = acc.fullName; SESSION.role = acc.role; SESSION.avatar = acc.avatar; SESSION.avatarPos = acc.avatarPos;
       persistSession(SESSION);
       renderAccountChip(); render(); toast('Account updated');
     }
   });
   // profile picture uploader, inserted above the name field
   const body = $('.modal-body');
+  let pendingAvatarPos = acc0.avatarPos || {x:50,y:50};
   if(body){
     const wrap = document.createElement('div');
     wrap.className = 'avatar-upload';
     wrap.innerHTML = `
-      <div class="avatar-preview" id="avatarPreview">${pendingAvatar? `<img src="${pendingAvatar}">` : esc(initials(SESSION.fullName))}</div>
+      <div class="avatar-preview" id="avatarPreview" style="${pendingAvatar?`background-image:url('${pendingAvatar}');background-size:cover;background-position:${pendingAvatarPos.x}% ${pendingAvatarPos.y}%;`:''}">${pendingAvatar? '' : esc(initials(SESSION.fullName))}</div>
       <div>
         <label class="btn secondary small" style="cursor:pointer">Upload photo<input type="file" accept="image/*" id="avatarInput" style="display:none"></label>
         ${pendingAvatar? `<button class="btn danger small" id="avatarRemove" style="margin-left:6px">Remove</button>`:''}
+        <div id="avatarRepositionWrap" style="${pendingAvatar?'':'display:none'};margin-top:8px">
+          <label style="font-size:11px;color:var(--muted)">Reposition photo</label>
+          <input type="range" id="avatarPosX" min="0" max="100" value="${pendingAvatarPos.x}" style="width:100%">
+          <input type="range" id="avatarPosY" min="0" max="100" value="${pendingAvatarPos.y}" style="width:100%">
+        </div>
       </div>`;
     body.prepend(wrap);
+    const updatePreview = ()=>{
+      const el = document.getElementById('avatarPreview');
+      if(el && pendingAvatar) el.style.backgroundPosition = `${pendingAvatarPos.x}% ${pendingAvatarPos.y}%`;
+    };
+    document.getElementById('avatarPosX').oninput = e=>{ pendingAvatarPos.x = +e.target.value; updatePreview(); };
+    document.getElementById('avatarPosY').oninput = e=>{ pendingAvatarPos.y = +e.target.value; updatePreview(); };
     document.getElementById('avatarInput').onchange = (e)=>{
       const file = e.target.files[0]; if(!file) return;
       if(file.size > 800*1024){ toast('Please choose an image under 800KB'); return; }
       const reader = new FileReader();
-      reader.onload = ()=>{ pendingAvatar = reader.result; document.getElementById('avatarPreview').innerHTML = `<img src="${pendingAvatar}">`; };
+      reader.onload = ()=>{
+        pendingAvatar = reader.result; pendingAvatarPos = {x:50,y:50};
+        const el = document.getElementById('avatarPreview');
+        el.style.backgroundImage = `url('${pendingAvatar}')`; el.style.backgroundSize='cover'; el.style.backgroundPosition='50% 50%'; el.innerHTML='';
+        const repoWrap = document.getElementById('avatarRepositionWrap');
+        if(repoWrap){ repoWrap.style.display=''; document.getElementById('avatarPosX').value=50; document.getElementById('avatarPosY').value=50; }
+      };
       reader.readAsDataURL(file);
     };
     const rmBtn = document.getElementById('avatarRemove');
-    if(rmBtn) rmBtn.onclick = ()=>{ pendingAvatar=null; document.getElementById('avatarPreview').innerHTML = esc(initials(SESSION.fullName)); };
+    if(rmBtn) rmBtn.onclick = ()=>{
+      pendingAvatar=null; pendingAvatarPos={x:50,y:50};
+      const el = document.getElementById('avatarPreview');
+      el.style.backgroundImage=''; el.innerHTML = esc(initials(SESSION.fullName));
+      const repoWrap = document.getElementById('avatarRepositionWrap'); if(repoWrap) repoWrap.style.display='none';
+    };
   }
   // add a sign-out button into the modal footer
   const foot = $('.modal-foot');
@@ -1052,7 +1122,8 @@ function openAccountPanel(){
 }
 function renderAccountChip(){
   if(!SESSION) return;
-  $('#accountAv').innerHTML = SESSION.avatar ? `<img src="${SESSION.avatar}">` : esc(initials(SESSION.fullName));
+  const pos = SESSION.avatarPos || {x:50,y:50};
+  $('#accountAv').innerHTML = SESSION.avatar ? `<img src="${SESSION.avatar}" style="object-position:${pos.x}% ${pos.y}%">` : esc(initials(SESSION.fullName));
   $('#accountName').textContent = SESSION.fullName;
   $('#accountRole').textContent = SESSION.role;
 }
@@ -1172,6 +1243,7 @@ const NAV = [
   {group:'Help', items:[
     {id:'guide', label:'User guide', ico:'❖'},
     {id:'about', label:'About', ico:'ⓘ'},
+    {id:'account', label:'My Account', ico:'☻', action:'openAccountPanel'},
   ]},
 ];
 const PAGE_META = {
@@ -1196,7 +1268,10 @@ function renderNav(){
   const brandSub = $('#brandSubtitle');
   if(brandSub) brandSub.textContent = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName.toUpperCase() : 'ACCESS LIBRARY';
   const logo = $('#sidebarLogo');
-  if(logo) logo.innerHTML = (DB && DB.setup && DB.setup.institutionLogo) ? `<img src="${DB.setup.institutionLogo}">` : 'AL';
+  if(logo){
+    const pos = DB.setup.institutionLogoPos || {x:50,y:50};
+    logo.innerHTML = (DB && DB.setup && DB.setup.institutionLogo) ? `<img src="${DB.setup.institutionLogo}" style="object-position:${pos.x}% ${pos.y}%">` : 'AL';
+  }
   const el = $('#navlist'); el.innerHTML='';
   NAV.forEach(g=>{
     const lab=document.createElement('div'); lab.className='navgroup-label'; lab.textContent=g.group; el.appendChild(lab);
@@ -1204,7 +1279,7 @@ function renderNav(){
       const b=document.createElement('button');
       b.innerHTML = `<span class="ico">${it.ico}</span><span>${it.label}</span>`;
       b.className = it.id===route ? 'active':'';
-      b.onclick=()=>{ route=it.id; render(); toggleSidebar(false); };
+      b.onclick = it.action ? ()=>{ window[it.action](); toggleSidebar(false); } : ()=>{ route=it.id; render(); toggleSidebar(false); };
       el.appendChild(b);
     });
   });
@@ -1282,7 +1357,13 @@ function fieldHtml(f,values){
     input = `<div class="pw-wrap"><input id="f_${f.key}" type="password" value="${esc(val)}">
       <button type="button" class="pw-toggle" id="pwt_f_${f.key}" onclick="togglePwVisibility('f_${f.key}')" aria-label="Show password">${EYE_ICON_SVG}</button></div>`;
   } else {
-    input = `<input id="f_${f.key}" type="${f.type||'text'}" value="${esc(val)}" ${f.readonly?'readonly':''}>`;
+    const supportsContactPicker = (typeof navigator!=='undefined') && 'contacts' in navigator && 'select' in (navigator.contacts||{});
+    if(f.type==='tel' && supportsContactPicker){
+      input = `<div class="pw-wrap"><input id="f_${f.key}" type="tel" value="${esc(val)}">
+        <button type="button" class="pw-toggle" onclick="pickContactForField('f_${f.key}')" title="Pick from contacts" aria-label="Pick from contacts">📇</button></div>`;
+    } else {
+      input = `<input id="f_${f.key}" type="${f.type||'text'}" value="${esc(val)}" ${f.readonly?'readonly':''}>`;
+    }
   }
   return `<div class="field" ${f.wrapId?`id="${f.wrapId}"`:''} ${f.hidden?'style="display:none"':''}><label>${esc(f.label)}${f.required?' *':''}</label>${input}</div>`;
 }
@@ -1491,10 +1572,11 @@ const PALETTE = ['#1F3A2E','#B8863E','#A8452F','#4C7C5E','#D9A94F','#6E5A3C','#7
 /* ================= print ================= */
 function printHeaderHtml(title, subtitle){
   const logo = DB.setup.institutionLogo;
+  const pos = DB.setup.institutionLogoPos || {x:50,y:50};
   const orgName = DB.setup.institutionName;
   return `
     <div class="print-header">
-      ${logo? `<img class="print-logo" src="${logo}" alt="logo">` : ''}
+      ${logo? `<img class="print-logo" src="${logo}" alt="logo" style="object-position:${pos.x}% ${pos.y}%">` : ''}
       <div class="print-header-text">
         ${orgName? `<h1 class="print-org-name">${esc(orgName)}</h1>` : ''}
         <h2>ALCMS — ${esc(title)}</h2>
@@ -1979,9 +2061,10 @@ function drawAnalyticsCharts(){
 
 /* ================= PAGE: CATALOGUE ================= */
 let catalogueModule;
+let catalogueModuleState = {q:'', filters:{}};
 function pageCatalogue(){
   catalogueModule = GenericModule({
-    key:'catalogue', title:'Catalogue', hint:'Search by title, author or accession number', cap:200,
+    state:catalogueModuleState, key:'catalogue', title:'Catalogue', hint:'Search by title, author or accession number', cap:200,
     data:()=>DB.catalogue,
     searchKeys:['acc','title','author','category','division','mainClass'],
     filters:[
@@ -2080,6 +2163,7 @@ function deleteBook(acc){
 
 /* ================= PAGE: USERS ================= */
 let usersModule;
+let usersModuleState = {q:'', filters:{}};
 function classTeacherLabel(cls){
   const ct = DB.setup.classTeachers[cls];
   if(!ct) return '';
@@ -2088,7 +2172,7 @@ function classTeacherLabel(cls){
 }
 function pageUsers(){
   usersModule = GenericModule({
-    key:'users', title:'Members', hint:'Students and staff registered with the library',
+    state:usersModuleState, key:'users', title:'Members', hint:'Students and staff registered with the library',
     data:()=>DB.users,
     searchKeys:['id','name','cls','teacher'],
     filters:[
@@ -2159,7 +2243,7 @@ function userFields(u={}){
       {key:'category',label:'Category', type:'select', options:DB.setup.userCategories, default:u.category||'STUDENT'},
       {key:'cls',label:'Class / Designation', type:'select', required:true, options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls||''},
     ]},
-    {row:[{key:'teacher',label:'Phone number', default:u.teacher, wrapId:'phoneFieldWrap', hidden:!isStaff},{key:'maxAllowed',label:'Max books allowed', type:'number', default:u.maxAllowed??2}]},
+    {row:[{key:'teacher',label:'Phone number', type:'tel', default:u.teacher, wrapId:'phoneFieldWrap', hidden:!isStaff},{key:'maxAllowed',label:'Max books allowed', type:'number', default:u.maxAllowed??2}]},
     {row:[
       {key:'eligibility',label:'Eligible to borrow', type:'select', options:['YES','NO'], default:u.eligibility||'YES'},
       {key:'status',label:'Status', type:'select', options:['ACTIVE','SUSPENDED','INACTIVE'], default:u.status||'ACTIVE'},
@@ -2381,9 +2465,10 @@ function bindCirculationPickers(){
   });
 }
 let circulationModule;
+let circulationModuleState = {q:'', filters:{}};
 function pageCirculationTable(){
   circulationModule = GenericModule({
-    key:'circulation', title:'Loan transactions', hint:'Full circulation history', cap:200,
+    state:circulationModuleState, key:'circulation', title:'Loan transactions', hint:'Full circulation history', cap:200,
     data:()=>DB.circulation.map(x=>({...x, status:txnStatus(x)})),
     searchKeys:['trxId','acc','title','userId','name'],
     filters:[{key:'status', label:'Status', options:['BORROWED','OVERDUE','RETURNED','MISSING']}],
@@ -2449,7 +2534,9 @@ function clearAllCirculation(){
 
 /* ================= PAGE: REMINDERS ================= */
 let remindersModule;
+let remindersModuleState = {q:'', filters:{}};
 let nearOverdueModule;
+let nearOverdueModuleState = {q:'', filters:{}};
 function whatsAppLink(phone, message){
   const digits = String(phone||'').replace(/[^\d+]/g,'').replace(/^0/,''); // strip formatting, drop a leading trunk 0
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
@@ -2474,6 +2561,7 @@ function waButtonHtml(trx, kind){
   return `<button class="btn small" onclick="sendReminderViaWhatsApp('${esc(trx.trxId)}','${kind}')" title="To: ${esc(recipient.label)}">📱 WhatsApp &amp; log</button>`;
 }
 let reminderHistoryModule;
+let reminderHistoryModuleState = {q:'', filters:{}};
 function pageReminders(){
   const overdue = DB.circulation.filter(x=>txnStatus(x)==='OVERDUE');
   const nearOverdue = DB.circulation.filter(x=>{
@@ -2483,7 +2571,7 @@ function pageReminders(){
     return days>=0 && days<=2;
   });
   remindersModule = GenericModule({
-    key:'reminders', title:'Overdue — needs a reminder', hint:overdue.length+' loan(s) past due date',
+    state:remindersModuleState, key:'reminders', title:'Overdue — needs a reminder', hint:overdue.length+' loan(s) past due date',
     data:()=>overdue.map(x=>({...x, daysOverdue: daysBetween(parseAnyDate(x.dueDate), new Date()), reminded: DB.reminders.some(r=>r.trxId===x.trxId)})),
     searchKeys:['acc','title','userId','name'],
     columns:[
@@ -2497,7 +2585,7 @@ function pageReminders(){
     rowActions:r=>r.reminded?'':`<button class="btn small" onclick="sendReminder('${r.trxId}')">Log reminder</button>`,
   });
   nearOverdueModule = GenericModule({
-    key:'nearoverdue', title:'Due soon (within 2 days)', hint:nearOverdue.length+' loan(s) approaching their due date — not yet overdue',
+    state:nearOverdueModuleState, key:'nearoverdue', title:'Due soon (within 2 days)', hint:nearOverdue.length+' loan(s) approaching their due date — not yet overdue',
     data:()=>nearOverdue.map(x=>({...x, daysLeft: daysBetween(new Date(), parseAnyDate(x.dueDate))})),
     searchKeys:['acc','title','userId','name'],
     columns:[
@@ -2508,7 +2596,7 @@ function pageReminders(){
     ],
   });
   reminderHistoryModule = GenericModule({
-    key:'reminderhistory', title:'Reminder history', hint:'Full detail of every reminder logged — tick rows, or use the date range, to export/print just those',
+    state:reminderHistoryModuleState, key:'reminderhistory', title:'Reminder history', hint:'Full detail of every reminder logged — tick rows, or use the date range, to export/print just those',
     data:()=>DB.reminders,
     searchKeys:['userId','name','cls','title','acc','trxId','loggedBy'],
     dateRange:true,
@@ -2563,9 +2651,10 @@ function sendReminderViaWhatsApp(trxId, kind){
 
 /* ================= PAGE: REGISTER (desk + class visits, consolidated) ================= */
 let registerModule;
+let registerModuleState = {q:'', filters:{}};
 function pageRegister(){
   registerModule = GenericModule({
-    key:'register', title:'Register', hint:'Desk sign-ins and class period visits together', cap:200,
+    state:registerModuleState, key:'register', title:'Register', hint:'Desk sign-ins and class period visits together', cap:200,
     data:()=>DB.registerLog,
     searchKeys:['id','name','purpose','cls','verifiedBy'],
     filters:[
@@ -2872,9 +2961,10 @@ function deleteScheduleEntry(index){
   });
 }
 let rosterModule;
+let rosterModuleState = {q:'', filters:{}};
 function pageRosterTable(){
   rosterModule = GenericModule({
-    key:'roster', title:'Individual subject combinations', hint:'Search a student to see — and edit — their subject line-up',
+    state:rosterModuleState, key:'roster', title:'Individual subject combinations', hint:'Search a student to see — and edit — their subject line-up',
     data:()=>DB.users.filter(u=>u.category==='STUDENT').map(u=>({id:u.id, name:u.name, cls:u.cls, subs:studentSubjects(u)})),
     searchKeys:['id','name','cls'],
     columns:[
@@ -2888,9 +2978,10 @@ function pageRosterTable(){
 
 /* ================= PAGE: FEEDBACK ================= */
 let feedbackModule;
+let feedbackModuleState = {q:'', filters:{}};
 function pageFeedback(){
   feedbackModule = GenericModule({
-    key:'feedback', title:'Feedback & suggestions', hint:'Raised by members and staff — tick rows, or use the date range, to export/print just those',
+    state:feedbackModuleState, key:'feedback', title:'Feedback & suggestions', hint:'Raised by members and staff — tick rows, or use the date range, to export/print just those',
     data:()=>DB.feedback,
     searchKeys:['userName','subject','text','type'],
     filters:[{key:'status', label:'Status', options:['NEW','IN REVIEW','RESOLVED']}],
@@ -3103,11 +3194,16 @@ function pageSettings(){
     <div class="panel-head"><h3>Institution</h3><div class="hint">Displayed on the sidebar, sign-in screen and printed reports</div></div>
     <div class="field"><label>Institution / school name</label><input id="setInstitution" value="${esc(DB.setup.institutionName||'')}" placeholder="e.g. Access International School"></div>
     <div class="avatar-upload" style="margin-top:10px">
-      <div class="avatar-preview" id="logoPreview" style="border-radius:8px">${DB.setup.institutionLogo? `<img src="${DB.setup.institutionLogo}">` : 'AL'}</div>
+      <div class="avatar-preview" id="logoPreview" style="border-radius:8px;${DB.setup.institutionLogo?`background-image:url('${DB.setup.institutionLogo}');background-size:cover;background-position:${(DB.setup.institutionLogoPos||{x:50,y:50}).x}% ${(DB.setup.institutionLogoPos||{x:50,y:50}).y}%;`:''}">${DB.setup.institutionLogo? '' : 'AL'}</div>
       <div>
         <label class="btn secondary small" style="cursor:pointer">Upload school logo<input type="file" accept="image/*" id="logoInput" style="display:none"></label>
         ${DB.setup.institutionLogo? `<button class="btn danger small" id="logoRemove" style="margin-left:6px">Remove</button>`:''}
         <p class="field-hint">Replaces the library icon in the sidebar. Under 800KB.</p>
+        <div id="logoRepositionWrap" style="${DB.setup.institutionLogo?'':'display:none'};margin-top:8px">
+          <label style="font-size:11px;color:var(--muted)">Reposition logo</label>
+          <input type="range" id="logoPosX" min="0" max="100" value="${(DB.setup.institutionLogoPos||{x:50,y:50}).x}" style="width:100%">
+          <input type="range" id="logoPosY" min="0" max="100" value="${(DB.setup.institutionLogoPos||{x:50,y:50}).y}" style="width:100%">
+        </div>
       </div>
     </div>
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
@@ -3162,6 +3258,18 @@ function pageSettings(){
       <div class="field"><label>Current session</label><input id="setSession" value="${esc(DB.setup.currentSession||'')}" placeholder="e.g. 2025/2026"></div>
     </div>
     <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Typography</h3><div class="hint">Applies across the whole app</div></div>
+    <div class="field-row">
+      <div class="field"><label>Body font</label><select id="setAppFont">${Object.entries(APP_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.appFont||'default')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Heading font</label><select id="setHeadingFont">${Object.entries(HEADING_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.headingFont||'default')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Text size</label><select id="setTextScale">${Object.entries(TEXT_SCALES).map(([k,v])=>`<option value="${k}" ${(PREFS.textScale||'medium')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+    </div>
+    <button class="btn secondary" onclick="saveTypographyForm()">Save typography</button>
+    <p class="field-hint" style="margin-top:8px">Text size uses your browser's zoom support — it may not apply in every browser.</p>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Accounts</h3><div class="hint">${ACCOUNTS.length} account(s)</div></div>
@@ -3307,11 +3415,20 @@ function bindSettingsUploaders(){
     const file = e.target.files[0]; if(!file) return;
     if(file.size > 800*1024){ toast('Please choose an image under 800KB'); return; }
     const reader = new FileReader();
-    reader.onload = ()=>{ DB.setup.institutionLogo = reader.result; saveDB(); render(); toast('Logo updated'); };
+    reader.onload = ()=>{ DB.setup.institutionLogo = reader.result; DB.setup.institutionLogoPos = {x:50,y:50}; saveDB(); render(); toast('Logo updated'); };
     reader.readAsDataURL(file);
   };
   const logoRemove = document.getElementById('logoRemove');
-  if(logoRemove) logoRemove.onclick = ()=>{ DB.setup.institutionLogo = null; saveDB(); render(); toast('Logo removed'); };
+  if(logoRemove) logoRemove.onclick = ()=>{ DB.setup.institutionLogo = null; DB.setup.institutionLogoPos = null; saveDB(); render(); toast('Logo removed'); };
+  const posX = document.getElementById('logoPosX'), posY = document.getElementById('logoPosY');
+  const updateLogoPreview = ()=>{
+    const el = document.getElementById('logoPreview');
+    if(el && DB.setup.institutionLogo) el.style.backgroundPosition = `${DB.setup.institutionLogoPos.x}% ${DB.setup.institutionLogoPos.y}%`;
+  };
+  if(posX) posX.oninput = e=>{ DB.setup.institutionLogoPos = DB.setup.institutionLogoPos||{x:50,y:50}; DB.setup.institutionLogoPos.x = +e.target.value; updateLogoPreview(); };
+  if(posY) posY.oninput = e=>{ DB.setup.institutionLogoPos = DB.setup.institutionLogoPos||{x:50,y:50}; DB.setup.institutionLogoPos.y = +e.target.value; updateLogoPreview(); };
+  if(posX) posX.onchange = ()=> saveDB();
+  if(posY) posY.onchange = ()=> saveDB();
 }
 
 /* ================= PAGE: ABOUT ================= */
