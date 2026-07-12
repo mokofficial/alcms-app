@@ -6,10 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ALCMS — Automated Library &amp; Circulation Management System</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231F3A2E'/%3E%3Cpath d='M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M32 18v30' stroke='%23B8863E' stroke-width='2'/%3E%3Ccircle cx='32' cy='12' r='4' fill='%23D9A94F'/%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --ink:#132019;
@@ -55,7 +51,7 @@ html[data-theme="dark"] .quickpick .suggestions{ background:var(--card);}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  font-family:var(--app-font,"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif);
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
   background:var(--parchment);
   color:var(--ink);
   min-height:100vh;
@@ -112,7 +108,6 @@ input,select,textarea{font-family:inherit;}
 .auth-foot{ font-size:11px; color:#8fa290; position:relative; z-index:2;}
 
 .auth-form-side{ flex:1; display:flex; align-items:flex-start; justify-content:center; padding:48px 30px 60px;}
-.auth-form-side{ align-items:safe center;}
 .auth-box{ width:100%; max-width:380px;}
 .auth-tabs{ display:flex; gap:4px; background:var(--parchment-dim); border-radius:9px; padding:4px; margin-bottom:24px;}
 .auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:var(--muted-label);}
@@ -265,8 +260,10 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .field-hint{ font-size:11px; color:var(--muted); margin-top:2px;}
 .pw-wrap{ position:relative;}
 .pw-wrap input{ padding-right:36px; width:100%;}
-.pw-toggle{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:var(--muted); padding:4px;}
+.pw-toggle{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:var(--muted); padding:4px; display:flex; align-items:center; justify-content:center;}
 .pw-toggle:hover{ color:var(--forest);}
+.pw-toggle .eye-slash{ opacity:0; transition:opacity .12s ease;}
+.pw-toggle.revealed .eye-slash{ opacity:1;}
 
 .toast{ position:fixed; bottom:20px; right:20px; background:var(--forest-dark); color:#fff; padding:12px 18px; border-radius:8px;
   font-size:13px; box-shadow:var(--shadow); z-index:200; opacity:0; transform:translateY(10px); transition:all .25s;}
@@ -326,10 +323,9 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 
 /* ===== print ===== */
 #printArea{ display:none; }
-.print-header{ margin-bottom:16px; display:flex; align-items:center; gap:12px;}
-.print-header img.print-logo{ width:44px; height:44px; object-fit:cover; border-radius:6px; flex:none;}
-.print-header .print-header-text h1{ font-size:20px;}
-.print-header .print-header-text p{ font-size:12px; color:#555; margin-top:4px;}
+.print-header{ margin-bottom:16px;}
+.print-header h1{ font-size:20px;}
+.print-header p{ font-size:12px; color:#555; margin-top:4px;}
 .print-table{ width:100%; border-collapse:collapse; font-size:11.5px;}
 .print-table th,.print-table td{ border:1px solid #ccc; padding:5px 7px; text-align:left;}
 .print-table th{ background:#eee;}
@@ -358,11 +354,10 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .clock-chip .time{ font-size:15px; font-weight:700; letter-spacing:.5px;}
 .clock-chip .date{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
 .auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-bottom:18px;}
-.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:center; gap:10px;}
-.auth-clock .time .stack{ display:flex; flex-direction:column; align-items:flex-start; line-height:1; gap:2px;}
-.auth-clock .time .secs{ font-size:16px; font-weight:700; color:#B9C4B4; font-family:'Montserrat','Arial Black',Impact,sans-serif;}
-.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:'Montserrat','Arial Black',Impact,sans-serif; letter-spacing:1px;}
-.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:'Montserrat','Arial Black',Impact,sans-serif; font-weight:400;}
+.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:baseline; gap:6px;}
+.auth-clock .time .secs{ font-size:20px; font-weight:700; color:#B9C4B4;}
+.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px;}
+.auth-clock .date{ font-size:12px; color:#B9C4B4; letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:"Segoe UI",-apple-system,sans-serif; font-weight:400;}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -410,6 +405,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
   table.datatable{ font-size:12px;}
   .account-chip .nm{ max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 }
+
 </style>
 </head>
 <body>
@@ -497,6 +493,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 <div id="printArea"></div>
 
 <script>
+/* ALCMS seed data — extracted from source workbook */
 /* =========================================================
    ALCMS — data seed (converted from the source workbook)
    ========================================================= */
@@ -511,7 +508,8 @@ const SEED_SCHEDULE_DAYS = /*__SCHEDULE_DAYS__*/[["MONDAY", "1ST", "09:00:00", "
 const SEED_SCHEDULE_ROSTER = /*__SCHEDULE_ROSTER__*/[["ACL-100", "AREMU SHARON INIOLUWA", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", "P", "P", null, null, null, null, "P", "P", null, null, "P", "P", null, null], ["ACL-101", "SCOTT PRAISE ONYEKACHUKWU", "YEAR 10 EZEKIEL", "P", "P", null, "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, null, null, "P", null], ["ACL-102", "SHOKUNBI OLUWASEMILORE", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", null, "P", "P", null, null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-103", "AKILO TOLUWANIMI", "YEAR 10 EZEKIEL", "P", "P", "P", null, "P", "P", "P", "P", null, "P", "P", null, null, "P", null, "P", "P", "P", null, null], ["ACL-104", "OKORODUDU ORITSEJOLOMI JOSHUA", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, null, null, "P", null, null, null, null, null], ["ACL-105", "DUROWOJU ABDULMALIK", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", "P", null, null, "P", "P", null, "P", "P", null, null, "P", "P", null, null], ["ACL-106", "OJO DEBORAH ENIOLA", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", "P", null, "P", null, null, null, null, null, null, null, null, "P", null, null, null], ["ACL-107", "AGBONIFOH EUNICE ITOHAN", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", null, "P", null, "P", "P", null, null, "P", null, null, "P", "P", null, null], ["ACL-108", "AWE OLUWATUNMISE ESTER", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", "P", "P", null, null, null, null, "P", "P", null, null, "P", "P", null, null], ["ACL-109", "GABA REUBEN AYOMIDE", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", "P", "P", null, "P", null, null, "P", "P", null, null, null, null, null, null], ["ACL-110", "ODUTADE OLUWATOFARATI JEREMIAH", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", "P", "P", null, "P", null, "P", null, "P", "P", null, null, null, null, null], ["ACL-111", "KAYODE DAVID OLANREWAJU", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, null, null, null, null], ["ACL-112", "EKWUEME CHIZARAM", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, null, null, null, null], ["ACL-113", "AMAZU CHIZITARA", "YEAR 10 EZEKIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-114", "IBEKWE MARTINS", "YEAR 10 EZEKIEL", "P", "P", null, "P", "P", null, "P", null, "P", null, null, "P", null, null, "P", null, null, null, null, null], ["ACL-115", "EDOSOMWAN ESEOSA IBIMINA", "YEAR 10 EZEKIEL", "P", "P", "P", "P", "P", null, "P", "P", "P", null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-116", "SHAFE JOSHUA", "YEAR 10 EZEKIEL", "P", "P", "P", null, null, "P", null, "P", null, null, null, null, "P", "P", "P", null, "P", null, null, null], ["ACL-117", "HASSAN IYIOLUWA", "YEAR 10 EZEKIEL", "P", "P", null, "P", "P", null, "P", "P", "P", null, null, "P", null, null, null, null, null, null, null, null], ["ACL-118", "ODUNLAMI STEPHANIE MOTUNRAYO", "YEAR 10 JEREMIAH", "P", "P", "P", "P", null, null, "P", "P", null, null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-119", "OROWONIYI AYOMIDE", "YEAR 10 JEREMIAH", "P", "P", "P", "P", null, null, "P", "P", null, null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-120", "AJUNWON MOYOSOREOLUWA", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", null, null, "P", "P", null, null, "P", null, null, "P", null, "P", null, "P", null], ["ACL-121", "NWOSU JASON", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, "P", null, null, null, null, null, null, null, null], ["ACL-122", "ENAHORO-OKHAE ZEKE ARAOLUWANIMI", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-123", "CALLY-BECHI CHIMAMANDA", "YEAR 10 JEREMIAH", "P", "P", "P", null, null, "P", "P", "P", null, "P", "P", null, null, "P", null, null, "P", "P", null, null], ["ACL-124", "TEMITOPE EUNICE", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-125", "OLUSANYA JESUTOBILOBA", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", null, "P", null, null, null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-126", "OGUNRO OLUWATIMILEHIN", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", null, "P", null, null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-127", "OLUWAFEMI-JOHNSON IREOLUWA MARY", "YEAR 10 JEREMIAH", "P", "P", "P", null, null, "P", "P", "P", null, "P", "P", null, null, "P", null, null, "P", "P", null, null], ["ACL-128", "ABANOBI CHIZARAM IMMACULATE", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-129", "STEPHEN-FALEYE OLUWADAMILOLA", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, "P", null, null, null, null], ["ACL-130", "SOREMEKUN OLUWAMAYOWA PAUL", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", null, null, "P", "P", null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-131", "GEORGE ANGEL EMMANUELLA", "YEAR 10 JEREMIAH", "P", "P", "P", null, null, "P", "P", "P", null, null, null, null, "P", "P", null, null, "P", "P", null, null], ["ACL-132", "ERHIRHIE ESEOGHENE", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", null, null, null, "P", null, null, "P", null, null, "P", null, "P", null, null, null], ["ACL-133", "OLAFUSI OLUWASEMILORE", "YEAR 10 JEREMIAH", null, null, null, null, null, "P", null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-134", "OGUNDEIN TEMIDAYO", "YEAR 10 JEREMIAH", "P", "P", null, "P", "P", "P", "P", "P", "P", null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-135", "MESH-MASADE DANIELLA", "YEAR 10 JEREMIAH", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, "P", null, null, null], ["ACL-136", "JAMES-ADESEMOWO LEONARD MARK", "YEAR 11 JUDE", "P", "P", "P", "P", "P", null, null, "P", "P", null, null, "P", null, null, "P", null, null, null, null, null], ["ACL-137", "DANIA DESMOND", "YEAR 11 JUDE", "P", "P", "P", null, null, "P", "P", null, null, "P", "P", null, null, null, null, "P", null, null, null, null], ["ACL-138", "RICHARD OLUWAJOMILOJU", "YEAR 11 JUDE", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-139", "ODUMUYIWA OLUWANIFEMI DANIEL", "YEAR 11 JUDE", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, "P", null, null, null, null, null, null, null, null], ["ACL-140", "TUNJI-MUTAIRU TOMISIN", "YEAR 11 JUDE", "P", "P", "P", "P", "P", null, "P", "P", "P", null, null, null, null, null, null, null, null, null, null, null], ["ACL-141", "ONASANYA TEMIDIRE", "YEAR 11 JUDE", "P", "P", null, "P", "P", null, "P", "P", "P", null, null, "P", null, null, null, null, null, null, null, null], ["ACL-142", "OWOEYE KOREDE", "YEAR 11 JUDE", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-143", "OGBONNA EBENEZER", "YEAR 11 JUDE", "P", "P", "P", "P", "P", null, "P", "P", null, null, null, "P", null, null, null, null, null, null, null, null], ["ACL-144", "AREMU MERCY", "YEAR 11 JUDE", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-145", "NWANYO MICHAEL", "YEAR 11 JUDE", "P", "P", null, "P", "P", null, "P", null, "P", null, "P", null, null, null, null, null, null, null, null, null], ["ACL-146", "EMEJIWE CHIMNECHEREM DANIEL", "YEAR 11 JUDE", "P", "P", "P", null, null, "P", "P", "P", null, "P", null, null, "P", "P", null, null, null, null, null, null], ["ACL-147", "MBA KINGDOM OBICHI", "YEAR 11 JUDE", "P", "P", "P", "P", null, null, "P", null, null, null, "P", null, "P", null, null, null, null, null, null, null], ["ACL-148", "AKHALUMENYO ISAIAH", "YEAR 11 JUDE", "P", "P", null, "P", "P", "P", "P", "P", "P", null, null, "P", null, null, null, null, null, null, null, null], ["ACL-149", "OGOSI SOPHIA", "YEAR 11 JUDE", "P", "P", "P", "P", "P", "P", "P", "P", null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-150", "OKEOWO DAVID", "YEAR 11 JUDE", "P", "P", "P", "P", "P", null, "P", null, "P", null, null, "P", null, null, "P", null, null, null, null, null], ["ACL-151", "PETER SAMSON", "YEAR 11 JUDE", "P", "P", "P", "P", null, "P", "P", null, null, "P", null, null, null, null, null, null, null, null, null, null], ["ACL-155", "AWOTUNDE ABD-MATIN", "YEAR 11 JUDE", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-001", "ANIKWUE OLUEBUBE", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-002", "ADETUNJI OLUWADEMILADE", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-003", "ENAHORO-OKHAE TAL", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-004", "ONYEBUCHI LIVINGSTONE", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-005", "OLUFADE OLUWANIFEMI", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-006", "AROWOLO JASON", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-007", "KAYODE-OGUTA AZARIAH", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-008", "OKORODUDU AARON", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-009", "BAKARE HASRUF", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-010", "ADEBAYO-JOHNSON MOSINMILEOLUWA", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-011", "OLUMIDE SAMUEL", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-012", "OKEY-NWAOSU MELVIS", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-013", "ORU MORIREOLUWA", "YEAR 7 NOAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-014", "AYINLA ADETOKUNBO", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-015", "ABIDEMI DANIEL", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-016", "SOREMEKUN AYANFE", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-017", "AKINYELE ZION", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-018", "IWILADE IYANDA", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-019", "DANIA DECLAN", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-020", "GLORY-ODAICHE GOD’SDELIGHT", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-021", "NWABUZOR IFECHUKWUDE", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-022", "OSILOWO TEMILOLAOLUWA", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-023", "OKANLAWON BENEDICTA", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-024", "OGUNRO OLUWASEGUNFUNMI", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-025", "SHOBOWALE FARAMADE", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-026", "ODUSANYA GBATIMOLOLUWA", "YEAR 7 DANIEL", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-027", "BADERIN ADEROMOLA", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-028", "SUNDAY-OKEY ANUOLUWAPO", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-029", "SOREMEKUN TOLUWANIMI", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-030", "AKINLAJA TANITOLUWA", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-031", "OGOSI PATRICIA", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-032", "DUROWOJU FAREEDAT", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-033", "OTEGBAYO DANIEL", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-034", "OGUNDE OLUWADARASIMI", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-035", "NWATU MARVEL", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-036", "JAMES-ADESEMOWO SIMON", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-037", "ONAIVI KEMUEL", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-038", "ANYALECHI KELECHI", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-039", "AJAYI ANNE TIOLUWANIMI", "YEAR 7 JOSEPH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-040", "SHAFE OLAOLUWA ISABELLA", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-041", "EBRENEYIN EMMANUELLA CHIDINMA", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-042", "ISHOLA HASSAN OMOBOLAJI", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-043", "OLANIPEKUN BOLUWATIFE", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-044", "ANUFORO ONYINYECHI ADRIEL", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-045", "EZINWA MUNACHIMSO", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-046", "AKPALABA FAVOUR", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-047", "AKINLAJA OLUWATONI DYLAN", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-048", "OJEBODE OLUWADARASIMI", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-049", "BEJIDE OLUWASEYIFUNMI MOSES", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-050", "EKWUEME SOCHINNA", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-051", "NWAORA SOMTOCHUKWU EMMANUEL", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-052", "OKEY-NWAOSU ALVIN", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-053", "OGUNDEIN OLUWATOSIN", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-054", "BAKARE HAMEENAT", "YEAR 8 CALEB", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-055", "BAKARE HASSAN", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-056", "NKANA HADASSAH", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-057", "ABANOBI NNEOMA", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-058", "OJEBODE OLUWADARASIMI", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-059", "MBA INFLUENCE OZICHI", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-060", "OLUWAFEMI-JOHNSON ANUOLUWAPO", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-061", "NWOSU TERRENCE UDOCHUKWU", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-062", "OYENIRAN OLUWAFEYIKEMI ELIZABETH", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-063", "SHOBAWALE ADEDAPO INIOLUWA", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-064", "BAYO-OLAIYA ADEOBA OLUWATIMILEHIN", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-065", "OLATUBOSUN ADEMIDE OLUWASEMILORE", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-066", "ASAGBA BAMISOPE OLUWADARASIMI", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-067", "OKWARA KELECHI", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-068", "ADESOKAN OLUWARIMILO", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-069", "OMOSENI ELIM-DAVID", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-070", "FAYINKA OLUWALONIMI", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-071", "AGBONIFOH BLESSING", "YEAR 8 JOSHUA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-072", "OJEYOMI OLUWAFUNMILORE", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-073", "ODUNLAMI VICTORIA", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-074", "OLUBIYI OLUWANIFEMI", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-075", "LADIPO-AJAYI OLAOLUWAKANMI", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-076", "NAKPOBERUO ONAROGHENE", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-077", "ADESIDA MOYOSORE", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-078", "DAVIES OLUWAJOMILOLUJU", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-079", "IWUNOH CHIMAMANDA", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-080", "RICHARD DAVID", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-081", "KALU NICOLE", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-082", "AGUGUA KAMSI", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-083", "ODUSANYA GBEKELEOLUWA", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-084", "ABONDEJO ADEJUMO", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-085", "ORU TUMININU", "YEAR 9 EZRA", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-086", "ONAIVI KESHA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-087", "OLUMIDE SARAH", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-088", "AMADI CHINOMSO", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-089", "SEVERINE ANUOLUWAPO", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-090", "AINA OLUWAJOMILOJU", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-091", "ADEGBUYI IYANOLUWA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-092", "FALEYE ADEOGO OTHNIEL", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-093", "DUROWOJU ABDULBASIT", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-094", "ADETOLA-ADESANYA ADERINRE", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-095", "ADEDAYO OLUWAGBEMIGA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-096", "FASHEYITAN JOSHUA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-097", "SUNDAY-OKEY OLORUNTOBILOBA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-098", "HARRY-IMUWUHEN DANIELLA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], ["ACL-099", "ADETUNJI OLUWAFOLADARA", "YEAR 9 NEHEMIAH", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]/*__END__*/;
 const SEED_SCHEDULE_SUBJECTS = /*__SCHEDULE_SUBJECTS__*/["MTH", "ENG", "ECO", "PHY", "CHM", "BIO", "ICT", "FRN", "D&T", "HIS", "LIT", "ADD", "ACC", "BUS", "GEO", "A&D", "CIV", "GOV", "AGR", "COM"]/*__END__*/;
 
-/* ================= helpers ================= */
+
+/* ALCMS application logic */
 const $ = (sel,root=document)=>root.querySelector(sel);
 const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
 const esc = s => (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -577,23 +575,24 @@ function initials(name){
   if(!name) return '?';
   const p = name.trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||'');
 }
+const EYE_ICON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="eye-outline" d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"></path><circle class="eye-pupil" cx="12" cy="12" r="3"></circle><line class="eye-slash" x1="3" y1="3" x2="21" y2="21"></line></svg>`;
 function pwFieldHtml(id, placeholder){
   return `<div class="pw-wrap"><input id="${id}" type="password" placeholder="${esc(placeholder||'')}">
-    <button type="button" class="pw-toggle" id="pwt_${id}" onclick="togglePwVisibility('${id}')">👁</button></div>`;
+    <button type="button" class="pw-toggle" id="pwt_${id}" onclick="togglePwVisibility('${id}')" aria-label="Show password">${EYE_ICON_SVG}</button></div>`;
 }
 function togglePwVisibility(id){
   const el = document.getElementById(id), btn = document.getElementById('pwt_'+id);
   if(!el) return;
-  if(el.type==='password'){ el.type='text'; if(btn) btn.textContent='🙈'; }
-  else { el.type='password'; if(btn) btn.textContent='👁'; }
+  if(el.type==='password'){ el.type='text'; if(btn){ btn.classList.add('revealed'); btn.setAttribute('aria-label','Hide password'); } }
+  else { el.type='password'; if(btn){ btn.classList.remove('revealed'); btn.setAttribute('aria-label','Show password'); } }
 }
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', font:'segoe', customFont:'', customPalette:null};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest'};
 async function loadPrefs(){
   try{ const v = await storeGet(PREFS_KEY); if(v) PREFS = Object.assign(PREFS, JSON.parse(v)); }catch(e){}
-  applyTheme(); applyPalette(); applyFont();
+  applyTheme(); applyPalette(PREFS.palette);
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
 
@@ -619,11 +618,11 @@ function applyTheme(){
 function cycleTheme(){
   const order = ['system','light','dark'];
   const next = order[(order.indexOf(PREFS.theme)+1) % order.length];
-  PREFS.theme = next; applyTheme(); applyPalette(); savePrefs();
+  PREFS.theme = next; applyTheme(); applyPalette(PREFS.palette); savePrefs();
   toast('Theme: '+next.charAt(0).toUpperCase()+next.slice(1));
 }
 if(window.matchMedia){
-  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(); } }); }catch(e){}
+  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(PREFS.palette); } }); }catch(e){}
 }
 function formatClockTime(d){
   if(PREFS.clockFormat==='12h') return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
@@ -636,8 +635,8 @@ function formatClockDate(d){
   const year = d.getFullYear();
   const weekday = d.toLocaleDateString('en-GB',{weekday:'long'});
   switch(PREFS.dateFormat){
-    case 'MM/DD/YYYY': return `${String(d.getMonth()+1).padStart(2,'0')}/${day}/${year}`;
-    case 'DD/MM/YYYY': return `${day}/${String(d.getMonth()+1).padStart(2,'0')}/${year}`;
+    case 'MM-DD-YYYY': return `${String(d.getMonth()+1).padStart(2,'0')}-${day}-${year}`;
+    case 'DD-MM-YYYY': return `${day}-${String(d.getMonth()+1).padStart(2,'0')}-${year}`;
     case 'YYYY-MM-DD': return `${year}-${String(d.getMonth()+1).padStart(2,'0')}-${day}`;
     case 'Weekday, DD MMMM YYYY': return `${weekday}, ${day} ${monLong} ${year}`;
     default: return `${day} ${monShort} ${year}`;
@@ -650,13 +649,16 @@ function tickClocks(){
   if(top) top.innerHTML = `<div class="time">${time}</div><div class="date">${date}</div>`;
   const auth = $('#authClock');
   if(auth){
-    let h = now.getHours(); const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
-    const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
-    const weekday = now.toLocaleDateString('en-GB',{weekday:'long'});
-    const day = String(now.getDate()).padStart(2,'0');
-    const month = now.toLocaleDateString('en-GB',{month:'long'});
-    const authDate = `${weekday}, ${day}/${month}/${now.getFullYear()}`;
-    auth.innerHTML = `<div class="time">${h}:${m}<span class="stack"><span class="secs">:${s}</span><span class="ampm">${ampm}</span></span></div><div class="date">${authDate}</div>`;
+    const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
+    let hDisplay, ampmHtml = '';
+    if(PREFS.clockFormat==='12h'){
+      let h = now.getHours(); const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
+      hDisplay = String(h).padStart(2,'0');
+      ampmHtml = `<span class="ampm">${ampm}</span>`;
+    } else {
+      hDisplay = String(now.getHours()).padStart(2,'0');
+    }
+    auth.innerHTML = `<div class="time">${hDisplay}:${m}<span class="secs">:${s}</span>${ampmHtml}</div><div class="date">${date}</div>`;
   }
 }
 setInterval(tickClocks, 1000);
@@ -670,13 +672,37 @@ function toggleSidebar(force){
   if(ov) ov.classList.toggle('show', open);
 }
 
-/* ================= storage shim (falls back to in-memory if window.storage is unavailable) ================= */
+/* ================= storage shim =================
+   Priority order:
+   1. window.storage    — only exists inside Claude's own artifact preview.
+   2. localStorage       — real, durable browser storage. This is what makes the
+                            app actually persist your data once you download it
+                            and open it as a normal file/site outside Claude.
+   3. in-memory object   — last-resort fallback (e.g. localStorage blocked by
+                            private/incognito mode or browser settings); data
+                            will NOT survive closing the tab in this case.
+   All three keep the same async get/set/delete interface used everywhere else,
+   so the rest of the app doesn't need to know which backend is active. */
 const __mem = {};
+const LOCAL_PREFIX = 'alcms:';
+function hasLocalStorage(){
+  try{
+    const k='__alcms_test__'; localStorage.setItem(k,'1'); localStorage.removeItem(k);
+    return true;
+  }catch(e){ return false; }
+}
+const STORAGE_BACKEND = (typeof window!=='undefined' && window.storage && window.storage.get)
+  ? 'claude'
+  : (hasLocalStorage() ? 'local' : 'memory');
 async function storeGet(key){
   try{
-    if(window.storage && window.storage.get){
+    if(STORAGE_BACKEND==='claude'){
       const r = await window.storage.get(key, false);
       return (r && r.value !== undefined) ? r.value : null;
+    }
+    if(STORAGE_BACKEND==='local'){
+      const v = localStorage.getItem(LOCAL_PREFIX+key);
+      return v !== null ? v : null;
     }
   }catch(e){ /* key missing or storage unavailable — fall through */ }
   return __mem[key] !== undefined ? __mem[key] : null;
@@ -684,14 +710,21 @@ async function storeGet(key){
 async function storeSet(key, value){
   __mem[key] = value; // always keep an in-memory copy so the app works even if persistence fails
   try{
-    if(window.storage && window.storage.set){ await window.storage.set(key, value, false); }
+    if(STORAGE_BACKEND==='claude'){ await window.storage.set(key, value, false); return; }
+    if(STORAGE_BACKEND==='local'){ localStorage.setItem(LOCAL_PREFIX+key, value); return; }
   }catch(e){ console.warn('Persistent storage unavailable, using in-memory session only.', e); }
 }
 async function storeDelete(key){
   delete __mem[key];
   try{
-    if(window.storage && window.storage.delete){ await window.storage.delete(key, false); }
+    if(STORAGE_BACKEND==='claude'){ await window.storage.delete(key, false); return; }
+    if(STORAGE_BACKEND==='local'){ localStorage.removeItem(LOCAL_PREFIX+key); return; }
   }catch(e){ /* ignore */ }
+}
+function storageStatusInfo(){
+  if(STORAGE_BACKEND==='claude') return {label:'Claude account storage', detail:'Saved to this Claude account/conversation. Works here; won\u2019t follow you if you download and open this app elsewhere.', ok:true};
+  if(STORAGE_BACKEND==='local') return {label:'This browser (localStorage)', detail:'Saved on this device, in this browser. It will still be here next time you open this app in the same browser — but not in a different browser, device, or private/incognito window.', ok:true};
+  return {label:'Not persisted (this session only)', detail:'Your browser is blocking local storage (e.g. private/incognito mode), so nothing will survive closing this tab. Download a backup before you close it, or enable storage for this site.', ok:false};
 }
 
 /* ================= auth / accounts ================= */
@@ -1080,7 +1113,8 @@ const NAV = [
   ]},
   {group:'Admin', items:[
     {id:'setup', label:'Setup', ico:'⚙'},
-    {id:'settings', label:'Settings', ico:'◈'},
+    {id:'settings', label:'Personalization', ico:'◐'},
+    {id:'backup', label:'Backup & Restore', ico:'⟲'},
   ]},
   {group:'Help', items:[
     {id:'guide', label:'User guide', ico:'❖'},
@@ -1099,7 +1133,8 @@ const PAGE_META = {
   schedule:['Schedule','Weekly library timetable'],
   feedback:['Feedback','Suggestions, complaints and requests'],
   setup:['Setup','Classes, subjects, shelves and other library configuration'],
-  settings:['Settings','Institution branding, appearance, accounts and backup'],
+  settings:['Personalization','Institution branding, appearance, clock/date and admin key'],
+  backup:['Backup & Restore','Account backup, data backup, GitHub sync, scheduled backups and checkpoints'],
   guide:['User guide','How to use every part of the desk'],
   about:['About','ALCMS — Automated Library & Circulation Management System'],
 };
@@ -1185,7 +1220,7 @@ function fieldHtml(f,values){
     input = `<textarea id="f_${f.key}">${esc(val)}</textarea>`;
   } else if(f.type==='password'){
     input = `<div class="pw-wrap"><input id="f_${f.key}" type="password" value="${esc(val)}">
-      <button type="button" class="pw-toggle" onclick="togglePwVisibility('f_${f.key}')">👁</button></div>`;
+      <button type="button" class="pw-toggle" id="pwt_f_${f.key}" onclick="togglePwVisibility('f_${f.key}')" aria-label="Show password">${EYE_ICON_SVG}</button></div>`;
   } else {
     input = `<input id="f_${f.key}" type="${f.type||'text'}" value="${esc(val)}" ${f.readonly?'readonly':''}>`;
   }
@@ -1338,12 +1373,9 @@ const PALETTE = ['#1F3A2E','#B8863E','#A8452F','#4C7C5E','#D9A94F','#6E5A3C','#7
 function printReport(title, subtitle, columns, rows){
   const html = `
     <div class="print-header">
-      ${DB.setup.institutionLogo? `<img class="print-logo" src="${DB.setup.institutionLogo}">` : ''}
-      <div class="print-header-text">
-        <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
-        <p>${esc(subtitle)}</p>
-        <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
-      </div>
+      <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
+      <p>${esc(subtitle)}</p>
+      <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
     </div>
     <table class="print-table">
       <thead><tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
@@ -1358,12 +1390,9 @@ window.addEventListener('afterprint', ()=> document.body.classList.remove('print
 function printMultiSection(title, subtitle, sections){
   const html = `
     <div class="print-header">
-      ${DB.setup.institutionLogo? `<img class="print-logo" src="${DB.setup.institutionLogo}">` : ''}
-      <div class="print-header-text">
-        <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
-        <p>${esc(subtitle)}</p>
-        <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
-      </div>
+      <h1>${DB.setup.institutionName? esc(DB.setup.institutionName)+" — ":""}ALCMS — ${esc(title)}</h1>
+      <p>${esc(subtitle)}</p>
+      <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
     </div>
     ${sections.map(sec=>`
       <h3 style="margin:18px 0 8px;font-size:14px;border-bottom:1px solid #999;padding-bottom:4px">${esc(sec.heading)}</h3>
@@ -1509,41 +1538,24 @@ function csvEscape(v){
   const s = v===null||v===undefined? '' : String(v);
   return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
 }
-function exportCSV(filename, title, columns, rows){
-  const lines = [];
-  if(DB.setup.institutionName) lines.push(csvEscape(DB.setup.institutionName));
-  lines.push(csvEscape('ALCMS — '+title));
-  lines.push(csvEscape('Generated '+new Date().toLocaleString('en-GB')));
-  lines.push('');
-  lines.push(columns.map(c=>csvEscape(c.label)).join(','));
+function exportCSV(filename, columns, rows){
+  const lines = [columns.map(c=>csvEscape(c.label)).join(',')];
   rows.forEach(r=> lines.push(columns.map(c=>csvEscape(c.get(r))).join(',')));
   downloadBlob(filename+'.csv', new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'}));
 }
-function exportExcel(filename, title, sheetName, columns, rows){
-  const aoa = [];
-  if(DB.setup.institutionName) aoa.push([DB.setup.institutionName]);
-  aoa.push(['ALCMS — '+title]);
-  aoa.push(['Generated '+new Date().toLocaleString('en-GB')]);
-  aoa.push([]);
-  aoa.push(columns.map(c=>c.label));
-  rows.forEach(r=> aoa.push(columns.map(c=>c.get(r))));
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = columns.map(()=>({wch:18}));
+function exportExcel(filename, sheetName, columns, rows){
+  const data = rows.map(r=>{ const o={}; columns.forEach(c=> o[c.label]=c.get(r)); return o; });
+  const ws = XLSX.utils.json_to_sheet(data, {header:columns.map(c=>c.label)});
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0,31));
   XLSX.writeFile(wb, filename+'.xlsx');
 }
 function exportPDF(filename, title, columns, rows){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
-  let y = 16, textX = 14;
-  if(DB.setup.institutionLogo){
-    try{ doc.addImage(DB.setup.institutionLogo, 'PNG', 14, 8, 16, 16); textX = 34; }catch(e){ /* unsupported image format — skip logo, keep exporting */ }
-  }
-  if(DB.setup.institutionName){ doc.setFontSize(12); doc.text(DB.setup.institutionName, textX, y); y+=6; }
-  doc.setFontSize(14); doc.text('ALCMS — '+title, textX, y); y+=6;
-  doc.setFontSize(9); doc.text('Generated '+new Date().toLocaleString('en-GB'), textX, y); y+=6;
+  doc.setFontSize(14); doc.text(title, 14, 16);
+  doc.setFontSize(9); doc.text('Generated '+new Date().toLocaleString('en-GB'), 14, 22);
   doc.autoTable({
-    startY:Math.max(y,26), head:[columns.map(c=>c.label)], body:rows.map(r=>columns.map(c=>String(c.get(r)??''))),
+    startY:28, head:[columns.map(c=>c.label)], body:rows.map(r=>columns.map(c=>String(c.get(r)??''))),
     styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:[31,58,46]}, margin:{left:10,right:10},
   });
   doc.save(filename+'.pdf');
@@ -1554,7 +1566,7 @@ function openExportModal(title, filenameBase, columns, getRows){
     <div class="modal">
       <div class="modal-head"><h3>Export ${esc(title)}</h3><button id="mClose">✕</button></div>
       <div class="modal-body">
-        <p class="field-hint" style="margin-bottom:10px">Choose a format. This exports the currently filtered view, with your institution name and logo on the header.</p>
+        <p class="field-hint" style="margin-bottom:10px">Choose a format. This exports the currently filtered view.</p>
         <div class="format-choice">
           <div class="format-opt" id="fmtCsv"><span class="ic">📄</span>CSV</div>
           <div class="format-opt" id="fmtXlsx"><span class="ic">📊</span>Excel</div>
@@ -1567,8 +1579,8 @@ function openExportModal(title, filenameBase, columns, getRows){
   const close = ()=> $('#modalRoot').innerHTML='';
   $('#mClose').onclick=close;
   $('#mb').addEventListener('click', e=>{ if(e.target.id==='mb') close(); });
-  $('#fmtCsv').onclick = ()=>{ exportCSV(filenameBase, title, columns, getRows()); close(); toast('CSV downloaded'); };
-  $('#fmtXlsx').onclick = ()=>{ exportExcel(filenameBase, title, title, columns, getRows()); close(); toast('Excel file downloaded'); };
+  $('#fmtCsv').onclick = ()=>{ exportCSV(filenameBase, columns, getRows()); close(); toast('CSV downloaded'); };
+  $('#fmtXlsx').onclick = ()=>{ exportExcel(filenameBase, title, columns, getRows()); close(); toast('Excel file downloaded'); };
   $('#fmtPdf').onclick = ()=>{ exportPDF(filenameBase, title, columns, getRows()); close(); toast('PDF downloaded'); };
 }
 
@@ -2156,35 +2168,23 @@ function reminderRecipient(trx){
   const user = DB.users.find(u=>u.id===trx.userId);
   if(!user) return null;
   if(user.category==='STAFF'){
-    return user.teacher ? {phone:user.teacher, label:user.name+' (staff, own number)', teacherName:user.name} : null;
+    return user.teacher ? {phone:user.teacher, label:user.name+' (staff, own number)'} : null;
   }
   // student — route to their class teacher
   const ct = DB.setup.classTeachers[user.cls];
   if(ct && ct.staffId){
     const teacher = DB.users.find(u=>u.id===ct.staffId);
-    if(teacher && teacher.teacher) return {phone:teacher.teacher, label:teacher.name+' (class teacher of '+user.cls+')', teacherName:teacher.name};
+    if(teacher && teacher.teacher) return {phone:teacher.teacher, label:teacher.name+' (class teacher of '+user.cls+')'};
   }
   return null;
-}
-function buildReminderMessage(trx, kind, recipient, isStaff){
-  const status = kind==='overdue'
-    ? `is now overdue by ${daysBetween(parseAnyDate(trx.dueDate), new Date())} day(s)`
-    : `is due back on ${fmtDate(trx.dueDate)}`;
-  let body;
-  if(isStaff){
-    body = `Dear ${trx.name},\n\nThis is a reminder regarding your library loan of "${trx.title}" (Accession No: ${trx.acc}), borrowed on ${fmtDate(trx.dateBorrowed)} and due ${fmtDate(trx.dueDate)}. This title ${status}. Kindly return it to the library at your earliest convenience.`;
-  } else {
-    body = `Dear ${recipient.teacherName},\n\nThis is to report that ${trx.name} of ${trx.cls} has a library loan of "${trx.title}" (Accession No: ${trx.acc}), borrowed on ${fmtDate(trx.dateBorrowed)} and due ${fmtDate(trx.dueDate)}, which ${status}. Kindly encourage the student to return it to the library as soon as possible.`;
-  }
-  return `*LIBRARY REMINDER*\n\n${body}\n\nBest Regards,\nLibrarian`;
 }
 function waButtonHtml(trx, kind){
   const recipient = reminderRecipient(trx);
   if(!recipient) return `<span class="field-hint">no phone on file</span>`;
-  const user = DB.users.find(u=>u.id===trx.userId);
-  const isStaff = user && user.category==='STAFF';
-  const msg = buildReminderMessage(trx, kind, recipient, isStaff);
-  return `<a class="btn small secondary" href="${whatsAppLink(recipient.phone, msg)}" target="_blank" rel="noopener" title="To: ${esc(recipient.label)}">📨 Send Reminder</a>`;
+  const msg = kind==='overdue'
+    ? `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} was due ${fmtDate(trx.dueDate)} and is now overdue. Please return it as soon as possible.`
+    : `Library reminder: "${trx.title}" (${trx.acc}) borrowed by ${trx.name} is due back ${fmtDate(trx.dueDate)}. A friendly heads-up before it becomes overdue.`;
+  return `<a class="btn small secondary" href="${whatsAppLink(recipient.phone, msg)}" target="_blank" rel="noopener" title="To: ${esc(recipient.label)}">📱 WhatsApp</a>`;
 }
 function pageReminders(){
   const overdue = DB.circulation.filter(x=>txnStatus(x)==='OVERDUE');
@@ -2299,76 +2299,26 @@ function openRegisterEdit(entryId){
   }
 }
 function openRegisterPrintModal(){
-  let scope = 'ALL';
-  const html = `
-  <div class="modal-backdrop" id="mb">
-    <div class="modal">
-      <div class="modal-head"><h3>Print register</h3><button id="mClose">✕</button></div>
-      <div class="modal-body">
-        <div class="field-row">
-          <div class="field"><label>From date</label><input id="rpFrom" type="date"></div>
-          <div class="field"><label>To date</label><input id="rpTo" type="date"></div>
-        </div>
-        <div class="field">
-          <label>Scope</label>
-          <select id="rpScope">
-            <option value="ALL">All members</option>
-            <option value="MEMBER">Single member</option>
-            <option value="CLASS">Class</option>
-          </select>
-        </div>
-        <div id="rpExtra"></div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn secondary" id="mCancel">Cancel</button>
-        <button class="btn" id="mPrintReg">Print</button>
-      </div>
-    </div>
-  </div>`;
-  $('#modalRoot').innerHTML = html;
-  const close = ()=> $('#modalRoot').innerHTML='';
-  $('#mClose').onclick=close; $('#mCancel').onclick=close;
-  $('#mb').addEventListener('click', e=>{ if(e.target.id==='mb') close(); });
-  let memberPicker;
-  function renderExtra(){
-    const area = $('#rpExtra');
-    if(scope==='MEMBER'){
-      area.innerHTML = `<div class="field"><label>Member</label>${quickPickerHtml('rpMember','Type a member ID…')}</div>`;
-      memberPicker = bindQuickPicker('rpMember', {
-        items: DB.users.map(u=>({id:u.id, label:u.name})),
-        formatPicked: it=>`<strong>${esc(it.id)}</strong> — ${esc(it.label)}`,
-      });
-    } else if(scope==='CLASS'){
-      area.innerHTML = `<div class="field"><label>Class</label><select id="rpClass">${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`;
-    } else { area.innerHTML=''; }
-  }
-  renderExtra();
-  $('#rpScope').onchange = e=>{ scope=e.target.value; renderExtra(); };
-  $('#mPrintReg').onclick = ()=>{
-    let rows = DB.registerLog;
-    let subtitle = 'All members';
-    if(scope==='MEMBER'){
-      const pick = memberPicker && memberPicker.value;
-      if(!pick){ toast('Pick a member first'); return; }
-      rows = rows.filter(r=>r.id===pick.id);
-      subtitle = `${pick.id} — ${pick.label}`;
-    } else if(scope==='CLASS'){
-      const cls = $('#rpClass').value;
-      rows = rows.filter(r=>r.cls===cls);
-      subtitle = `Class: ${cls}`;
+  openModal({
+    title:'Print register',
+    fields:[
+      {row:[{key:'from',label:'From date', type:'date'},{key:'to',label:'To date', type:'date'}]},
+      {key:'source', label:'Type', type:'select', options:['ALL','DESK','CLASS']},
+    ],
+    onSave:(vals)=>{
+      let rows = DB.registerLog;
+      if(vals.source && vals.source!=='ALL') rows = rows.filter(r=>r.source===vals.source);
+      if(vals.from) rows = rows.filter(r=> (parseAnyDate(r.date)||0) >= parseAnyDate(vals.from));
+      if(vals.to) rows = rows.filter(r=> (parseAnyDate(r.date)||0) <= parseAnyDate(vals.to));
+      const subtitle = `${vals.source&&vals.source!=='ALL'? vals.source+' entries':'All entries'}${vals.from||vals.to? ' · '+(vals.from?fmtDate(vals.from):'earliest')+' to '+(vals.to?fmtDate(vals.to):'latest') : ' · full history'} — ${rows.length} record(s)`;
+      printReport('Register', subtitle, [
+        {label:'Date', get:r=>fmtDate(r.date)}, {label:'Type', get:r=>r.source},
+        {label:'Time in', get:r=>fmtTime(r.timeIn)}, {label:'Time out', get:r=>fmtTime(r.timeOut)},
+        {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+        {label:'Purpose', get:r=>r.purpose}, {label:'Borrowed', get:r=>r.borrow}, {label:'Note', get:r=>r.note},
+      ], rows);
     }
-    const from = $('#rpFrom').value, to = $('#rpTo').value;
-    if(from) rows = rows.filter(r=> (parseAnyDate(r.date)||0) >= parseAnyDate(from));
-    if(to) rows = rows.filter(r=> (parseAnyDate(r.date)||0) <= parseAnyDate(to));
-    subtitle += `${from||to? ' · '+(from?fmtDate(from):'earliest')+' to '+(to?fmtDate(to):'latest') : ' · full history'} — ${rows.length} record(s)`;
-    close();
-    printReport('Register', subtitle, [
-      {label:'Date', get:r=>fmtDate(r.date)}, {label:'Type', get:r=>r.source==='DESK'?'Desk sign-in':'Class visit'},
-      {label:'Time in', get:r=>fmtTime(r.timeIn)}, {label:'Time out', get:r=>fmtTime(r.timeOut)},
-      {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
-      {label:'Purpose', get:r=>r.purpose}, {label:'Borrowed', get:r=>r.borrow}, {label:'Note', get:r=>r.note},
-    ], rows);
-  };
+  });
 }
 function clearAllRegister(){
   if(!isAdmin()) return requireAdmin('clear the register');
@@ -2750,68 +2700,57 @@ function pageSetup(){
 
 /* ================= PAGE: SETTINGS (app-level, non-library config) ================= */
 const COLOR_PALETTES = {
-  forest:  {label:'Forest & Brass (default)', ink:'#132019', parchment:'#F6F1E2', parchmentDim:'#EDE5CE', card:'#FFFDF6', forest:'#1F3A2E', forestDark:'#122419', brass:'#B8863E', brassLight:'#D9A94F', terracotta:'#A8452F', line:'#DDD3B4'},
-  ocean:   {label:'Ocean Blue', ink:'#12222C', parchment:'#EAF3F7', parchmentDim:'#DCEAF0', card:'#FFFFFF', forest:'#1B4B66', forestDark:'#0E2A3A', brass:'#3E8FB8', brassLight:'#6FB4D9', terracotta:'#C9622F', line:'#CBDEE6'},
-  royal:   {label:'Royal Purple', ink:'#211A33', parchment:'#F2EEF9', parchmentDim:'#E6DFF2', card:'#FFFFFF', forest:'#3B2A6B', forestDark:'#211640', brass:'#8A63C9', brassLight:'#B79CE0', terracotta:'#C9427A', line:'#DCD0EE'},
-  crimson: {label:'Crimson', ink:'#2B1315', parchment:'#FAEDEA', parchmentDim:'#F3DDD8', card:'#FFFFFF', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B', line:'#EAC9C2'},
-  slate:   {label:'Slate Blue', ink:'#1B242B', parchment:'#EEF1F3', parchmentDim:'#E1E6E9', card:'#FFFFFF', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A', line:'#D6DCE0'},
-  grey:    {label:'Grey (light, monochrome)', ink:'#26282A', parchment:'#F1F1F1', parchmentDim:'#E4E4E4', card:'#FFFFFF', forest:'#43474B', forestDark:'#232527', brass:'#8A8E93', brassLight:'#B4B8BC', terracotta:'#75797D', line:'#D8D8D8'},
-  midnight:{label:'Midnight (the original dark look)', ink:'#E9E4D2', parchment:'#141E19', parchmentDim:'#1C2921', card:'#1B2A22', forest:'#3C6B52', forestDark:'#0C1712', brass:'#D9A94F', brassLight:'#EACB7C', terracotta:'#E0836A', line:'#33463A'},
+  forest: {label:'Forest & Brass (default)', forest:'#1F3A2E', forestDark:'#122419', brass:'#B8863E', brassLight:'#D9A94F', terracotta:'#A8452F'},
+  ocean:  {label:'Ocean Blue', forest:'#1B4B66', forestDark:'#0E2A3A', brass:'#3E8FB8', brassLight:'#6FB4D9', terracotta:'#C9622F'},
+  royal:  {label:'Royal Purple', forest:'#3B2A6B', forestDark:'#211640', brass:'#8A63C9', brassLight:'#B79CE0', terracotta:'#C9427A'},
+  crimson:{label:'Crimson', forest:'#6B1F2A', forestDark:'#3A0F16', brass:'#C9573E', brassLight:'#E08A6F', terracotta:'#8A2E3B'},
+  slate:  {label:'Slate Blue', forest:'#33414D', forestDark:'#1B242B', brass:'#7C93A3', brassLight:'#A6BAC7', terracotta:'#B85C4A'},
+  grey:   {label:'Grey (monochrome)', forest:'#43474B', forestDark:'#232527', brass:'#8A8E93', brassLight:'#B4B8BC', terracotta:'#75797D'},
 };
-// The universal Dark theme is ALWAYS this fixed grey scale, regardless of which colour palette is
-// selected — palettes only apply when the theme resolves to Light. This keeps Dark mode calm and
-// consistent, and keeps every palette's own identity purely a Light-mode thing.
-const UNIVERSAL_DARK = {ink:'#EDEDED', parchment:'#19191B', parchmentDim:'#232326', card:'#222224', forest:'#5A5D62', forestDark:'#0E0E10', brass:'#B9BDC2', brassLight:'#D6D9DC', terracotta:'#9C6F6A', line:'#3A3A3D'};
-const CSS_VAR_MAP = {ink:'--ink', parchment:'--parchment', parchmentDim:'--parchment-dim', card:'--card', forest:'--forest', forestDark:'--forest-dark', brass:'--brass', brassLight:'--brass-light', terracotta:'--terracotta', line:'--line'};
-function getActivePaletteSet(){
-  const effective = document.documentElement.getAttribute('data-theme') || 'light';
-  if(effective === 'dark') return UNIVERSAL_DARK;
-  if(PREFS.palette === 'custom') return Object.assign({}, COLOR_PALETTES.forest, PREFS.customPalette||{});
-  return COLOR_PALETTES[PREFS.palette] || COLOR_PALETTES.forest;
+/* ---- small HSL helpers so every palette's dark mode is a genuine, complementary reversal ---- */
+function hexToHsl(hex){
+  hex = hex.replace('#','');
+  const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,l=(max+min)/2;
+  if(max===min){ h=s=0; } else {
+    const d=max-min; s = l>0.5? d/(2-max-min) : d/(max+min);
+    switch(max){ case r: h=(g-b)/d+(g<b?6:0); break; case g: h=(b-r)/d+2; break; default: h=(r-g)/d+4; }
+    h/=6;
+  }
+  return [h*360, s*100, l*100];
 }
-function applyPalette(){
-  const set = getActivePaletteSet();
-  const root = document.documentElement.style;
-  Object.entries(CSS_VAR_MAP).forEach(([key,cssVar])=>{ if(set[key]) root.setProperty(cssVar, set[key]); });
+function hslToHex(h,s,l){
+  h/=360; s/=100; l/=100; let r,g,b;
+  if(s===0){ r=g=b=l; } else {
+    const hue2rgb=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; };
+    const q = l<0.5? l*(1+s) : l+s-l*s, p = 2*l-q;
+    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
+  }
+  const toHex = x=>Math.round(Math.max(0,Math.min(1,x))*255).toString(16).padStart(2,'0');
+  return '#'+toHex(r)+toHex(g)+toHex(b);
 }
-
-/* ---- font presets — applied globally via a CSS variable, so desktop and mobile always match ---- */
-const FONT_PRESETS = {
-  segoe:    {label:'Segoe UI', stack:'"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif'},
-  system:   {label:'System default', stack:'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'},
-  georgia:  {label:'Georgia (serif)', stack:'Georgia, "Times New Roman", Times, serif'},
-  verdana:  {label:'Verdana', stack:'Verdana, Geneva, sans-serif'},
-  trebuchet:{label:'Trebuchet MS', stack:'"Trebuchet MS", Helvetica, sans-serif'},
-};
-function getActiveFontStack(){
-  if(PREFS.font==='custom') return PREFS.customFont || FONT_PRESETS.segoe.stack;
-  return (FONT_PRESETS[PREFS.font] || FONT_PRESETS.segoe).stack;
-}
-function applyFont(){
-  document.documentElement.style.setProperty('--app-font', getActiveFontStack());
-}
-function previewFont(name){
-  PREFS.font = name;
-  document.getElementById('customFontBuilder').style.display = name==='custom' ? '' : 'none';
-  applyFont();
-}
-function onThemeSelectChange(){
-  PREFS.theme = document.getElementById('setTheme').value;
-  applyTheme(); applyPalette();
-}
-function saveCustomPalette(){
-  PREFS.customPalette = {
-    forest: document.getElementById('cpForest').value,
-    forestDark: document.getElementById('cpForestDark').value,
-    brass: document.getElementById('cpBrass').value,
-    brassLight: document.getElementById('cpBrassLight').value,
-    terracotta: document.getElementById('cpTerracotta').value,
-    parchment: document.getElementById('cpParchment').value,
-    parchmentDim: COLOR_PALETTES.forest.parchmentDim, card: '#FFFFFF', ink: COLOR_PALETTES.forest.ink, line: COLOR_PALETTES.forest.line,
+function deriveDarkSet(light){
+  const [fh,fs] = hexToHsl(light.forest);
+  const [bh,bs] = hexToHsl(light.brass);
+  const [th,ts] = hexToHsl(light.terracotta);
+  return {
+    forest: hslToHex(fh, Math.min(fs+8,65), 50),      // brightened, same hue — becomes the accent on dark backgrounds
+    forestDark: hslToHex(fh, Math.min(fs+12,35), 9),  // near-black background, tinted with the palette's own hue
+    brass: hslToHex(bh, bs, 58),
+    brassLight: hslToHex(bh, Math.max(bs-6,25), 74),
+    terracotta: hslToHex(th, ts, 64),
   };
-  PREFS.palette = 'custom';
-  applyPalette(); savePrefs();
-  toast('Custom palette saved');
+}
+function applyPalette(name){
+  const p = COLOR_PALETTES[name] || COLOR_PALETTES.forest;
+  const effective = document.documentElement.getAttribute('data-theme') || 'light';
+  const set = effective==='dark' ? deriveDarkSet(p) : p;
+  const root = document.documentElement.style;
+  root.setProperty('--forest', set.forest);
+  root.setProperty('--forest-dark', set.forestDark);
+  root.setProperty('--brass', set.brass);
+  root.setProperty('--brass-light', set.brassLight);
+  root.setProperty('--terracotta', set.terracotta);
 }
 function pageSettings(){
   if(!isAdmin()){
@@ -2832,40 +2771,16 @@ function pageSettings(){
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Appearance</h3><div class="hint">Colour palettes apply in Light mode — Dark mode is always the neutral grey below</div></div>
+    <div class="panel-head"><h3>Appearance</h3></div>
     <div class="field-row">
-      <div class="field"><label>Theme</label><select id="setTheme" onchange="onThemeSelectChange()"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark (grey)</option></select></div>
-      <div class="field"><label>Colour palette</label><select id="setPalette" onchange="previewPalette(this.value)">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}<option value="custom" ${PREFS.palette==='custom'?'selected':''}>Custom…</option></select></div>
+      <div class="field"><label>Theme</label><select id="setTheme"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark</option></select></div>
+      <div class="field"><label>Colour palette</label><select id="setPalette">${Object.entries(COLOR_PALETTES).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
     </div>
     <div class="field-row" id="paletteSwatches">${Object.entries(COLOR_PALETTES).map(([k,p])=>`
       <div class="role-opt ${PREFS.palette===k?'selected':''}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px" onclick="document.getElementById('setPalette').value='${k}'; previewPalette('${k}')">
         <div style="display:flex;gap:3px"><span style="width:14px;height:14px;border-radius:50%;background:${p.forest}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.brass}"></span><span style="width:14px;height:14px;border-radius:50%;background:${p.terracotta}"></span></div>
         <span style="font-size:10.5px">${esc(p.label)}</span>
       </div>`).join('')}</div>
-    <div id="customPaletteBuilder" style="${PREFS.palette==='custom'?'':'display:none'};margin-top:14px">
-      <p class="field-hint" style="margin-bottom:8px">Pick your own colours and save them as your Custom preset</p>
-      <div class="field-row">
-        <div class="field"><label>Primary (buttons, sidebar)</label><input type="color" id="cpForest" value="${esc((PREFS.customPalette&&PREFS.customPalette.forest)||COLOR_PALETTES.forest.forest)}"></div>
-        <div class="field"><label>Primary — dark shade</label><input type="color" id="cpForestDark" value="${esc((PREFS.customPalette&&PREFS.customPalette.forestDark)||COLOR_PALETTES.forest.forestDark)}"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Accent</label><input type="color" id="cpBrass" value="${esc((PREFS.customPalette&&PREFS.customPalette.brass)||COLOR_PALETTES.forest.brass)}"></div>
-        <div class="field"><label>Accent — light shade</label><input type="color" id="cpBrassLight" value="${esc((PREFS.customPalette&&PREFS.customPalette.brassLight)||COLOR_PALETTES.forest.brassLight)}"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Warning / danger</label><input type="color" id="cpTerracotta" value="${esc((PREFS.customPalette&&PREFS.customPalette.terracotta)||COLOR_PALETTES.forest.terracotta)}"></div>
-        <div class="field"><label>Page background</label><input type="color" id="cpParchment" value="${esc((PREFS.customPalette&&PREFS.customPalette.parchment)||COLOR_PALETTES.forest.parchment)}"></div>
-      </div>
-      <button class="btn secondary small" onclick="saveCustomPalette()">Save as my Custom preset</button>
-    </div>
-    <div class="field" style="margin-top:14px">
-      <label>Font style</label>
-      <select id="setFont" onchange="previewFont(this.value)">${Object.entries(FONT_PRESETS).map(([k,f])=>`<option value="${k}" ${PREFS.font===k?'selected':''}>${esc(f.label)}</option>`).join('')}<option value="custom" ${PREFS.font==='custom'?'selected':''}>Custom…</option></select>
-    </div>
-    <div id="customFontBuilder" style="${PREFS.font==='custom'?'':'display:none'};margin-top:8px">
-      <div class="field"><label>Custom font stack (CSS font-family value)</label><input id="cpFontStack" value="${esc(PREFS.customFont||'')}" placeholder='e.g. "Trebuchet MS", sans-serif'></div>
-    </div>
-    <p class="field-hint" style="margin-top:4px">Applies the same way on desktop and mobile.</p>
     <button class="btn secondary" style="margin-top:10px" onclick="saveClockPrefs()">Save appearance</button>
   </div>
   <div class="card panel">
@@ -2873,7 +2788,7 @@ function pageSettings(){
     <div class="field-row">
       <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
       <div class="field"><label>Date format</label><select id="setDateFormat">
-        ${['DD MMM YYYY','MM/DD/YYYY','DD/MM/YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
+        ${['DD MMM YYYY','MM-DD-YYYY','DD-MM-YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
       </select></div>
     </div>
     <div class="field-row">
@@ -2886,51 +2801,87 @@ function pageSettings(){
     <div class="panel-head"><h3>Accounts</h3><div class="hint">${ACCOUNTS.length} account(s)</div></div>
     <div class="table-wrap"><table class="datatable"><thead><tr><th>Username</th><th>Full name</th><th>Role</th></tr></thead>
     <tbody>${ACCOUNTS.map(a=>`<tr><td>${esc(a.username)}</td><td>${esc(a.fullName)}</td><td><span class="badge ${a.role==='ADMIN'?'gold':'grey'}">${a.role}</span></td></tr>`).join('')}</tbody></table></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn secondary" onclick="downloadAccountsBackup()">⭳ Download accounts backup</button>
-      <label class="btn secondary" style="cursor:pointer">
-        ⭱ Restore accounts backup
-        <input type="file" accept="application/json" onchange="restoreAccountsBackup(this.files[0])" style="display:none">
-      </label>
-    </div>
-    <p class="field-hint" style="margin-top:6px">Restoring an accounts backup requires the admin key below, as an extra safety check.</p>
+    <p class="field-hint" style="margin-top:6px">To back up or restore account data (including profile pictures), see <strong>Backup &amp; Restore</strong> in the sidebar.</p>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Admin key</h3><div class="hint">Required to create — or self-promote to — an admin account</div></div>
     <div class="field"><label>Change admin key</label>${pwFieldHtml('setAdminKey','Enter a new admin key')}</div>
     <button class="btn secondary" onclick="changeAdminKey()">Update admin key</button>
-  </div>
+  </div>`;
+}
+function previewPalette(name){ applyPalette(name); }
+function pageBackup(){
+  if(!isAdmin()){
+    return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Backup &amp; Restore is only available to admin accounts.</div></div>`;
+  }
+  const si = storageStatusInfo();
+  return `
   <div class="card panel">
-    <div class="panel-head"><h3>Data &amp; backup</h3><div class="hint">Your changes save automatically to your Claude account</div></div>
-    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Everything you add or edit here is saved automatically and will be here the next time you open this app on this account. For an extra copy — e.g. to keep on your own Google Drive — download a backup file below. You can restore from that file at any time, on any device.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-      <button class="btn secondary" onclick="downloadBackup()">⭳ Download full backup (.json)</button>
-      <label class="btn secondary" style="cursor:pointer">
-        ⭱ Restore from backup
-        <input type="file" accept="application/json" onchange="restoreBackup(this.files[0])" style="display:none">
-      </label>
+    <div class="panel-head"><h3>Storage status</h3><div class="hint">${si.ok?'✓':'⚠'} ${esc(si.label)}</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">${esc(si.detail)}</p>
+  </div>
+  <div class="grid two-col">
+    <div class="card panel">
+      <div class="panel-head"><h3>Data backup</h3><div class="hint">Library &amp; institution data</div></div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Catalogue, members, circulation, feedback, register, schedule, and setup — including the institution name and institution logo.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn secondary" onclick="downloadDataBackup()">⭳ Download data backup</button>
+        <label class="btn secondary" style="cursor:pointer">⭱ Restore data backup
+          <input type="file" accept="application/json" onchange="restoreDataBackup(this.files[0])" style="display:none">
+        </label>
+      </div>
+    </div>
+    <div class="card panel">
+      <div class="panel-head"><h3>Account backup</h3><div class="hint">Accounts &amp; personalization</div></div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6">All user accounts — including each person's profile picture — plus theme, colour palette, and clock/date preferences.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn secondary" onclick="downloadAccountBackup()">⭳ Download account backup</button>
+        <label class="btn secondary" style="cursor:pointer">⭱ Restore account backup
+          <input type="file" accept="application/json" onchange="restoreAccountBackup(this.files[0])" style="display:none">
+        </label>
+      </div>
+      <p class="field-hint" style="margin-top:6px">Restoring requires the admin key, as an extra safety check.</p>
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Cloud backup (Google Drive)</h3><div class="hint">A static page can't sign in to your Drive on its own — here's the closest one-click flow, and the honest reason why</div></div>
-    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Uploading straight to Google Drive from inside this page would need Google sign-in (OAuth) wired up on a real server — something a single self-contained HTML file can't safely do. The practical workaround below gets you 90% of the way there in two clicks:</p>
-    <ol style="font-size:12.5px;color:var(--muted);line-height:1.9;padding-left:20px">
-      <li>Click <strong>"☁ Cloud backup now"</strong> — it downloads today's backup file <em>and</em> opens Google Drive in a new tab.</li>
-      <li>Drag the downloaded file from your Downloads folder into that Drive tab.</li>
-    </ol>
-    <p class="field-hint">Tip: if you install Google Drive for Desktop and point your browser's download folder at your synced Drive folder, this becomes fully automatic — every backup lands in Drive the moment it downloads, with no drag-and-drop needed.</p>
-    <button class="btn secondary" onclick="cloudBackupNow()">☁ Cloud backup now</button>
+    <div class="panel-head"><h3>Scheduled auto-backup</h3><div class="hint">${AUTO_BACKUP.enabled?'✓ Enabled':'Off'}</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Automatically downloads a data backup while the app is open, at the day/time you choose below — no need to remember to do it manually.</p>
+    <div class="field-row">
+      <div class="field"><label><input type="checkbox" id="abEnabled" ${AUTO_BACKUP.enabled?'checked':''}> Enable scheduled backups</label></div>
+      <div class="field"><label>Frequency</label><select id="abFrequency"><option value="daily" ${AUTO_BACKUP.frequency==='daily'?'selected':''}>Daily</option><option value="weekly" ${AUTO_BACKUP.frequency==='weekly'?'selected':''}>Weekly</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Time of day</label><input type="time" id="abTime" value="${esc(AUTO_BACKUP.time)}"></div>
+      <div class="field"><label>Day of week (weekly only)</label><select id="abWeekday">${WEEKDAY_CODE.map(w=>`<option ${AUTO_BACKUP.weekday===w?'selected':''}>${w}</option>`).join('')}</select></div>
+    </div>
+    <button class="btn secondary" onclick="saveAutoBackupForm()">Save schedule</button>
+    <p class="field-hint" style="margin-top:6px">Only runs while ALCMS is open in a browser tab — it can't wake your device to run in the background.</p>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Write data into the app itself</h3><div class="hint">Bakes everything currently here into a fresh copy of ALCMS.html</div></div>
-    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">A file on its own can't rewrite itself while it's running — but this generates a brand-new ALCMS.html with all of today's catalogue, members, circulation and settings baked in as its starting data. Use it to hand off an up-to-date copy, or to replace this file with one that opens straight into today's state.</p>
-    <button class="btn secondary" onclick="downloadUpdatedApp()">⭳ Download updated ALCMS.html</button>
+    <div class="panel-head"><h3>Checkpoints</h3><div class="hint">${(DB.versions||[]).length}/${MAX_VERSIONS} saved</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Quick, named snapshots kept alongside your data — restore instantly without downloading or uploading a file. The same checkpoints as the "🕐 Checkpoints & restore" shortcut in the sidebar.</p>
+    <button class="btn secondary" onclick="openVersionPanel()">＋ Create / manage checkpoints</button>
+    <div class="table-wrap" style="margin-top:10px">
+      <table class="datatable"><thead><tr><th>Label</th><th>When</th><th>By</th><th></th></tr></thead>
+      <tbody>${(DB.versions||[]).length? (DB.versions||[]).map(v=>`<tr><td>${esc(v.label)}</td><td>${new Date(v.at).toLocaleString('en-GB')}</td><td>${esc(v.by)}</td>
+        <td style="display:flex;gap:6px"><button class="btn secondary small" onclick="restoreVersionById('${esc(v.id)}')">Restore</button><button class="btn danger small" onclick="deleteVersionById('${esc(v.id)}')">Delete</button></td></tr>`).join('') : '<tr><td colspan=4><div class="empty">No checkpoints yet</div></td></tr>'}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>GitHub sync</h3><div class="hint">Cross-device backup that isn't tied to this browser</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Push your current data to a file in a GitHub repo, and pull it back down on any other browser or computer. This goes straight from your browser to GitHub — it doesn't depend on this browser's storage, and it doesn't pass through Claude. Requires a GitHub personal access token with Contents read/write access on the target repo.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn secondary" onclick="openGithubConfigForm()">⚙ Configure GitHub sync</button>
+      <button class="btn secondary" onclick="githubSaveNow()">⭱ Save to GitHub</button>
+      <button class="btn secondary" onclick="githubLoadNow()">⭳ Load from GitHub</button>
+    </div>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Write data into the app itself</h3><div class="hint">Bakes everything currently here into a fresh copy of ALCMS</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">A file on its own can't rewrite itself while it's running — but this generates an updated starting file with all of today's catalogue, members, circulation and settings baked in as its default data. Use it to hand off an up-to-date copy, or to replace this file with one that opens straight into today's state.</p>
+    <button class="btn secondary" onclick="downloadUpdatedApp()">⭳ Download updated starting data</button>
   </div>`;
-}
-function previewPalette(name){
-  PREFS.palette = name; applyPalette();
-  const builder = document.getElementById('customPaletteBuilder');
-  if(builder) builder.style.display = name==='custom' ? '' : 'none';
 }
 function bindSettingsUploaders(){
   const logoInput = document.getElementById('logoInput');
@@ -3154,9 +3105,7 @@ function saveClockPrefs(){
   PREFS.clockFormat = DB.setup.clockFormat; PREFS.dateFormat = DB.setup.dateFormat;
   if($('#setTheme')) PREFS.theme = $('#setTheme').value;
   if($('#setPalette')) PREFS.palette = $('#setPalette').value;
-  if($('#setFont')) PREFS.font = $('#setFont').value;
-  if($('#cpFontStack')) PREFS.customFont = $('#cpFontStack').value.trim();
-  applyTheme(); applyPalette(); applyFont();
+  applyTheme(); applyPalette(PREFS.palette);
   savePrefs(); saveDB(); render(); toast('Preferences saved');
 }
 function saveInstitution(){
@@ -3175,7 +3124,32 @@ function replaceSeedBlock(html, key, jsonStr){
   if(!re.test(html)) throw new Error('Could not find the '+key+' data block in this page — cannot regenerate safely.');
   return html.replace(re, '/*__'+key+'__*/'+jsonStr+'/*__END__*/');
 }
+function isSplitSeedFile(){
+  // True in the split project (index.html + css/styles.css + js/seed-data.js + js/app.js).
+  // False in a merged single-file ALCMS.html, where everything is inline already.
+  return !!document.querySelector('script[src$="seed-data.js"]');
+}
+async function generateUpdatedSeedJs(){
+  // Split project: seed data lives in js/seed-data.js as its own file, so fetch that
+  // file's own source and rewrite its /*__KEY__*/../*__END__*/ blocks in place.
+  const res = await fetch('js/seed-data.js', {cache:'no-store'});
+  if(!res.ok) throw new Error('Could not load js/seed-data.js (HTTP '+res.status+'). Make sure the app is served from its folder (e.g. `python3 -m http.server`), not opened directly as a file://.');
+  let js = await res.text();
+  js = replaceSeedBlock(js, 'CATALOGUE', JSON.stringify(catalogueToRows()));
+  js = replaceSeedBlock(js, 'USERS', JSON.stringify(usersToRows()));
+  js = replaceSeedBlock(js, 'CIRCULATION', JSON.stringify(circulationToRows()));
+  js = replaceSeedBlock(js, 'SETUP', JSON.stringify(DB.setup));
+  js = replaceSeedBlock(js, 'FEEDBACK', JSON.stringify(feedbackToRows()));
+  js = replaceSeedBlock(js, 'REGISTER', JSON.stringify(registerDeskToRows()));
+  js = replaceSeedBlock(js, 'LOG', JSON.stringify(registerClassToRows()));
+  js = replaceSeedBlock(js, 'SCHEDULE_DAYS', JSON.stringify(DB.scheduleDays));
+  js = replaceSeedBlock(js, 'SCHEDULE_ROSTER', JSON.stringify(DB.scheduleRoster));
+  js = replaceSeedBlock(js, 'SCHEDULE_SUBJECTS', JSON.stringify(DB.scheduleSubjects));
+  return js;
+}
 function generateUpdatedAppHtml(){
+  // Single-file mode: the seed blocks are inline inside this very page, so rewrite
+  // document.documentElement.outerHTML directly, same as the original ALCMS.html did.
   let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
   html = replaceSeedBlock(html, 'CATALOGUE', JSON.stringify(catalogueToRows()));
   html = replaceSeedBlock(html, 'USERS', JSON.stringify(usersToRows()));
@@ -3189,62 +3163,209 @@ function generateUpdatedAppHtml(){
   html = replaceSeedBlock(html, 'SCHEDULE_SUBJECTS', JSON.stringify(DB.scheduleSubjects));
   return html;
 }
-function downloadUpdatedApp(){
-  if(!isAdmin()) return requireAdmin('export an updated copy of the app');
+async function downloadUpdatedApp(){
+  if(!isAdmin()) return requireAdmin('export an updated copy of the app data');
   try{
-    const html = generateUpdatedAppHtml();
-    downloadBlob('ALCMS_updated_'+todayISO()+'.html', new Blob([html], {type:'text/html'}));
-    toast('Updated ALCMS.html downloaded — your current data is now baked in as its starting point');
+    if(isSplitSeedFile()){
+      const js = await generateUpdatedSeedJs();
+      downloadBlob('seed-data.js', new Blob([js], {type:'application/javascript'}));
+      toast('Updated seed-data.js downloaded — replace js/seed-data.js with this file so it becomes the new starting point');
+    } else {
+      const html = generateUpdatedAppHtml();
+      downloadBlob('ALCMS_updated_'+todayISO()+'.html', new Blob([html], {type:'text/html'}));
+      toast('Updated ALCMS.html downloaded — your current data is now baked in as its starting point');
+    }
   }catch(e){
     toast('Could not regenerate the file: '+e.message);
   }
 }
-function downloadBackup(){
-  const payload = { exportedAt:new Date().toISOString(), db:DB, accounts:ACCOUNTS };
-  downloadBlob('alcms_backup_'+todayISO()+'.json', new Blob([JSON.stringify(payload)], {type:'application/json'}));
-  toast('Backup downloaded — save it to your Drive');
+/* ================= Backup & Restore — consolidated (no overlapping mechanisms) =================
+   Exactly two manual backup types, each covering a distinct, non-overlapping slice
+   of state, plus one combined external sync and one internal snapshot mechanism:
+   - DATA backup   → everything about the library/institution: catalogue, members,
+                     circulation, feedback, register, schedule, and setup (including
+                     institution name + institution logo).
+   - ACCOUNT backup → everything about user accounts: all accounts (including each
+                     person's profile picture), plus this browser's personalization
+                     preferences (theme, colour palette, clock/date format).
+   - GitHub sync    → combined snapshot (data + accounts + preferences) pushed/pulled
+                     to a file in a GitHub repo, for cross-device access.
+   - Checkpoints    → combined snapshot saved locally (no download), for a fast
+                     in-app "undo to a known-good point". */
+async function applyDataPayload(payload){
+  if(!payload || !payload.db || !Array.isArray(payload.db.catalogue)) throw new Error("This doesn't look like an ALCMS data backup");
+  DB = payload.db;
+  await saveDB();
 }
-function cloudBackupNow(){
-  downloadBackup();
-  setTimeout(()=>{ window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener'); }, 300);
-  toast('Backup downloaded — drop it into the Google Drive tab that just opened');
+async function applyAccountPayload(payload){
+  if(!payload || !Array.isArray(payload.accounts) || !payload.accounts.length) throw new Error("This doesn't look like an ALCMS account backup");
+  ACCOUNTS = payload.accounts; await saveAccounts(ACCOUNTS);
+  if(payload.prefs){ PREFS = Object.assign(PREFS, payload.prefs); await savePrefs(); applyTheme(); applyPalette(PREFS.palette); }
+  if(payload.adminKey) await saveAdminKey(payload.adminKey);
 }
-function restoreBackup(file){
+async function applyFullPayload(payload){
+  await applyDataPayload(payload);
+  if(Array.isArray(payload.accounts) && payload.accounts.length) await applyAccountPayload(payload);
+}
+function downloadDataBackup(){
+  const payload = { type:'alcms-data-backup', exportedAt:new Date().toISOString(), db:DB };
+  downloadBlob('alcms_data_backup_'+todayISO()+'.json', new Blob([JSON.stringify(payload)], {type:'application/json'}));
+  toast('Data backup downloaded (catalogue, members, circulation, schedule, institution branding)');
+}
+function restoreDataBackup(file){
   if(!file) return;
-  if(!isAdmin()) return requireAdmin('restore a backup');
+  if(!isAdmin()) return requireAdmin('restore a data backup');
   const reader = new FileReader();
   reader.onload = async ()=>{
-    try{
-      const payload = JSON.parse(reader.result);
-      if(!payload.db || !Array.isArray(payload.db.catalogue)) throw new Error("This file doesn't look like an ALCMS backup");
-      DB = payload.db;
-      if(Array.isArray(payload.accounts) && payload.accounts.length){ ACCOUNTS = payload.accounts; await saveAccounts(ACCOUNTS); }
-      await saveDB(); render(); toast('Backup restored');
-    }catch(e){ toast('Could not read that file: '+e.message); }
+    try{ await applyDataPayload(JSON.parse(reader.result)); render(); toast('Data backup restored'); }
+    catch(e){ toast('Could not read that file: '+e.message); }
   };
   reader.readAsText(file);
 }
-function downloadAccountsBackup(){
-  const payload = { exportedAt:new Date().toISOString(), accounts:ACCOUNTS };
-  downloadBlob('alcms_accounts_backup_'+todayISO()+'.json', new Blob([JSON.stringify(payload)], {type:'application/json'}));
-  toast('Accounts backup downloaded');
+function downloadAccountBackup(){
+  const payload = { type:'alcms-account-backup', exportedAt:new Date().toISOString(), accounts:ACCOUNTS, prefs:PREFS, adminKey:ADMIN_KEY };
+  downloadBlob('alcms_account_backup_'+todayISO()+'.json', new Blob([JSON.stringify(payload)], {type:'application/json'}));
+  toast('Account backup downloaded (accounts, profile pictures, theme & preferences)');
 }
-function restoreAccountsBackup(file){
+function restoreAccountBackup(file){
   if(!file) return;
-  if(!isAdmin()) return requireAdmin('restore accounts');
+  if(!isAdmin()) return requireAdmin('restore an account backup');
   const key = prompt('Enter the admin key to restore accounts:');
   if(key !== ADMIN_KEY){ toast('Incorrect admin key — restore cancelled'); return; }
   const reader = new FileReader();
   reader.onload = async ()=>{
-    try{
-      const payload = JSON.parse(reader.result);
-      if(!Array.isArray(payload.accounts) || !payload.accounts.length) throw new Error('No accounts found in that file');
-      ACCOUNTS = payload.accounts; await saveAccounts(ACCOUNTS);
-      render(); toast('Accounts restored');
-    }catch(e){ toast('Could not read that file: '+e.message); }
+    try{ await applyAccountPayload(JSON.parse(reader.result)); render(); toast('Account backup restored'); }
+    catch(e){ toast('Could not read that file: '+e.message); }
   };
   reader.readAsText(file);
 }
+
+/* ================= GitHub sync (optional external, cross-device persistence) =================
+   Pushes/pulls one combined snapshot (data + accounts + preferences) to a file inside a
+   GitHub repo, via the GitHub REST "contents" API, straight from the browser.
+   This means your data can follow you to a different browser, computer, or
+   account — it does not depend on this browser's storage and does not pass
+   through Claude at all; the request goes directly from your browser to
+   api.github.com. The token you provide is stored only in this browser
+   (localStorage) so it has to be re-entered per browser/device. Use a
+   fine-grained personal access token scoped to just this one repo's contents,
+   not a broad all-repo token. */
+const GITHUB_CFG_KEY = 'alcms_github_cfg_v1';
+async function loadGithubConfig(){
+  try{ const v = await storeGet(GITHUB_CFG_KEY); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+}
+async function saveGithubConfigObj(cfg){ await storeSet(GITHUB_CFG_KEY, JSON.stringify(cfg)); }
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str))); }
+function githubApiUrl(cfg){
+  const cleanPath = String(cfg.path||'alcms-data.json').replace(/^\/+/, '');
+  return `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cleanPath.split('/').map(encodeURIComponent).join('/')}`;
+}
+async function githubRequest(cfg, method, body){
+  const qs = (method==='GET' && cfg.branch) ? ('?ref='+encodeURIComponent(cfg.branch)) : '';
+  return fetch(githubApiUrl(cfg)+qs, {
+    method,
+    headers:{
+      'Authorization': 'Bearer '+cfg.token,
+      'Accept':'application/vnd.github+json',
+      ...(body ? {'Content-Type':'application/json'} : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+}
+function openGithubConfigForm(){
+  loadGithubConfig().then(existing=>{
+    openModal({
+      title:'GitHub sync settings',
+      fields:[
+        {key:'owner', label:'Repo owner (your GitHub username or org)', required:true},
+        {key:'repo', label:'Repository name', required:true},
+        {key:'branch', label:'Branch', default:'main'},
+        {key:'path', label:'File path inside the repo', default:'alcms-data.json'},
+        {key:'token', label:'Personal access token (needs Contents read/write on this repo)', type:'password', required:true},
+      ],
+      values: existing || {branch:'main', path:'alcms-data.json'},
+      onSave: async (vals)=>{
+        await saveGithubConfigObj(vals);
+        toast('GitHub sync settings saved in this browser');
+        render();
+      }
+    });
+  });
+}
+async function githubSaveNow(){
+  if(!isAdmin()) return requireAdmin('sync data to GitHub');
+  const cfg = await loadGithubConfig();
+  if(!cfg || !cfg.owner || !cfg.repo || !cfg.token){ toast('Set up GitHub sync first (owner, repo, token)'); openGithubConfigForm(); return; }
+  try{
+    let sha = null;
+    const getRes = await githubRequest(cfg, 'GET');
+    if(getRes.ok){ sha = (await getRes.json()).sha; }
+    else if(getRes.status !== 404){ throw new Error('GitHub error '+getRes.status+' while checking for an existing file'); }
+    const payload = { type:'alcms-full-backup', exportedAt:new Date().toISOString(), db:DB, accounts:ACCOUNTS, prefs:PREFS };
+    const putRes = await githubRequest(cfg, 'PUT', {
+      message: 'ALCMS data sync — '+new Date().toISOString(),
+      content: b64EncodeUnicode(JSON.stringify(payload, null, 2)),
+      branch: cfg.branch||'main',
+      ...(sha ? {sha} : {})
+    });
+    if(!putRes.ok){ const j = await putRes.json().catch(()=>({})); throw new Error(j.message || ('GitHub error '+putRes.status)); }
+    toast('Saved to GitHub — your data is now backed up outside this browser');
+  }catch(e){ toast('GitHub save failed: '+e.message); }
+}
+async function githubLoadNow(){
+  if(!isAdmin()) return requireAdmin('load data from GitHub');
+  const cfg = await loadGithubConfig();
+  if(!cfg || !cfg.owner || !cfg.repo || !cfg.token){ toast('Set up GitHub sync first (owner, repo, token)'); openGithubConfigForm(); return; }
+  if(!confirm('This replaces everything currently in the app with the version saved on GitHub. Continue?')) return;
+  try{
+    const getRes = await githubRequest(cfg, 'GET');
+    if(getRes.status===404) throw new Error('No file found at that path yet — use "Save to GitHub" first');
+    if(!getRes.ok) throw new Error('GitHub error '+getRes.status);
+    const j = await getRes.json();
+    const payload = JSON.parse(b64DecodeUnicode(j.content.replace(/\n/g,'')));
+    await applyFullPayload(payload);
+    render();
+    toast('Data loaded from GitHub');
+  }catch(e){ toast('GitHub load failed: '+e.message); }
+}
+
+/* ================= Scheduled auto-backup ================= */
+const AUTO_BACKUP_KEY = 'alcms_autobackup_v1';
+let AUTO_BACKUP = {enabled:false, frequency:'daily', time:'20:00', weekday:'SUN', lastRunDate:null};
+async function loadAutoBackupCfg(){
+  try{ const v = await storeGet(AUTO_BACKUP_KEY); if(v) AUTO_BACKUP = Object.assign(AUTO_BACKUP, JSON.parse(v)); }catch(e){}
+}
+async function saveAutoBackupCfg(){ await storeSet(AUTO_BACKUP_KEY, JSON.stringify(AUTO_BACKUP)); }
+function saveAutoBackupForm(){
+  AUTO_BACKUP.enabled = !!document.getElementById('abEnabled')?.checked;
+  AUTO_BACKUP.frequency = document.getElementById('abFrequency')?.value || 'daily';
+  AUTO_BACKUP.time = document.getElementById('abTime')?.value || '20:00';
+  AUTO_BACKUP.weekday = document.getElementById('abWeekday')?.value || 'SUN';
+  saveAutoBackupCfg();
+  toast(AUTO_BACKUP.enabled ? `Scheduled backups enabled — ${AUTO_BACKUP.frequency==='weekly'?('every '+AUTO_BACKUP.weekday+' '):''}at ${AUTO_BACKUP.time}` : 'Scheduled backups turned off');
+  render();
+}
+const WEEKDAY_CODE = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+function checkAutoBackup(){
+  if(!AUTO_BACKUP.enabled || !SESSION) return;
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if(hhmm !== AUTO_BACKUP.time) return;
+  const todayCode = todayISO();
+  if(AUTO_BACKUP.lastRunDate === todayCode) return; // already ran today
+  if(AUTO_BACKUP.frequency==='weekly' && WEEKDAY_CODE[now.getDay()] !== AUTO_BACKUP.weekday) return;
+  downloadDataBackup();
+  AUTO_BACKUP.lastRunDate = todayCode;
+  saveAutoBackupCfg();
+  toast('Scheduled backup downloaded automatically');
+}
+setInterval(checkAutoBackup, 20000);
+
+/* Checkpoints reuse the existing DB.versions mechanism (see createCheckpoint(label)
+   and openVersionPanel() further below) rather than a separate storage key — this
+   keeps exactly one checkpoint system, reachable both from the sidebar shortcut and
+   from the Backup & Restore page below. */
 function changeAdminKey(){
   const el = document.getElementById('setAdminKey');
   const val = el ? el.value.trim() : '';
@@ -3288,6 +3409,22 @@ async function createCheckpoint(label){
   if(DB.versions.length > MAX_VERSIONS) DB.versions.length = MAX_VERSIONS;
   await saveDB();
 }
+async function restoreVersionById(id){
+  if(!confirm('Restore this checkpoint? Current unsaved-in-checkpoint changes will be replaced.')) return;
+  const versions = (DB && DB.versions) || [];
+  const v = versions.find(x=>x.id===id);
+  if(!v) return toast('Checkpoint not found');
+  const restored = JSON.parse(v.snapshot);
+  restored.versions = DB.versions; // keep history intact
+  DB = restored;
+  await saveDB(); render(); toast('Checkpoint restored');
+}
+async function deleteVersionById(id){
+  if(!isAdmin()) return requireAdmin('delete a checkpoint');
+  if(!DB || !Array.isArray(DB.versions)) return;
+  DB.versions = DB.versions.filter(v=>v.id!==id);
+  await saveDB(); render(); toast('Checkpoint deleted');
+}
 function openVersionPanel(){
   const versions = (DB && DB.versions) || [];
   const html = `
@@ -3322,14 +3459,9 @@ function openVersionPanel(){
     toast('Checkpoint saved'); close();
   };
   $$('[data-restore]').forEach(btn=>{
-    btn.onclick = ()=>{
-      if(!confirm('Restore this checkpoint? Current unsaved-in-checkpoint changes will be replaced.')) return;
-      const v = versions.find(x=>x.id===btn.dataset.restore);
-      if(!v) return;
-      const restored = JSON.parse(v.snapshot);
-      restored.versions = DB.versions; // keep history intact
-      DB = restored;
-      saveDB(); close(); render(); toast('Checkpoint restored');
+    btn.onclick = async ()=>{
+      await restoreVersionById(btn.dataset.restore);
+      close();
     };
   });
 }
@@ -3352,6 +3484,7 @@ function render(){
     case 'feedback': html = pageFeedback(); break;
     case 'setup': html = pageSetup(); break;
     case 'settings': html = pageSettings(); break;
+    case 'backup': html = pageBackup(); break;
     case 'guide': html = pageGuide(); break;
     case 'about': html = pageAbout(); break;
     default: html = pageHome();
@@ -3401,6 +3534,7 @@ async function enterApp(){
   try{
     ACCOUNTS = await loadAccounts();
     await loadAdminKey();
+    await loadAutoBackupCfg();
     const restored = await restoreSession();
     setTimeout(async ()=>{
       clearTimeout(failsafe);
@@ -3425,6 +3559,7 @@ async function enterApp(){
   }
 })();
 window.addEventListener('error', e=> console.error('Runtime error:', e.error||e.message));
+
 </script>
 </body>
 </html>
