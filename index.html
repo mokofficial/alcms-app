@@ -136,6 +136,7 @@ input,select,textarea{font-family:inherit;}
   .auth-info{ padding:22px 20px 18px; flex:none;}
   .auth-info::before{ width:160px; height:160px; right:-50px; bottom:-50px;}
   .auth-info::after{ width:100px; height:100px; right:-25px; bottom:-25px;}
+  .auth-brand{ margin-left:auto; justify-content:flex-end;}
   .auth-clock{ margin-bottom:10px;}
   .auth-clock .time{ font-size:32px;}
   .auth-carousel{ min-height:auto;}
@@ -366,9 +367,9 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .clock-chip .time{ font-size:15px; font-weight:700; letter-spacing:.5px; font-family:var(--clock-font);}
 .clock-chip .date{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
 .auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-bottom:18px;}
-.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:baseline; gap:6px; font-family:var(--clock-font);}
-.auth-clock .time .secs{ font-size:20px; font-weight:700; color:rgba(255,255,255,.7);}
-.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px;}
+.auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:center; gap:6px; font-family:var(--clock-font);}
+.auth-clock .time .secs{ font-size:20px; font-weight:700; color:rgba(255,255,255,.7); display:inline-flex; align-items:center;}
+.auth-clock .time .ampm{ font-size:16px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px; display:inline-flex; align-items:center;}
 .auth-clock .date{ font-size:12px; color:rgba(255,255,255,.75); letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:"Segoe UI",-apple-system,sans-serif; font-weight:400;}
 
 /* ===== profile picture ===== */
@@ -471,8 +472,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
     </div>
     <nav class="navlist" id="navlist"></nav>
     <div class="sidebar-foot">
-      <button class="btn small" id="sidebarSaveBtn" style="width:100%;margin-bottom:6px" onclick="saveNow()">💾 Save changes</button>
-      <button class="btn secondary small" style="width:100%;margin-bottom:8px" onclick="openVersionPanel()">🕐 Checkpoints &amp; restore</button>
+      <button class="btn small" id="sidebarSaveBtn" style="width:100%;margin-bottom:8px" onclick="saveNow()">💾 Save changes</button>
       Automated Library &amp; Circulation Management System · July 2026
     </div>
   </aside>
@@ -586,6 +586,11 @@ function toast(msg){
 function initials(name){
   if(!name) return '?';
   const p = name.trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||'');
+}
+function firstNameOf(name){
+  if(!name) return '';
+  const first = name.trim().split(/\s+/)[0] || '';
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 const EYE_ICON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="eye-outline" d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"></path><circle class="eye-pupil" cx="12" cy="12" r="3"></circle><line class="eye-slash" x1="3" y1="3" x2="21" y2="21"></line></svg>`;
 function pwFieldHtml(id, placeholder){
@@ -972,16 +977,26 @@ function renderAuthForm(){
       <div class="field">
         <label>Access level</label>
         <div class="role-choice">
-          <div class="role-opt ${signupRole==='GUEST'?'selected':''}" onclick="signupRole='GUEST'; renderAuthForm();"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
-          <div class="role-opt ${signupRole==='ADMIN'?'selected':''}" onclick="signupRole='ADMIN'; renderAuthForm();"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
+          <div class="role-opt ${signupRole==='GUEST'?'selected':''}" id="roleOptGuest" onclick="setSignupRole('GUEST')"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
+          <div class="role-opt ${signupRole==='ADMIN'?'selected':''}" id="roleOptAdmin" onclick="setSignupRole('ADMIN')"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
         </div>
       </div>
-      ${signupRole==='ADMIN'? `<div class="field"><label>Admin key</label>${pwFieldHtml('suAdminKey','Ask your librarian/administrator for this')}<p class="field-hint">Required to create an admin account — set in Settings by an existing admin.</p></div>` : ''}
+      <div id="suAdminKeyWrap" style="${signupRole==='ADMIN'?'':'display:none'}">
+        <div class="field"><label>Admin key</label>${pwFieldHtml('suAdminKey','Ask your librarian/administrator for this')}<p class="field-hint">Required to create an admin account — set in Settings by an existing admin.</p></div>
+      </div>
       <button class="btn auth-submit" onclick="doSignup()">Create account</button>
       <p class="field-hint" style="margin-top:12px">Email and phone are stored for account recovery and aren't sent anywhere by this app.</p>
       <p class="field-hint" style="margin-top:8px"><a href="#" onclick="authTab='signin';renderAuthForm();return false;" style="color:var(--forest);font-weight:600">← Back to sign in</a></p>
     `;
   }
+}
+function setSignupRole(role){
+  signupRole = role;
+  const guestOpt = document.getElementById('roleOptGuest'), adminOpt = document.getElementById('roleOptAdmin');
+  if(guestOpt) guestOpt.classList.toggle('selected', role==='GUEST');
+  if(adminOpt) adminOpt.classList.toggle('selected', role==='ADMIN');
+  const keyWrap = document.getElementById('suAdminKeyWrap');
+  if(keyWrap) keyWrap.style.display = role==='ADMIN' ? '' : 'none';
 }
 function showAuthError(msg){ const e=$('#authError'); e.textContent=msg; e.classList.add('show'); }
 async function doSignin(){
@@ -1903,7 +1918,7 @@ function pageHome(){
       <div class="accession-stamp"><div class="n">${c.length}</div><div class="t">TITLES CATALOGUED</div></div>
       <div class="accession-stamp" style="transform:rotate(-4deg)"><div class="n">${u.length}</div><div class="t">MEMBERS REGISTERED</div></div>
     </div>
-    <h1>${greeting}, ${esc((SESSION&&SESSION.fullName)||'')}.</h1>
+    <h1>${greeting}, ${esc(firstNameOf((SESSION&&SESSION.fullName)||''))}!</h1>
     <p>${DB.setup.institutionName? esc(DB.setup.institutionName)+' — ':''}Search the catalogue, issue and return loans, keep an eye on overdue titles, and manage your members — all from one shelf.</p>
   </div>
   <div class="grid kpis">
@@ -3040,13 +3055,7 @@ function pageSetup(){
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>Student classes &amp; class teachers</h3><div class="hint">Every class starts with "YEAR" · teacher is picked from registered staff</div></div>
-      <div id="classList">${sortedClasses().map(c=>{
-        const ct = DB.setup.classTeachers[c];
-        const label = ct ? (ct.staffId ? (DB.users.find(u=>u.id===ct.staffId)||{}).name || ct.name : ct.name) : 'no teacher set';
-        return `<div class="list-editor-row"><span><strong>${esc(c)}</strong> — ${esc(label)}</span>
-        <button class="btn secondary small" onclick="openEditClass('${esc(c)}')">Edit</button>
-        <button class="btn danger small" onclick="removeClass('${esc(c)}')">Remove</button></div>`;
-      }).join('')}</div>
+      <div id="classList">${renderClassListRowsHtml()}</div>
       <div class="field-row" style="margin-top:12px">
         <div class="field"><label>New class</label><input id="newClassName" placeholder="e.g. YEAR 12 ELI"></div>
       </div>
@@ -3054,7 +3063,7 @@ function pageSetup(){
     </div>
     <div class="card panel">
       <div class="panel-head"><h3>Staff designations</h3><div class="hint">Used for the "Designation" field when a member's category is Staff</div></div>
-      <div>${DB.setup.staffDesignations.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeDesignation('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
+      <div id="designationList">${DB.setup.staffDesignations.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeDesignation('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
       <div class="field-row" style="margin-top:12px">
         <div class="field"><label>New designation</label><input id="newDesignation" placeholder="e.g. LIBRARIAN"></div>
       </div>
@@ -3080,7 +3089,7 @@ function pageSetup(){
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>Shelf locations</h3></div>
-      <div>${DB.setup.shelves.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeShelf('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
+      <div id="shelfList">${DB.setup.shelves.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeShelf('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
       <div class="field-row" style="margin-top:12px">
         <div class="field"><label>New shelf code</label><input id="newShelf" placeholder="e.g. DS1-C1"></div>
       </div>
@@ -3096,7 +3105,7 @@ function pageSetup(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Subjects offered</h3><div class="hint">The school-wide subject list, used to auto-assign each class's combination</div></div>
-    <div>${DB.setup.subjects.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
+    <div id="subjectList">${DB.setup.subjects.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
     <div class="field-row" style="margin-top:12px">
       <div class="field"><label>New subject code</label><input id="newSubject" placeholder="e.g. MUS"></div>
     </div>
@@ -3104,17 +3113,10 @@ function pageSetup(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Class subject distribution</h3><div class="hint">Default subjects auto-assigned to every student in a class — override per-student from Members → Subjects</div></div>
-    ${sortedClasses().map(c=>`
-      <div style="margin-bottom:14px">
-        <p class="field-hint" style="margin-bottom:6px"><strong>${esc(c)}</strong></p>
-        <div class="subject-pill-grid">
-          ${DB.setup.subjects.map(s=>`
-            <label class="subject-check"><input type="checkbox" class="classSubjChk" data-cls="${esc(c)}" value="${esc(s)}" ${(DB.setup.classSubjects[c]||[]).includes(s)?'checked':''}> ${esc(s)}</label>
-          `).join('')}
-        </div>
-      </div>`).join('')}
+    <div id="classSubjectGrid">${renderClassSubjectGridHtml()}</div>
     <button class="btn secondary" onclick="saveClassSubjects()">Save subject distribution</button>
   </div>
+  <p class="field-hint" style="margin:-8px 0 4px">Note: adding or removing a class/subject refreshes its own list and the grid above immediately (so no stale subject checkboxes linger), without clearing anything you're mid-typing in the other boxes on this page. The "From/Move to" pickers above pick up new classes next time you open Setup.</p>
   <div class="card panel">
     <div class="panel-head"><h3>Schedule management</h3><div class="hint">Add, edit or remove weekly periods</div></div>
     <p style="font-size:12.5px;color:var(--muted)">Manage the weekly timetable and per-student subject combinations from the <a href="#" onclick="route='schedule';render();return false;" style="color:var(--forest);font-weight:600">Schedule page</a> — every row there has Edit/Delete when you're signed in as admin.</p>
@@ -3409,17 +3411,40 @@ function pageBackup(){
     <button class="btn secondary" onclick="downloadUpdatedApp()">⭳ Download updated starting data</button>
   </div>`;
 }
+function refreshLogoPreviewDOM(){
+  const el = document.getElementById('logoPreview');
+  const repoWrap = document.getElementById('logoRepositionWrap');
+  const logo = DB.setup.institutionLogo;
+  const pos = DB.setup.institutionLogoPos || {x:50,y:50};
+  if(el){
+    if(logo){ el.style.backgroundImage = `url('${logo}')`; el.style.backgroundSize='cover'; el.style.backgroundPosition = `${pos.x}% ${pos.y}%`; el.innerHTML=''; }
+    else { el.style.backgroundImage=''; el.innerHTML='AL'; }
+  }
+  if(repoWrap) repoWrap.style.display = logo ? '' : 'none';
+  // remove-button existence toggle without touching the rest of the card
+  const uploadRow = el ? el.closest('.avatar-upload') : null;
+  if(uploadRow){
+    let rmBtn = document.getElementById('logoRemove');
+    if(logo && !rmBtn){
+      rmBtn = document.createElement('button');
+      rmBtn.className='btn danger small'; rmBtn.id='logoRemove'; rmBtn.style.marginLeft='6px'; rmBtn.textContent='Remove';
+      rmBtn.onclick = ()=>{ DB.setup.institutionLogo=null; DB.setup.institutionLogoPos=null; saveDB(); refreshLogoPreviewDOM(); renderNav(); toast('Logo removed'); };
+      const uploadLabel = uploadRow.querySelector('label.btn'); if(uploadLabel) uploadLabel.after(rmBtn);
+    } else if(!logo && rmBtn){ rmBtn.remove(); }
+  }
+  renderNav();
+}
 function bindSettingsUploaders(){
   const logoInput = document.getElementById('logoInput');
   if(logoInput) logoInput.onchange = (e)=>{
     const file = e.target.files[0]; if(!file) return;
     if(file.size > 800*1024){ toast('Please choose an image under 800KB'); return; }
     const reader = new FileReader();
-    reader.onload = ()=>{ DB.setup.institutionLogo = reader.result; DB.setup.institutionLogoPos = {x:50,y:50}; saveDB(); render(); toast('Logo updated'); };
+    reader.onload = ()=>{ DB.setup.institutionLogo = reader.result; DB.setup.institutionLogoPos = {x:50,y:50}; saveDB(); refreshLogoPreviewDOM(); toast('Logo updated'); };
     reader.readAsDataURL(file);
   };
   const logoRemove = document.getElementById('logoRemove');
-  if(logoRemove) logoRemove.onclick = ()=>{ DB.setup.institutionLogo = null; DB.setup.institutionLogoPos = null; saveDB(); render(); toast('Logo removed'); };
+  if(logoRemove) logoRemove.onclick = ()=>{ DB.setup.institutionLogo = null; DB.setup.institutionLogoPos = null; saveDB(); refreshLogoPreviewDOM(); toast('Logo removed'); };
   const posX = document.getElementById('logoPosX'), posY = document.getElementById('logoPosY');
   const updateLogoPreview = ()=>{
     const el = document.getElementById('logoPreview');
@@ -3608,23 +3633,56 @@ function commitPromotion(){
   promoteBatch = []; promoteSourceChecked = {};
   saveDB(); render(); toast(`${n} student(s) promoted to ${to}`);
 }
+function renderClassListRowsHtml(){
+  return sortedClasses().map(c=>{
+    const ct = DB.setup.classTeachers[c];
+    const label = ct ? (ct.staffId ? (DB.users.find(u=>u.id===ct.staffId)||{}).name || ct.name : ct.name) : 'no teacher set';
+    return `<div class="list-editor-row"><span><strong>${esc(c)}</strong> — ${esc(label)}</span>
+    <button class="btn secondary small" onclick="openEditClass('${esc(c)}')">Edit</button>
+    <button class="btn danger small" onclick="removeClass('${esc(c)}')">Remove</button></div>`;
+  }).join('');
+}
+function renderDesignationsHtml(){
+  return DB.setup.staffDesignations.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeDesignation('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('');
+}
+function renderShelvesHtml(){
+  return DB.setup.shelves.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeShelf('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('');
+}
+function renderSubjectsHtml(){
+  return DB.setup.subjects.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('');
+}
+function renderClassSubjectGridHtml(){
+  return sortedClasses().map(c=>`
+    <div style="margin-bottom:14px">
+      <p class="field-hint" style="margin-bottom:6px"><strong>${esc(c)}</strong></p>
+      <div class="subject-pill-grid">
+        ${DB.setup.subjects.map(s=>`
+          <label class="subject-check"><input type="checkbox" class="classSubjChk" data-cls="${esc(c)}" value="${esc(s)}" ${(DB.setup.classSubjects[c]||[]).includes(s)?'checked':''}> ${esc(s)}</label>
+        `).join('')}
+      </div>
+    </div>`).join('');
+}
+function refreshSetupSection(id, htmlFn){ const el=document.getElementById(id); if(el) el.innerHTML = htmlFn(); }
 function addDesignation(){
-  const s = $('#newDesignation').value.trim().toUpperCase();
+  const el = $('#newDesignation'); const s = el.value.trim().toUpperCase();
   if(!s){ toast('Enter a designation'); return; }
   if(!DB.setup.staffDesignations.includes(s)) DB.setup.staffDesignations.push(s);
-  saveDB(); render(); toast('Designation added');
+  saveDB(); refreshSetupSection('designationList', renderDesignationsHtml); el.value=''; toast('Designation added');
 }
-function removeDesignation(s){ DB.setup.staffDesignations = DB.setup.staffDesignations.filter(x=>x!==s); saveDB(); render(); }
+function removeDesignation(s){
+  DB.setup.staffDesignations = DB.setup.staffDesignations.filter(x=>x!==s);
+  saveDB(); refreshSetupSection('designationList', renderDesignationsHtml);
+}
 function addSubject(){
-  const s = $('#newSubject').value.trim().toUpperCase();
+  const el = $('#newSubject'); const s = el.value.trim().toUpperCase();
   if(!s){ toast('Enter a subject code'); return; }
   if(!DB.setup.subjects.includes(s)) DB.setup.subjects.push(s);
-  saveDB(); render(); toast('Subject added');
+  saveDB(); refreshSetupSection('subjectList', renderSubjectsHtml); refreshSetupSection('classSubjectGrid', renderClassSubjectGridHtml); el.value=''; toast('Subject added');
 }
 function removeSubject(s){
   DB.setup.subjects = DB.setup.subjects.filter(x=>x!==s);
   Object.keys(DB.setup.classSubjects).forEach(c=> DB.setup.classSubjects[c] = (DB.setup.classSubjects[c]||[]).filter(x=>x!==s));
-  saveDB(); render();
+  saveDB(); refreshSetupSection('subjectList', renderSubjectsHtml); refreshSetupSection('classSubjectGrid', renderClassSubjectGridHtml);
 }
 function saveClassSubjects(){
   const map = {};
@@ -3799,13 +3857,13 @@ function githubApiUrl(cfg){
   const cleanPath = String(cfg.path||'alcms-data.json').replace(/^\/+/, '');
   return `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cleanPath.split('/').map(encodeURIComponent).join('/')}`;
 }
-async function githubRequest(cfg, method, body){
+async function githubRequest(cfg, method, body, opts={}){
   const qs = (method==='GET' && cfg.branch) ? ('?ref='+encodeURIComponent(cfg.branch)) : '';
   return fetch(githubApiUrl(cfg)+qs, {
     method,
     headers:{
       'Authorization': 'Bearer '+cfg.token,
-      'Accept':'application/vnd.github+json',
+      'Accept': opts.raw ? 'application/vnd.github.raw' : 'application/vnd.github+json',
       ...(body ? {'Content-Type':'application/json'} : {})
     },
     body: body ? JSON.stringify(body) : undefined
@@ -3843,7 +3901,7 @@ async function githubSaveNow(){
     const payload = { type:'alcms-full-backup', exportedAt:new Date().toISOString(), db:DB, accounts:ACCOUNTS, prefs:PREFS };
     const putRes = await githubRequest(cfg, 'PUT', {
       message: 'ALCMS data sync — '+new Date().toISOString(),
-      content: b64EncodeUnicode(JSON.stringify(payload, null, 2)),
+      content: b64EncodeUnicode(JSON.stringify(payload)),
       branch: cfg.branch||'main',
       ...(sha ? {sha} : {})
     });
@@ -3857,11 +3915,15 @@ async function githubLoadNow(){
   if(!cfg || !cfg.owner || !cfg.repo || !cfg.token){ toast('Set up GitHub sync first (owner, repo, token)'); openGithubConfigForm(); return; }
   if(!confirm('This replaces everything currently in the app with the version saved on GitHub. Continue?')) return;
   try{
-    const getRes = await githubRequest(cfg, 'GET');
-    if(getRes.status===404) throw new Error('No file found at that path yet — use "Save to GitHub" first');
-    if(!getRes.ok) throw new Error('GitHub error '+getRes.status);
-    const j = await getRes.json();
-    const payload = JSON.parse(b64DecodeUnicode(j.content.replace(/\n/g,'')));
+    // Fetch the raw file bytes directly (not the default JSON-wrapped/base64 response) — the
+    // default Contents API response truncates `content` to empty for files over ~1MB, which
+    // ALCMS backups routinely exceed. Requesting the raw media type avoids that limit entirely.
+    const rawRes = await githubRequest(cfg, 'GET', null, {raw:true});
+    if(rawRes.status===404) throw new Error('No file found at that path yet — use "Save to GitHub" first');
+    if(!rawRes.ok) throw new Error('GitHub error '+rawRes.status);
+    const text = await rawRes.text();
+    if(!text || !text.trim()) throw new Error('GitHub returned an empty file — try "Save to GitHub" again from a device with the full data loaded');
+    const payload = JSON.parse(text);
     await applyFullPayload(payload);
     render();
     toast('Data loaded from GitHub');
@@ -3912,26 +3974,26 @@ function changeAdminKey(){
   toast('Admin key updated');
 }
 function addClass(){
-  const name = $('#newClassName').value.trim().toUpperCase();
+  const el = $('#newClassName'); const name = el.value.trim().toUpperCase();
   if(!name){ toast('Enter a class name'); return; }
   if(!name.startsWith('YEAR')){ toast('Student classes should start with "YEAR"'); return; }
   if(!DB.setup.userClasses.includes(name)) DB.setup.userClasses.push(name);
   if(!DB.setup.classSubjects[name]) DB.setup.classSubjects[name] = [];
   DB.setup.userClasses = sortClassesChrono(DB.setup.userClasses);
-  saveDB(); render(); toast('Class added');
+  saveDB(); refreshSetupSection('classList', renderClassListRowsHtml); refreshSetupSection('classSubjectGrid', renderClassSubjectGridHtml); el.value=''; toast('Class added');
 }
 function removeClass(c){
   DB.setup.userClasses = DB.setup.userClasses.filter(x=>x!==c);
   delete DB.setup.classTeachers[c]; delete DB.setup.classSubjects[c];
-  saveDB(); render();
+  saveDB(); refreshSetupSection('classList', renderClassListRowsHtml); refreshSetupSection('classSubjectGrid', renderClassSubjectGridHtml);
 }
 function addShelf(){
-  const s = $('#newShelf').value.trim().toUpperCase();
+  const el = $('#newShelf'); const s = el.value.trim().toUpperCase();
   if(!s){ toast('Enter a shelf code'); return; }
   if(!DB.setup.shelves.includes(s)) DB.setup.shelves.push(s);
-  saveDB(); render(); toast('Shelf added');
+  saveDB(); refreshSetupSection('shelfList', renderShelvesHtml); el.value=''; toast('Shelf added');
 }
-function removeShelf(s){ DB.setup.shelves = DB.setup.shelves.filter(x=>x!==s); saveDB(); render(); }
+function removeShelf(s){ DB.setup.shelves = DB.setup.shelves.filter(x=>x!==s); saveDB(); refreshSetupSection('shelfList', renderShelvesHtml); }
 async function resetAllData(){
   if(!confirm('This will erase all changes and reload the original workbook data. Continue?')) return;
   DB = buildSeedDB(); await saveDB(); render(); toast('Data reset');
