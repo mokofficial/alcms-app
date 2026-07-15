@@ -337,6 +337,9 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 @media (max-width:900px){ .two-col{grid-template-columns:1fr;} .field-row{grid-template-columns:1fr;} }
 
 .home-hero{ background:linear-gradient(135deg,var(--forest) 0%, var(--forest-dark) 100%); color:#F3EEDD; border-radius:14px; padding:38px 34px; margin-bottom:20px; position:relative; overflow:hidden;}
+.weather-ambience{ position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.9;}
+.weather-ambience svg{ width:100%; height:100%; display:block;}
+.home-hero .hero-stamps, .home-hero h1, .home-hero p{ position:relative; z-index:1;}
 .home-hero h1{ font-size:30px; color:#fff; max-width:640px; padding-right:0;}
 .home-hero p{ color:#C9D3C2; font-size:14px; margin-top:10px; max-width:560px; line-height:1.5;}
 .hero-stamps{ position:absolute; right:34px; top:30px; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; max-width:260px;}
@@ -423,6 +426,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .auth-clock .time .secs{ font-size:15px; font-weight:700; color:rgba(255,255,255,.7);}
 .auth-clock .time .ampm{ font-size:13px; font-weight:700; color:var(--brass-light); font-family:"Segoe UI",-apple-system,sans-serif; letter-spacing:1px;}
 .auth-clock .date{ font-size:12px; color:rgba(255,255,255,.75); letter-spacing:1px; text-transform:uppercase; margin-top:4px; font-family:var(--date-font); font-weight:400;}
+.analogue-clock-wrap{ display:flex;}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -785,7 +789,7 @@ async function pickContactForField(fieldId){
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', textScale:'medium', headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal'};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'system', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', textScale:'medium', headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', clockStyle:'digital', weatherAmbience:true, weatherAmbienceMode:'auto'};
 const CLOCK_FONTS = {
   digital: {label:'Digital (default)', stack:"'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace"},
   elegant: {label:'Elegant serif', stack:"Georgia,'Times New Roman',serif"},
@@ -828,6 +832,11 @@ function applyDateFont(key){
   PREFS.dateFont = DATE_FONTS[key] ? key : 'default';
   document.documentElement.style.setProperty('--date-font', DATE_FONTS[PREFS.dateFont].stack);
   savePrefs();
+}
+function applyClockStyle(style){
+  PREFS.clockStyle = style==='analogue' ? 'analogue' : 'digital';
+  savePrefs();
+  tickClocks();
 }
 function applyTypography(){
   document.documentElement.style.setProperty('--app-font', (APP_FONTS[PREFS.appFont]||APP_FONTS.default).stack);
@@ -903,6 +912,29 @@ function formatClockDate(d){
     default: return `${day} ${monShort} ${year}`;
   }
 }
+function analogueClockSVG(now){
+  const cx=50, cy=50, r=46;
+  const sec = now.getSeconds(), min = now.getMinutes(), hr = now.getHours()%12;
+  const secAngle = sec*6, minAngle = min*6 + sec*0.1, hrAngle = hr*30 + min*0.5;
+  const hand = (angle, len, width, color, opacity)=>{
+    const rad = (angle-90) * Math.PI/180;
+    const x2 = cx + len*Math.cos(rad), y2 = cy + len*Math.sin(rad);
+    return `<line x1="${cx}" y1="${cy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"/>`;
+  };
+  const ticks = Array.from({length:12}).map((_,i)=>{
+    const a = i*30, rad=(a-90)*Math.PI/180;
+    const x1=cx+40*Math.cos(rad), y1=cy+40*Math.sin(rad), x2=cx+44*Math.cos(rad), y2=cy+44*Math.sin(rad);
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="rgba(255,255,255,.55)" stroke-width="${i%3===0?2:1}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 100 100" width="90" height="90" style="filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+    ${ticks}
+    ${hand(hrAngle, 24, 3.5, '#fff', 0.95)}
+    ${hand(minAngle, 34, 2.5, 'rgba(255,255,255,.85)', 0.95)}
+    ${hand(secAngle, 38, 1.2, 'var(--brass-light)', 0.9)}
+    <circle cx="${cx}" cy="${cy}" r="2.5" fill="var(--brass-light)"/>
+  </svg>`;
+}
 function tickClocks(){
   const now = new Date();
   const time = formatClockTime(now), date = formatClockDate(now);
@@ -910,16 +942,20 @@ function tickClocks(){
   if(top) top.innerHTML = `<div class="time">${time}</div><div class="date">${date}</div>`;
   const auth = $('#authClock');
   if(auth){
-    const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
-    let hDisplay, ampmHtml = '';
-    if(PREFS.clockFormat==='12h'){
-      let h = now.getHours(); const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
-      hDisplay = String(h).padStart(2,'0');
-      ampmHtml = `<span class="ampm">${ampm}</span>`;
+    if(PREFS.clockStyle==='analogue'){
+      auth.innerHTML = `<div class="analogue-clock-wrap">${analogueClockSVG(now)}</div><div class="date">${date}</div>`;
     } else {
-      hDisplay = String(now.getHours()).padStart(2,'0');
+      const m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
+      let hDisplay, ampmHtml = '';
+      if(PREFS.clockFormat==='12h'){
+        let h = now.getHours(); const ampm = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12;
+        hDisplay = String(h).padStart(2,'0');
+        ampmHtml = `<span class="ampm">${ampm}</span>`;
+      } else {
+        hDisplay = String(now.getHours()).padStart(2,'0');
+      }
+      auth.innerHTML = `<div class="time">${hDisplay}:${m}<span class="time-suffix"><span class="secs">:${s}</span>${ampmHtml}</span></div><div class="date">${date}</div>`;
     }
-    auth.innerHTML = `<div class="time">${hDisplay}:${m}<span class="time-suffix"><span class="secs">:${s}</span>${ampmHtml}</span></div><div class="date">${date}</div>`;
   }
 }
 setInterval(tickClocks, 1000);
@@ -2230,6 +2266,27 @@ function openImportModal(cfg){
 }
 
 /* ================= PAGE: HOME ================= */
+function getAmbiencePeriod(hour){
+  if(PREFS.weatherAmbienceMode && PREFS.weatherAmbienceMode!=='auto') return PREFS.weatherAmbienceMode;
+  if(hour>=5 && hour<12) return 'cloudy';
+  if(hour>=12 && hour<17) return 'sunny';
+  return 'moony';
+}
+function weatherAmbienceHtml(period){
+  if(period==='sunny'){
+    return `<svg viewBox="0 0 300 140" preserveAspectRatio="xMaxYMin slice"><circle cx="250" cy="30" r="26" fill="var(--brass-light)" opacity=".35"/><circle cx="250" cy="30" r="40" fill="var(--brass-light)" opacity=".12"/></svg>`;
+  }
+  if(period==='moony'){
+    return `<svg viewBox="0 0 300 140" preserveAspectRatio="xMaxYMin slice"><circle cx="255" cy="28" r="20" fill="#fff" opacity=".22"/><circle cx="264" cy="22" r="17" fill="var(--forest)" opacity=".9" style="mix-blend-mode:multiply"/>
+    <circle cx="30" cy="20" r="1.6" fill="#fff" opacity=".5"/><circle cx="60" cy="45" r="1.2" fill="#fff" opacity=".4"/><circle cx="100" cy="15" r="1.4" fill="#fff" opacity=".45"/><circle cx="160" cy="35" r="1" fill="#fff" opacity=".35"/><circle cx="200" cy="12" r="1.3" fill="#fff" opacity=".4"/></svg>`;
+  }
+  // cloudy
+  return `<svg viewBox="0 0 300 140" preserveAspectRatio="xMaxYMin slice">
+    <ellipse cx="235" cy="35" rx="42" ry="16" fill="#fff" opacity=".14"/>
+    <ellipse cx="265" cy="28" rx="30" ry="13" fill="#fff" opacity=".12"/>
+    <ellipse cx="200" cy="50" rx="26" ry="10" fill="#fff" opacity=".08"/>
+  </svg>`;
+}
 function pageHome(){
   const c = DB.catalogue, u = DB.users, t = DB.circulation;
   const overdue = t.filter(x=>txnStatus(x)==='OVERDUE').length;
@@ -2239,9 +2296,11 @@ function pageHome(){
   const visitsToday = DB.registerLog.filter(x=> (parseAnyDate(x.date)||0) && fmtDate(x.date)===fmtDate(today)).length;
   const hour = new Date().getHours();
   const greeting = hour<12? 'Good morning' : hour<17? 'Good afternoon' : 'Good evening';
+  const ambiencePeriod = getAmbiencePeriod(hour);
 
   return `
   <div class="home-hero">
+    ${PREFS.weatherAmbience!==false ? `<div class="weather-ambience ${ambiencePeriod}" aria-hidden="true">${weatherAmbienceHtml(ambiencePeriod)}</div>` : ''}
     <div class="hero-stamps">
       <div class="accession-stamp"><div class="n">${c.length}</div><div class="t">TITLES CATALOGUED</div></div>
       <div class="accession-stamp" style="transform:rotate(-4deg)"><div class="n">${u.length}</div><div class="t">MEMBERS REGISTERED</div></div>
@@ -2696,6 +2755,8 @@ function viewSubjects(userId){
 
 /* ================= PAGE: CIRCULATION ================= */
 let issuePicker, returnPicker;
+let issueBatch = []; // [{acc, title}]
+let returnBatch = []; // [{trxId, acc, title}]
 function pageCirculation(){
   const t = DB.circulation.map(x=>({...x, status:txnStatus(x)}));
   const active = t.filter(x=>x.status!=='RETURNED');
@@ -2705,16 +2766,20 @@ function pageCirculation(){
   return `
   <div class="grid two-col">
     <div class="card panel">
-      <div class="panel-head"><h3>Issue a title</h3><div class="hint">Type an ID to fetch it instantly · 7-day loan period</div></div>
+      <div class="panel-head"><h3>Issue title(s)</h3><div class="hint">7-day loan period · capped at each member's borrow limit</div></div>
       <div class="field"><label>Member ID</label>${quickPickerHtml('issueUser','Type a member ID, e.g. ACL-045')}</div>
       <div class="field"><label>Accession No.</label>${quickPickerHtml('issueBook','Type an accession no., e.g. ACC-512')}</div>
-      <button class="btn" onclick="issueBook()">Issue title</button>
+      <button class="btn secondary" onclick="addToIssueBatch()">＋ Add to batch</button>
+      <div id="issueBatchList" style="margin-top:10px">${renderIssueBatchHtml()}</div>
+      <button class="btn" style="margin-top:8px" onclick="commitIssueBatch()" ${issueBatch.length?'':'disabled'}>Issue all (${issueBatch.length})</button>
     </div>
     <div class="card panel">
-      <div class="panel-head"><h3>Return a title</h3><div class="hint">${active.length} loan(s) currently out · type transaction, member or acc. no.</div></div>
+      <div class="panel-head"><h3>Return title(s)</h3><div class="hint">${active.length} loan(s) currently out · type transaction, member or acc. no.</div></div>
       <div class="field"><label>Active loan</label>${quickPickerHtml('returnTrx','Type member ID or accession no.')}</div>
-      <div class="field"><label>Returned condition</label><select id="returnCondition">${(DB.setup.conditions||['GOOD','FAIR','DAMAGED','MISSING']).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-      <button class="btn" onclick="returnBook()">Mark as returned</button>
+      <button class="btn secondary" onclick="addToReturnBatch()">＋ Add to batch</button>
+      <div id="returnBatchList" style="margin-top:10px">${renderReturnBatchHtml()}</div>
+      <div class="field" style="margin-top:8px"><label>Returned condition (applies to all in this batch)</label><select id="returnCondition">${(DB.setup.conditions||['GOOD','FAIR','DAMAGED','MISSING']).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <button class="btn" style="margin-top:4px" onclick="commitReturnBatch()" ${returnBatch.length?'':'disabled'}>Return all (${returnBatch.length})</button>
     </div>
   </div>
   <div class="panel-head" style="margin:0 0 -6px 4px">
@@ -2725,6 +2790,104 @@ function pageCirculation(){
     </div>
   </div>
   <div id="mod_circulation"></div>`;
+}
+function renderIssueBatchHtml(){
+  if(!issueBatch.length) return `<p class="field-hint">No titles staged yet.</p>`;
+  return `<div class="table-wrap"><table class="datatable"><tbody>
+    ${issueBatch.map((b,i)=>`<tr><td>${esc(b.acc)}</td><td>${esc(b.title)}</td><td><a href="#" onclick="removeFromIssueBatch(${i});return false;" style="color:#A8452F">✕</a></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function renderReturnBatchHtml(){
+  if(!returnBatch.length) return `<p class="field-hint">No loans staged yet.</p>`;
+  return `<div class="table-wrap"><table class="datatable"><tbody>
+    ${returnBatch.map((b,i)=>`<tr><td>${esc(b.acc)}</td><td>${esc(b.title)}</td><td><a href="#" onclick="removeFromReturnBatch(${i});return false;" style="color:#A8452F">✕</a></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function addToIssueBatch(){
+  if(!isAdmin()) return requireAdmin('issue titles');
+  const userPick = issuePicker && issuePicker.value;
+  const bookPick = window.__issueBookPicker && window.__issueBookPicker.value;
+  if(!userPick){ toast('Pick a member first'); return; }
+  if(!bookPick){ toast('Pick a title to add'); return; }
+  const user = DB.users.find(u=>u.id===userPick.id), book = DB.catalogue.find(b=>b.acc===bookPick.id);
+  if(!user || !book) return;
+  if(issueBatch.some(b=>b.acc===book.acc)){ toast('That title is already staged'); return; }
+  if(book.available!=='AVAILABLE'){ toast(`${book.title} isn't available to issue`); return; }
+  const wouldBe = user.borrowed + issueBatch.length + 1;
+  if(wouldBe > user.maxAllowed){ toast(`${user.name}'s borrow limit is ${user.maxAllowed} — can't stage another title`); return; }
+  issueBatch.push({acc:book.acc, title:book.title});
+  refreshSetupSection('issueBatchList', renderIssueBatchHtml);
+  const btn = document.querySelector('[onclick="commitIssueBatch()"]'); if(btn){ btn.disabled=false; btn.textContent=`Issue all (${issueBatch.length})`; }
+  toast(`${book.title} staged (${issueBatch.length} in batch)`);
+}
+function removeFromIssueBatch(i){
+  issueBatch.splice(i,1);
+  refreshSetupSection('issueBatchList', renderIssueBatchHtml);
+  const btn = document.querySelector('[onclick="commitIssueBatch()"]'); if(btn){ btn.disabled=!issueBatch.length; btn.textContent=`Issue all (${issueBatch.length})`; }
+}
+function commitIssueBatch(){
+  if(!isAdmin()) return requireAdmin('issue titles');
+  const userPick = issuePicker && issuePicker.value;
+  if(!userPick || !issueBatch.length){ toast('Stage at least one title first'); return; }
+  const user = DB.users.find(u=>u.id===userPick.id);
+  if(!user) return;
+  const now = new Date();
+  let issued = 0;
+  issueBatch.forEach(item=>{
+    const book = DB.catalogue.find(b=>b.acc===item.acc);
+    if(!book || book.available!=='AVAILABLE' || user.borrowed>=user.maxAllowed) return;
+    const trx = {
+      trxId:'TRX-'+book.acc+'-'+user.id+'-'+Date.now()+'-'+issued, acc:book.acc, title:book.title, userId:user.id, name:user.name,
+      category:user.category, cls:user.cls, dateBorrowed:now.toISOString().slice(0,10),
+      dueDate: addDays(now,7).toISOString().slice(0,10), returnDate:null, condition:book.condition, note:''
+    };
+    DB.circulation.unshift(trx);
+    book.available = 'ISSUED';
+    user.borrowed += 1; user.totalBorrowed += 1;
+    issued++;
+    if(issued===issueBatch.length) offerTransactionReceipt(trx, 'issue'); // one receipt offer per batch, on the last item
+  });
+  issueBatch = [];
+  saveDB(); render(); toast(`${issued} title(s) issued to ${user.name}`);
+}
+function addToReturnBatch(){
+  if(!isAdmin()) return requireAdmin('return titles');
+  const pick = returnPicker && returnPicker.value;
+  if(!pick){ toast('Pick a loan to add'); return; }
+  const trx = DB.circulation.find(x=>x.trxId===pick.id);
+  if(!trx) return;
+  if(returnBatch.some(b=>b.trxId===trx.trxId)){ toast('That loan is already staged'); return; }
+  returnBatch.push({trxId:trx.trxId, acc:trx.acc, title:trx.title});
+  refreshSetupSection('returnBatchList', renderReturnBatchHtml);
+  const btn = document.querySelector('[onclick="commitReturnBatch()"]'); if(btn){ btn.disabled=false; btn.textContent=`Return all (${returnBatch.length})`; }
+  toast(`${trx.title} staged (${returnBatch.length} in batch)`);
+}
+function removeFromReturnBatch(i){
+  returnBatch.splice(i,1);
+  refreshSetupSection('returnBatchList', renderReturnBatchHtml);
+  const btn = document.querySelector('[onclick="commitReturnBatch()"]'); if(btn){ btn.disabled=!returnBatch.length; btn.textContent=`Return all (${returnBatch.length})`; }
+}
+function commitReturnBatch(){
+  if(!isAdmin()) return requireAdmin('return titles');
+  if(!returnBatch.length){ toast('Stage at least one loan first'); return; }
+  const condition = $('#returnCondition') ? $('#returnCondition').value : 'GOOD';
+  const isMissing = condition === 'MISSING';
+  let returned = 0, lastTrx = null, lastUser = null;
+  returnBatch.forEach(item=>{
+    const trx = DB.circulation.find(x=>x.trxId===item.trxId);
+    if(!trx || trx.returnDate) return;
+    const book = DB.catalogue.find(b=>b.acc===trx.acc);
+    const user = DB.users.find(u=>u.id===trx.userId);
+    const wasOverdue = txnStatus(trx)==='OVERDUE';
+    trx.returnDate = todayISO(); trx.condition = condition;
+    trx.finalStatus = isMissing ? 'MISSING' : 'RETURNED';
+    if(book){ book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition; }
+    if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
+    returned++; lastTrx = trx; lastUser = user;
+  });
+  returnBatch = [];
+  saveDB(); render(); toast(`${returned} title(s) returned`);
+  if(!isMissing && lastTrx) offerTransactionReceipt(lastTrx, 'return'); // one receipt offer per batch
 }
 function openCirculationPrintModal(){
   let scope = 'ALL';
@@ -2848,6 +3011,17 @@ function pageCirculationTable(){
   });
   return circulationModule.render();
 }
+function offerTransactionReceipt(trx, kind){
+  if(!DB.setup.transactionReceiptsEnabled) return;
+  const recipient = reminderRecipient(trx);
+  if(!recipient) return;
+  const msg = kind==='issue'
+    ? `Library receipt: "${trx.title}" (${trx.acc}) issued to ${trx.name} on ${fmtDate(trx.dateBorrowed)}, due back ${fmtDate(trx.dueDate)}.`
+    : `Library receipt: "${trx.title}" (${trx.acc}) returned by ${trx.name} on ${fmtDate(trx.returnDate)}. Condition: ${trx.condition}.`;
+  if(confirm(`Send a WhatsApp receipt to ${recipient.label}?`)){
+    window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+  }
+}
 function issueBook(){
   if(!isAdmin()) return requireAdmin('issue titles');
   const userPick = issuePicker && issuePicker.value;
@@ -2866,6 +3040,7 @@ function issueBook(){
   book.available = 'ISSUED';
   user.borrowed += 1; user.totalBorrowed += 1;
   saveDB(); render(); toast(`${book.title} issued to ${user.name} — due ${fmtDate(trx.dueDate)}`);
+  offerTransactionReceipt(trx, 'issue');
 }
 function returnBook(){
   if(!isAdmin()) return requireAdmin('return titles');
@@ -2884,6 +3059,7 @@ function returnBook(){
   if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
   saveDB(); render();
   toast(isMissing ? `${book?book.title:'Title'} recorded as MISSING — catalogue updated` : `Return recorded${wasOverdue?' — loan was overdue, strike added':''}`);
+  if(!isMissing) offerTransactionReceipt(trx, 'return');
 }
 function clearAllCirculation(){
   if(!isAdmin()) return requireAdmin('clear circulation records');
@@ -3432,6 +3608,11 @@ function pageSetup(){
     </div>
     <button class="btn secondary" onclick="saveAcademicPeriod()">Save term &amp; session</button>
   </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Transaction receipts</h3><div class="hint">Optional — off by default</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">When a book is issued or returned, offer to send a WhatsApp receipt to the staff member, or the class teacher if it's a student.</p>
+    <label style="font-size:13px"><input type="checkbox" id="setTxnReceipts" ${DB.setup.transactionReceiptsEnabled?'checked':''} onchange="DB.setup.transactionReceiptsEnabled=this.checked; saveDB(); toast(this.checked?'Transaction receipts enabled':'Transaction receipts disabled');"> Offer a WhatsApp receipt after every issue/return</label>
+  </div>
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>Student classes &amp; class teachers</h3><div class="hint">Every class starts with "YEAR" · teacher is picked from registered staff</div></div>
@@ -3648,6 +3829,21 @@ function pageSettings(){
     <div class="field-row">
       <div class="field"><label>Clock font</label><select id="setClockFont" onchange="applyClockFont(this.value)">${Object.entries(CLOCK_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.clockFont||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
       <div class="field"><label>Date font</label><select id="setDateFontDisplay" onchange="applyDateFont(this.value)">${Object.entries(DATE_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.dateFont||'default')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Login screen clock style</label><select id="setClockStyle" onchange="applyClockStyle(this.value)">
+        <option value="digital" ${(PREFS.clockStyle||'digital')==='digital'?'selected':''}>Digital</option>
+        <option value="analogue" ${PREFS.clockStyle==='analogue'?'selected':''}>Analogue (transparent)</option>
+      </select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label><input type="checkbox" id="setWeatherAmbience" ${PREFS.weatherAmbience!==false?'checked':''}> Weather ambience on Home banner</label></div>
+      <div class="field"><label>Ambience</label><select id="setWeatherMode">
+        <option value="auto" ${(PREFS.weatherAmbienceMode||'auto')==='auto'?'selected':''}>Auto (time of day)</option>
+        <option value="cloudy" ${PREFS.weatherAmbienceMode==='cloudy'?'selected':''}>Always cloudy</option>
+        <option value="sunny" ${PREFS.weatherAmbienceMode==='sunny'?'selected':''}>Always sunny</option>
+        <option value="moony" ${PREFS.weatherAmbienceMode==='moony'?'selected':''}>Always moonlit</option>
+      </select></div>
     </div>
     <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
   </div>
@@ -4158,6 +4354,8 @@ function saveClockPrefs(){
   PREFS.clockFormat = DB.setup.clockFormat; PREFS.dateFormat = DB.setup.dateFormat;
   if($('#setTheme')) PREFS.theme = $('#setTheme').value;
   if($('#setPalette')) PREFS.palette = $('#setPalette').value;
+  if($('#setWeatherAmbience')) PREFS.weatherAmbience = $('#setWeatherAmbience').checked;
+  if($('#setWeatherMode')) PREFS.weatherAmbienceMode = $('#setWeatherMode').value;
   applyTheme(); applyPalette(PREFS.palette);
   appearancePreviewDirty = false;
   savePrefs(); saveDB(); render(); toast('Preferences saved');
