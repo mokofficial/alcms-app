@@ -1924,8 +1924,8 @@ function checkOutstandingSummaryAlert(){
   const feedbackCount = Array.isArray(DB.feedback) ? DB.feedback.filter(f=>f.status!=='RESOLVED').length : 0;
   if(!overdueCount && !feedbackCount) return;
   const parts = [];
-  if(overdueCount) parts.push(`<p style="margin:0 0 6px"><strong>${overdueCount}</strong> loan${overdueCount>1?'are':'is'} still overdue</p>`);
-  if(feedbackCount) parts.push(`<p style="margin:0">${feedbackCount>1?'s':''} <strong>${feedbackCount}</strong> unresolved feedback item${feedbackCount>1?'s':''}</p>`);
+  if(overdueCount) parts.push(`<p style="margin:0 0 6px"><strong>${overdueCount}</strong> loan${overdueCount>1?'s':''} still overdue</p>`);
+  if(feedbackCount) parts.push(`<p style="margin:0">${feedbackCount>1?'are':'is'} <strong>${feedbackCount}</strong> unresolved feedback item${feedbackCount>1?'s':''}</p>`);
   openTimedAlert({
     title: 'Needs your attention',
     bodyHtml: parts.join(''),
