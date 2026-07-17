@@ -1035,6 +1035,7 @@ function formatClockDate(d){
     case 'DD-MM-YYYY': return `${day}-${String(d.getMonth()+1).padStart(2,'0')}-${year}`;
     case 'YYYY-MM-DD': return `${year}-${String(d.getMonth()+1).padStart(2,'0')}-${day}`;
     case 'Weekday, DD MMMM YYYY': return `${weekday}, ${day} ${monLong} ${year}`;
+    case 'Wkday, DD MMMM YYYY': return `${weekdayShort}, ${day} ${monLong} ${year}`;
     case 'Wkday, DD MMM YYYY': return `${weekdayShort}, ${day} ${monShort} ${year}`;
     default: return `${day} ${monShort} ${year}`;
   }
@@ -2952,13 +2953,13 @@ function pageHome(){
     ${kpi('Overdue right now', overdue, overdue? 'needs a reminder':'all clear')}
   </div>
   <div class="grid quicklinks">
+    ${qlink(navIcon('dashboard','▤'),'Dashboard', 'Full library overview','dashboard')}
     ${qlink(navIcon('catalogue','▥'),'Catalogue', c.length+' titles on the shelf','catalogue')}
     ${qlink(navIcon('users','👥'),'Members', u.length+' registered borrowers','users')}
     ${qlink(navIcon('circulation','⇄'),'Circulation', t.filter(x=>txnStatus(x)!=='RETURNED').length+' active loans','circulation')}
     ${qlink(navIcon('reminders','✉'),'Reminders', overdue+' overdue right now','reminders')}
     ${qlink(navIcon('register','✎'),'Register', DB.registerLog.length+' logged visits','register')}
     ${qlink(navIcon('feedback','💬'),'Feedback', DB.feedback.filter(f=>f.status==='NEW').length+' new items','feedback')}
-    ${qlink(navIcon('dashboard','▤'),'Dashboard', 'Full library overview','dashboard')}
     ${qlink(navIcon('analytics','◔'),'Analytics', 'Trends & reports','analytics')}
     ${qlink(navIcon('schedule','▦'),'Schedule', 'Weekly timetable','schedule')}
     ${qlink(navIcon('setup','⚙'),'Setup', isAdmin()? 'Configure the system':'Admin only','setup')}
