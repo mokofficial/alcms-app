@@ -14,23 +14,70 @@
     var raw = localStorage.getItem('alcms:alcms_prefs_v1');
     var theme = raw ? (JSON.parse(raw).theme || 'system') : 'system';
     if(theme==='system' || !theme){
-      theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      var h = new Date().getHours();
+      var isNight = h>=19 || h<6;
+      theme = ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) || isNight) ? 'dark' : 'light';
     }
     document.documentElement.setAttribute('data-theme', theme);
   }catch(e){ /* no saved prefs yet, or storage blocked — default :root colours are fine */ }
 })();
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231F3A2E'/%3E%3Cpath d='M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M32 18v30' stroke='%23B8863E' stroke-width='2'/%3E%3Ccircle cx='32' cy='12' r='4' fill='%23D9A94F'/%3E%3C/svg%3E">
-<!-- These three libraries were missing entirely, which is why Excel/CSV import, Excel export,
-     PDF export, and chart rendering all silently failed with "undefined" errors (XLSX, jsPDF and
-     Chart were never defined). Load order matters: they must come before app.js. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Nunito:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Pacifico&family=Dancing+Script&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<!-- These three libraries were missing entirely, which is why Excel/CSV import, Excel export,
+     PDF export, and chart rendering all silently failed with "undefined" errors (XLSX, jsPDF and
+     Chart were never defined). Load order matters: they must come before app.js.
+
+     A single CDN (cdnjs) previously meant that if the school/library network blocks that one host
+     — a common cause on filtered/offline networks, and the reason charts sometimes never appear
+     — every one of these libraries failed at once with no way to recover short of a reload once
+     the network changed. This loader tries a short list of independent CDN mirrors per library,
+     one at a time, before giving up; makeChart() below also exposes a manual "Retry" action for
+     the rare case where every mirror is unreachable. -->
+<script>
+function loadScriptWithFallbacks(urls, onDone){
+  let i = 0;
+  function tryNext(){
+    if(i >= urls.length){ onDone(false); return; }
+    const url = urls[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=> onDone(true);
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+}
+window.libraryLoadStatus = { xlsx:'loading', jspdf:'loading', chart:'loading' };
+loadScriptWithFallbacks([
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+], (ok)=>{ window.libraryLoadStatus.xlsx = ok ? 'ready' : 'failed'; });
+loadScriptWithFallbacks([
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
+], (ok)=>{
+  window.libraryLoadStatus.jspdf = ok ? 'ready' : 'failed';
+  if(!ok) return;
+  loadScriptWithFallbacks([
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+    'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js',
+    'https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js',
+  ], ()=>{});
+});
+loadScriptWithFallbacks([
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js',
+  'https://unpkg.com/chart.js@4.4.3/dist/chart.umd.min.js',
+], (ok)=>{
+  window.libraryLoadStatus.chart = ok ? 'ready' : 'failed';
+  if(ok && window.retryPendingCharts) window.retryPendingCharts();
+});
+</script>
 <style>
 :root{
   --ink:#132019;
@@ -142,8 +189,8 @@ input,select,textarea{font-family:inherit;}
   flex:1.1; color:#F3EEDD;
   padding:60px 50px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; min-width:320px;
 }
-.auth-info::before{ content:""; position:absolute; right:-80px; bottom:-80px; width:280px;height:280px;border-radius:50%; border:1px solid rgba(255,255,255,.08);}
-.auth-info::after{ content:""; position:absolute; right:-40px; bottom:-40px; width:180px;height:180px;border-radius:50%; border:1px solid rgba(255,255,255,.1);}
+.auth-info::before{ content:""; position:absolute; right:-160px; top:50%; transform:translateY(-50%); width:420px;height:420px;border-radius:50%; border:1px solid rgba(255,255,255,.08);}
+.auth-info::after{ content:""; position:absolute; right:-90px; top:50%; transform:translateY(-50%); width:280px;height:280px;border-radius:50%; border:1px solid rgba(255,255,255,.1);}
 .auth-brand{ display:flex; align-items:center; gap:12px;}
 .auth-brand .stamp-badge{ width:44px;height:44px;border-radius:50%;border:2px solid var(--brass-light); display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:var(--brass-light); overflow:hidden;}
 .auth-brand .stamp-badge img{ width:100%; height:100%; object-fit:cover;}
@@ -174,6 +221,23 @@ input,select,textarea{font-family:inherit;}
 .auth-slide-author{ font-size:12.5px; color:var(--brass-light); margin-top:6px; font-style:italic;}
 .auth-slide-info{ color:rgba(255,255,255,.55); font-style:normal;}
 
+body[data-lockscreen-circles="off"] .auth-info::before, body[data-lockscreen-circles="off"] .auth-info::after{ display:none;}
+body[data-lockscreen-quotes="off"] .auth-carousel-wrap, body[data-lockscreen-quotes="off"] .auth-dots{ display:none;}
+body[data-lockscreen-clock="off"] .auth-clock{ display:none;}
+body[data-lockscreen-tips="off"] .auth-carousel-actions{ display:none;}
+body[data-lockscreen-contact="off"] .auth-contact-dev-link{ display:none;}
+/* ===== Personalization ribbon (Office-style element picker) ===== */
+.ribbon-picker{ display:flex; gap:4px; flex-wrap:wrap; background:var(--parchment-dim); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:12px;}
+.ribbon-item{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  width:76px; padding:8px 4px; border-radius:8px; border:1px solid transparent; background:transparent;
+  cursor:pointer; color:var(--ink); font-size:10.5px; line-height:1.2; text-align:center;
+}
+.ribbon-item .ic{ font-size:18px;}
+.ribbon-item:hover{ background:var(--card); border-color:var(--line);}
+.ribbon-item.active{ background:var(--card); border-color:var(--brass); box-shadow:0 0 0 1px var(--brass) inset;}
+.ribbon-item.active .ic{ color:var(--forest);}
+html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-light) inset;}
 .auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:48px 30px; position:relative; z-index:1;}
 .auth-box{ width:100%; max-width:380px; background:rgba(255,255,255,var(--auth-box-opacity,0.9)); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.5); border-radius:18px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,.2);}
 html[data-theme="dark"] .auth-box{ background:rgba(30,32,30,var(--auth-box-opacity,0.82)); border-color:rgba(255,255,255,.14);}
@@ -200,8 +264,8 @@ html[data-theme="dark"] .auth-box{ background:rgba(30,32,30,var(--auth-box-opaci
     grid-template-areas:"brand clock" "carousel carousel" "bottom bottom";
     align-items:start;
   }
-  .auth-info::before{ width:160px; height:160px; right:-50px; bottom:-50px;}
-  .auth-info::after{ width:100px; height:100px; right:-25px; bottom:-25px;}
+  .auth-info::before{ width:220px; height:220px; right:-80px;}
+  .auth-info::after{ width:140px; height:140px; right:-45px;}
   .auth-brand{
     grid-area:brand; margin-left:0; justify-content:flex-start; align-items:center;
     min-width:0; /* allow the name to actually shrink/wrap instead of overflowing */
@@ -507,7 +571,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .home-hero .accession-stamp .t{ font-size:9px; letter-spacing:1.5px;}
 .weather-ambience{ position:absolute; top:0; right:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; opacity:.7;}
 .weather-label{
-  position:absolute; top:18px; right:22px; z-index:2; display:flex; align-items:center; gap:7px;
+  position:absolute !important; top:18px !important; right:22px !important; left:auto !important; bottom:auto !important;
+  z-index:5 !important; display:flex !important; align-items:center; gap:7px;
   font-size:11.5px; font-weight:600; letter-spacing:.3px; color:#F3EEDD; text-shadow:0 1px 4px rgba(0,0,0,.4);
 }
 .weather-label-dot{ width:9px; height:9px; border-radius:50%; flex:none;}
@@ -518,7 +583,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 @media (max-width:640px){
   /* Not enough width to keep the heading clear of a fixed top-right label — let it sit in the
      normal flow above the title instead (it's already first in the markup, so this just un-floats it). */
-  .weather-label{ position:static; margin-bottom:10px;}
+  .weather-label{ position:static !important; margin-bottom:10px;}
   .home-hero h1{ padding-right:0;}
 }
 .quicklinks{ grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
@@ -884,7 +949,8 @@ async function pickContactForField(fieldId){
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'light', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', headingScale:1, bodyScale:1, headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', authClockStyle:'digital', weatherAmbience:true, weatherAmbienceStyle:'soft', paletteAuto:true, headingColor:'default', bodyColor:'default', mutedColor:'default', iconPack:'minimal', transitionStyle:'scale', sectionStyle:'solid', sectionOpacity:70, topbarStyle:'solid', authBoxOpacity:90};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'light', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', headingScale:1, bodyScale:1, headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', authClockStyle:'digital', weatherAmbience:true, weatherAmbienceStyle:'soft', paletteAuto:true, headingColor:'default', bodyColor:'default', mutedColor:'default', iconPack:'minimal', transitionStyle:'scale', sectionStyle:'solid', sectionOpacity:70, topbarStyle:'solid', authBoxOpacity:90,
+  lockscreenElements:{circles:true, quotes:true, clock:true, tips:true, contact:true}};
 const CLOCK_FONTS = {
   digital: {label:'Digital (default)', stack:"'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace"},
   elegant: {label:'Elegant serif', stack:"Georgia,'Times New Roman',serif"},
@@ -957,14 +1023,13 @@ const TEXT_COLORS = {
 const FONT_WEIGHTS = {default:{label:'Default'}, normal:{label:'Normal', value:400}, medium:{label:'Medium', value:500}, bold:{label:'Bold', value:700}, black:{label:'Extra bold', value:900}};
 const FONT_STYLES = {normal:{label:'Normal', value:'normal'}, italic:{label:'Italic', value:'italic'}};
 function applyClockFont(key){
-  PREFS.clockFont = CLOCK_FONTS[key] ? key : 'digital';
-  document.documentElement.style.setProperty('--clock-font', CLOCK_FONTS[PREFS.clockFont].stack);
-  savePrefs();
+  // Preview only — the visible clock updates immediately, but PREFS.clockFont isn't touched
+  // (and nothing is saved) until the Save button on this panel is clicked.
+  document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[key]||CLOCK_FONTS.digital).stack);
 }
 function applyDateFont(key){
-  PREFS.dateFont = DATE_FONTS[key] ? key : 'default';
-  document.documentElement.style.setProperty('--date-font', DATE_FONTS[PREFS.dateFont].stack);
-  savePrefs();
+  // Preview only — see applyClockFont() above.
+  document.documentElement.style.setProperty('--date-font', (DATE_FONTS[key]||DATE_FONTS.default).stack);
 }
 function applyTypography(){
   document.documentElement.style.setProperty('--app-font', (APP_FONTS[PREFS.appFont]||APP_FONTS.default).stack);
@@ -1057,8 +1122,18 @@ async function loadPrefs(){
   if(savedSectionRgb){ document.documentElement.style.setProperty('--section-bg-rgb', savedSectionRgb); document.documentElement.style.setProperty('--section-bg-rgb-dark', savedSectionRgb); }
   const savedTopbarRgb = hexToRgbStr(PREFS.topbarBgColor);
   if(savedTopbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', savedTopbarRgb);
+  applyLockscreenElements(PREFS.lockscreenElements);
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
+/* Which lockscreen elements are shown — toggled from the Office-ribbon-style picker in
+   Settings → Lockscreen. Applying just sets data attributes the CSS reacts to, so this works
+   equally well as a live preview (not yet saved) or the real saved state on boot. */
+function applyLockscreenElements(elements){
+  const els = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, elements||{});
+  Object.keys(els).forEach(key=>{
+    document.body.setAttribute('data-lockscreen-'+key, els[key] ? 'on' : 'off');
+  });
+}
 
 /* ================= admin key (required to create a new admin account) ================= */
 const ADMIN_KEY_STORAGE = 'alcms_admin_key_v1';
@@ -1076,10 +1151,17 @@ function verifyAdminKey(promptText){
   if(key !== ADMIN_KEY){ toast('Incorrect admin key — action cancelled'); return false; }
   return true;
 }
+// "Night" is 7pm–6am local time — used to auto-switch "Match system" over to dark, since the OS
+// dark-mode preference alone doesn't account for time of day.
+function isNightTime(){
+  const h = new Date().getHours();
+  return h>=19 || h<6;
+}
 function applyTheme(){
   let effective = PREFS.theme;
   if(effective==='system' || !effective){
-    effective = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    const osPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    effective = (osPrefersDark || isNightTime()) ? 'dark' : 'light';
   }
   document.documentElement.setAttribute('data-theme', effective);
   // Forest & Brass (green) is its own explicit theme choice — it shouldn't be what Dark mode looks
@@ -1095,6 +1177,9 @@ function cycleTheme(){
   PREFS.theme = next; applyTheme(); applyPalette(PREFS.palette); savePrefs();
   toast('Theme: '+next.charAt(0).toUpperCase()+next.slice(1));
 }
+// Re-check every few minutes so a "Match system" theme actually flips to dark the moment night
+// falls, rather than only updating on the next page load or OS-level preference change.
+setInterval(()=>{ if(PREFS.theme==='system' || !PREFS.theme){ applyTheme(); applyPalette(PREFS.palette); } }, 5*60*1000);
 if(window.matchMedia){
   try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(PREFS.palette); } }); }catch(e){}
 }
@@ -2005,22 +2090,74 @@ function checkReminderAlerts(){
     + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more overdue</p>` : '');
   openTimedAlert({title:`${newOnes.length} loan${newOnes.length>1?'s':''} now overdue`, bodyHtml});
 }
+// Loans that are still borrowed but due within 2 days — shared by the near-overdue alert below
+// and the "Needs your attention" summary, so both agree on exactly what counts as "near overdue".
+function getNearOverdueLoans(){
+  if(!DB || !Array.isArray(DB.circulation)) return [];
+  return DB.circulation.filter(x=>{
+    if(txnStatus(x)!=='BORROWED') return false;
+    const due = parseAnyDate(x.dueDate); if(!due) return false;
+    const days = daysBetween(new Date(), due);
+    return days>=0 && days<=2;
+  });
+}
+// Near-overdue gets its own independent alert, the same shape as checkReminderAlerts() for
+// overdue loans above: it tracks which trxIds it has already alerted on in a Set that starts
+// empty each session, so the first check after sign-in effectively acts as a startup alert.
+let nearOverdueAlertedIds = new Set();
+function checkNearOverdueAlerts(){
+  if(!SESSION || !DB || !Array.isArray(DB.circulation) || $('#timedAlertBackdrop')) return;
+  const nearOverdue = getNearOverdueLoans();
+  const newOnes = nearOverdue.filter(x=>!nearOverdueAlertedIds.has(x.trxId));
+  if(!newOnes.length) return;
+  newOnes.forEach(x=>nearOverdueAlertedIds.add(x.trxId));
+  const shown = newOnes.slice(0,8);
+  const bodyHtml = shown.map(x=>{
+    const daysLeft = daysBetween(new Date(), parseAnyDate(x.dueDate));
+    return `<p style="margin:0 0 8px"><strong>${esc(x.title)}</strong> — ${esc(x.name)} (${esc(x.userId)}) <span style="color:var(--muted)">— due in ${daysLeft} day${daysLeft===1?'':'s'}</span></p>`;
+  }).join('') + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more due soon</p>` : '');
+  openTimedAlert({
+    title:`${newOnes.length} loan${newOnes.length>1?'s':''} due soon`,
+    bodyHtml,
+    actions:[{label:'View', primary:true, onClick:()=>{ route='reminders'; render(); }}],
+  });
+}
+// Feedback gets its own independent alert too, same pattern as overdue and near-overdue above.
+let feedbackAlertedIds = new Set();
+function checkFeedbackAlerts(){
+  if(!SESSION || !DB || !Array.isArray(DB.feedback) || $('#timedAlertBackdrop')) return;
+  const unresolved = DB.feedback.filter(f=>f.status!=='RESOLVED');
+  const newOnes = unresolved.filter(f=>!feedbackAlertedIds.has(f.entryId));
+  if(!newOnes.length) return;
+  newOnes.forEach(f=>feedbackAlertedIds.add(f.entryId));
+  const shown = newOnes.slice(0,8);
+  const bodyHtml = shown.map(f=>`<p style="margin:0 0 8px"><strong>${esc(f.subject||f.type||'Feedback')}</strong> — ${esc(f.userName||'Anonymous')}</p>`).join('')
+    + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more unresolved</p>` : '');
+  openTimedAlert({
+    title:`${newOnes.length} unresolved feedback item${newOnes.length>1?'s':''}`,
+    bodyHtml,
+    actions:[{label:'View', primary:true, onClick:()=>{ route='feedback'; render(); }}],
+  });
+}
 let outstandingSnoozeUntil = 0;
 function checkOutstandingSummaryAlert(){
   if(!SESSION || !DB || $('#timedAlertBackdrop')) return;
   if(Date.now() < outstandingSnoozeUntil) return;
   const overdueCount = Array.isArray(DB.circulation) ? DB.circulation.filter(x=>txnStatus(x)==='OVERDUE').length : 0;
+  const nearOverdueCount = getNearOverdueLoans().length;
   const feedbackCount = Array.isArray(DB.feedback) ? DB.feedback.filter(f=>f.status!=='RESOLVED').length : 0;
-  if(!overdueCount && !feedbackCount) return;
+  if(!overdueCount && !nearOverdueCount && !feedbackCount) return;
   const parts = [];
   if(overdueCount) parts.push(`<p style="margin:0 0 6px">There ${overdueCount>1?'are':'is'} <strong>${overdueCount}</strong> loan${overdueCount>1?'s':''} still overdue</p>`);
+  if(nearOverdueCount) parts.push(`<p style="margin:0 0 6px">There ${nearOverdueCount>1?'are':'is'} <strong>${nearOverdueCount}</strong> loan${nearOverdueCount>1?'s':''} due within 2 days</p>`);
   if(feedbackCount) parts.push(`<p style="margin:0">There ${feedbackCount>1?'are':'is'} <strong>${feedbackCount}</strong> unresolved feedback item${feedbackCount>1?'s':''}</p>`);
   const actions = [{label:'Snooze', onClick:()=>{ outstandingSnoozeUntil = Date.now() + 15*60*1000; }}];
-  if(overdueCount && feedbackCount){
-    actions.push({label:'View overdue loans', onClick:()=>{ route='reminders'; render(); }});
-    actions.push({label:'View feedback', primary:true, onClick:()=>{ route='feedback'; render(); }});
+  const needsCount = [overdueCount, nearOverdueCount, feedbackCount].filter(Boolean).length;
+  if(needsCount>1){
+    if(overdueCount || nearOverdueCount) actions.push({label:'View reminders', onClick:()=>{ route='reminders'; render(); }});
+    if(feedbackCount) actions.push({label:'View feedback', primary:true, onClick:()=>{ route='feedback'; render(); }});
   } else {
-    actions.push({label:'Attend to it', primary:true, onClick:()=>{ route = overdueCount ? 'reminders' : 'feedback'; render(); }});
+    actions.push({label:'Attend to it', primary:true, onClick:()=>{ route = feedbackCount ? 'feedback' : 'reminders'; render(); }});
   }
   openTimedAlert({
     title: 'Needs your attention',
@@ -2029,7 +2166,7 @@ function checkOutstandingSummaryAlert(){
   });
 }
 setInterval(checkOutstandingSummaryAlert, 15*60*1000);
-setInterval(()=>{ checkScheduleAlerts(); checkReminderAlerts(); }, 20000);
+setInterval(()=>{ checkScheduleAlerts(); checkReminderAlerts(); checkNearOverdueAlerts(); checkFeedbackAlerts(); }, 20000);
 
 /* ================= navigation ================= */
 const NAV = [
@@ -2159,10 +2296,38 @@ function saveAuthBackground(){
   reader.onload = ()=>{ DB.setup.authBackgroundImage = reader.result; saveDB(); applyAuthBackground(); render(); toast('Sign-in background saved'); };
   reader.readAsDataURL(file);
 }
+const LOCKSCREEN_RIBBON_ITEMS = [
+  {key:'circles', ic:'◯', label:'Circles'},
+  {key:'quotes', ic:'❝', label:'Quotes'},
+  {key:'clock', ic:'🕐', label:'Clock'},
+  {key:'tips', ic:'💡', label:'Tips'},
+  {key:'contact', ic:'✉', label:'Contact link'},
+];
+// Draft of which lockscreen elements are on/off while this panel is open — mirrors the
+// appearancePreviewDirty pattern: previews live via applyLockscreenElements(), only written
+// into PREFS (and persisted) when "Save lockscreen appearance" is actually clicked.
+let lockscreenElementsDraft = null;
+function renderLockscreenRibbon(){
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, PREFS.lockscreenElements||{});
+  return LOCKSCREEN_RIBBON_ITEMS.map(item=>
+    `<button type="button" class="ribbon-item ${lockscreenElementsDraft[item.key]?'active':''}" onclick="toggleLockscreenElement('${item.key}')">
+      <span class="ic">${item.ic}</span><span>${esc(item.label)}</span>
+    </button>`
+  ).join('');
+}
+function toggleLockscreenElement(key){
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, PREFS.lockscreenElements||{});
+  lockscreenElementsDraft[key] = !lockscreenElementsDraft[key];
+  applyLockscreenElements(lockscreenElementsDraft); // live preview on the real (currently hidden) lockscreen
+  const ribbon = document.getElementById('lockscreenRibbon');
+  if(ribbon) ribbon.innerHTML = renderLockscreenRibbon();
+}
 function saveLockscreenAppearance(){
-  // One save button for the whole lockscreen row: background image + its opacity + login box opacity.
+  // One save button for the whole lockscreen row: background image + its opacity + login box opacity + elements shown.
   PREFS.authBoxOpacity = +document.getElementById('setAuthBoxOpacity')?.value || 90;
   document.documentElement.style.setProperty('--auth-box-opacity', PREFS.authBoxOpacity/100);
+  if(lockscreenElementsDraft) PREFS.lockscreenElements = Object.assign({}, lockscreenElementsDraft);
+  applyLockscreenElements(PREFS.lockscreenElements);
   savePrefs();
   saveAuthBackground();
 }
@@ -2241,6 +2406,16 @@ function saveSectionStyle(){
   const topbarRgb = hexToRgbStr(PREFS.topbarBgColor);
   if(topbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', topbarRgb);
   savePrefs(); toast('Background style saved');
+}
+function previewPersonalizationExtras(){
+  // Live preview only — applies the icon pack and modal transition visually without persisting.
+  const iconPack = document.getElementById('setIconPack')?.value || PREFS.iconPack || 'minimal';
+  const transitionStyle = document.getElementById('setTransitionStyle')?.value || PREFS.transitionStyle || 'scale';
+  document.body.setAttribute('data-transition', transitionStyle);
+  const prevIconPack = PREFS.iconPack;
+  PREFS.iconPack = iconPack; // applyIconPack() reads from PREFS, so set it briefly to preview…
+  applyIconPack();
+  PREFS.iconPack = prevIconPack; // …then restore, since this hasn't been saved yet.
 }
 function savePersonalizationExtras(){
   PREFS.iconPack = document.getElementById('setIconPack')?.value || 'minimal';
@@ -2685,15 +2860,40 @@ function softRerender(key){
 
 /* ================= chart helpers ================= */
 const chartInstances = {};
+let pendingChartDraws = [];
+// Called by the loader in <head> once Chart.js finishes loading (from whichever mirror worked) —
+// re-runs any dashboard/analytics chart draws that were attempted before the library was ready.
+window.retryPendingCharts = function(){
+  const draws = pendingChartDraws; pendingChartDraws = [];
+  draws.forEach(fn=>{ try{ fn(); }catch(e){ console.warn('Retry chart draw failed', e); } });
+};
+function retryChartLoad(drawFn){
+  // Manual "Retry" click from the fallback message — try the mirror list again from scratch.
+  loadScriptWithFallbacks([
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js',
+    'https://unpkg.com/chart.js@4.4.3/dist/chart.umd.min.js',
+  ], (ok)=>{
+    window.libraryLoadStatus.chart = ok ? 'ready' : 'failed';
+    if(ok && drawFn) drawFn(); else toast('Still couldn\'t reach a charts library — check your network connection.');
+  });
+}
 function makeChart(canvasId, config){
   const ctx = document.getElementById(canvasId);
   if(!ctx) return;
   if(typeof Chart==='undefined'){
-    // The Chart.js CDN script didn't load (offline, blocked, or a network hiccup) — instead of
-    // throwing "Chart is not defined" and silently killing every chart call after this one, show
-    // a clear inline message where the chart would have been.
     const wrap = ctx.closest('.chart-canvas-wrap') || ctx.parentElement;
-    if(wrap) wrap.innerHTML = '<div class="empty chart-fallback">⚠ Charts library failed to load. Check your internet connection and reload the page.</div>';
+    if(window.libraryLoadStatus && window.libraryLoadStatus.chart==='loading'){
+      // Still trying mirrors in the background — queue this draw so it fires the moment one
+      // succeeds, and show a message that makes clear this is transient, not a dead end.
+      pendingChartDraws.push(()=> makeChart(canvasId, config));
+      if(wrap) wrap.innerHTML = '<div class="empty chart-fallback">⏳ Loading charts library…</div>';
+      return;
+    }
+    // Every CDN mirror failed (offline, or the network blocks all of them) — give a clear,
+    // actionable message and a way to retry without a full page reload.
+    if(wrap) wrap.innerHTML = '<div class="empty chart-fallback">⚠ Charts library failed to load — check your internet connection.'
+      + '<div style="margin-top:8px"><button class="btn secondary small" onclick="retryChartLoad(()=>{ if(route===\'dashboard\') drawDashboardCharts(); if(route===\'analytics\') drawAnalyticsCharts(); })">Retry</button></div></div>';
     return;
   }
   if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
@@ -5000,10 +5200,12 @@ function pageSettings(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Icons &amp; motion</h3><div class="hint">Nav icon style and how modals animate</div></div>
+    <p class="field-hint" style="margin:-4px 0 8px">Previewing live — click "Save" below to keep it, or leave this page without saving to discard.</p>
     <div class="field-row">
-      <div class="field"><label>Icon pack</label><select id="setIconPack" onchange="savePersonalizationExtras()">${Object.entries(ICON_PACKS).map(([k,v])=>`<option value="${k}" ${(PREFS.iconPack||'minimal')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
-      <div class="field"><label>Modal transition</label><select id="setTransitionStyle" onchange="savePersonalizationExtras()">${Object.entries(TRANSITION_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.transitionStyle||'scale')===k?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="field"><label>Icon pack</label><select id="setIconPack" onchange="previewPersonalizationExtras()">${Object.entries(ICON_PACKS).map(([k,v])=>`<option value="${k}" ${(PREFS.iconPack||'minimal')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Modal transition</label><select id="setTransitionStyle" onchange="previewPersonalizationExtras()">${Object.entries(TRANSITION_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.transitionStyle||'scale')===k?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
     </div>
+    <button class="btn secondary" style="margin-top:10px" onclick="savePersonalizationExtras()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>In-app background</h3><div class="hint">A subtle image behind the app content — cards stay readable on top of it</div></div>
@@ -5024,6 +5226,8 @@ function pageSettings(){
       <div class="field"><label>Login box opacity (<span id="authBoxOpacityVal">${PREFS.authBoxOpacity??90}</span>%)</label><input type="range" id="setAuthBoxOpacity" min="30" max="100" value="${PREFS.authBoxOpacity??90}" oninput="document.getElementById('authBoxOpacityVal').textContent=this.value; document.documentElement.style.setProperty('--auth-box-opacity', this.value/100);"></div>
     </div>
     <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background.</p>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Elements shown on the lockscreen</h4><div class="hint">Pick which pieces appear — like the Insert ribbon in Microsoft Office</div></div>
+    <div class="ribbon-picker" id="lockscreenRibbon">${renderLockscreenRibbon()}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <button class="btn secondary" onclick="saveLockscreenAppearance()">Save lockscreen appearance</button>
       ${DB.setup.authBackgroundImage? `<button class="btn danger" onclick="clearAuthBackground()">Remove background</button>`:''}
@@ -5535,9 +5739,13 @@ function saveClockPrefs(){
   if($('#setDateFormat')) DB.setup.dateFormat = $('#setDateFormat').value;
   PREFS.clockFormat = DB.setup.clockFormat; PREFS.dateFormat = DB.setup.dateFormat;
   if($('#setAuthClockStyle')) PREFS.authClockStyle = $('#setAuthClockStyle').value;
+  if($('#setClockFont')) PREFS.clockFont = $('#setClockFont').value;
+  if($('#setDateFontDisplay')) PREFS.dateFont = $('#setDateFontDisplay').value;
   if($('#setTheme')) PREFS.theme = $('#setTheme').value;
   if($('#setPalette')){ PREFS.palette = $('#setPalette').value; PREFS.paletteAuto = false; }
   applyTheme(); applyPalette(PREFS.palette);
+  document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[PREFS.clockFont]||CLOCK_FONTS.digital).stack);
+  document.documentElement.style.setProperty('--date-font', (DATE_FONTS[PREFS.dateFont]||DATE_FONTS.default).stack);
   appearancePreviewDirty = false;
   savePrefs(); saveDB(); render(); toast('Preferences saved');
 }
@@ -6116,6 +6324,9 @@ let lastRenderedRoute = null;
 function render(){
   if(appearancePreviewDirty && route!=='settings'){
     applyTheme(); applyPalette(PREFS.palette); applyTypography(); appearancePreviewDirty = false;
+  }
+  if(lockscreenElementsDraft && route!=='settings'){
+    applyLockscreenElements(PREFS.lockscreenElements); lockscreenElementsDraft = null;
   }
   if(route !== lastRenderedRoute){
     // Every page should open at the top rather than keeping the previous page's scroll position.
