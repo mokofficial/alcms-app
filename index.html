@@ -235,6 +235,15 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-foot{ font-size:11px; color:rgba(255,255,255,.5); position:relative; z-index:2; line-height:1; display:inline-flex; align-items:center;}
 .auth-contact-dev-link{ display:block; margin-top:1px; font-size:11px; color:rgba(255,255,255,.55); text-decoration:underline; text-align:left;}
 .auth-contact-dev-link:hover{ color:#fff;}
+.auth-notif-bell{ position:absolute; top:22px; right:26px; z-index:6;}
+.auth-notif-bell .icon-btn{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#EFE8D3; position:relative;}
+.auth-notif-bell .icon-btn:hover{ border-color:var(--brass-light);}
+.auth-notif-preview{ display:none; position:absolute; top:calc(100% + 8px); right:0; width:300px; max-width:88vw; max-height:360px; overflow:auto;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:6px; z-index:20;}
+.auth-notif-preview.open{ display:block;}
+.auth-notif-preview .notif-row{ cursor:default;}
+.auth-notif-preview .auth-notif-signin-hint{ font-size:11px; color:var(--muted); text-align:center; padding:8px 6px 4px; border-top:1px solid var(--line); margin-top:4px;}
+@media (max-width:640px){ .auth-notif-bell{ top:14px; right:14px;} }
 .auth-slide{ display:none; animation:fadeSlide .6s ease;}
 .auth-slide.active{ display:block;}
 @keyframes fadeSlide{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
@@ -250,6 +259,7 @@ body[data-lockscreen-clock="off"] .auth-clock{ display:none;}
 body[data-lockscreen-tips="off"] .auth-tips-btn{ display:none;}
 body[data-lockscreen-gettingstarted="off"] .auth-getting-started-btn{ display:none;}
 body[data-lockscreen-contact="off"] .auth-contact-dev-link{ display:none;}
+body[data-lockscreen-notifbell="off"] .auth-notif-bell{ display:none;}
 /* ===== Personalization ribbon (Office-style element picker) ===== */
 .ribbon-picker{ display:flex; gap:4px; flex-wrap:wrap; background:var(--parchment-dim); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:12px;}
 .ribbon-item{
@@ -369,6 +379,22 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
 .topbar .titles p{ margin:2px 0 0; font-size:12.5px; color:rgba(239,232,211,.68);}
 .topbar .today{ font-size:12px; color:rgba(239,232,211,.68); text-align:right;}
 .topbar-right{ display:flex; align-items:center; gap:14px;}
+.topbar-search{ position:relative; display:flex; align-items:center;}
+.topbar-search-input{ display:none;}
+.topbar-search-results{ display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:60vh; overflow:auto;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.32); padding:6px; z-index:60;}
+.topbar-search-results.open{ display:block;}
+@media (min-width:821px){
+  .topbar-right{ flex:1; justify-content:flex-end;}
+  .topbar-search{ flex:1; max-width:440px; margin-right:6px;}
+  .topbar-search-icon{ display:none;}
+  .topbar-search-input{ display:block; width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+    color:#EFE8D3; border-radius:22px; padding:9px 16px; font-size:13px;}
+  .topbar-search-input::placeholder{ color:rgba(239,232,211,.55);}
+  .topbar-search-input:focus{ outline:none; border-color:var(--brass-light); background:rgba(255,255,255,.14);}
+}
+body[data-topbar-style="blank"] .topbar-search-input{ color:var(--ink); border-color:var(--line);}
+body[data-topbar-style="blank"] .topbar-search-input::placeholder{ color:var(--muted);}
 .topbar .hamburger{ color:#EFE8D3;}
 .topbar .icon-btn{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#EFE8D3;}
 .topbar .icon-btn:hover{ border-color:var(--brass-light);}
@@ -388,20 +414,35 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
 body[data-section-style="blank"] .card, body[data-section-style="blank"] .modal{
   background:transparent; border:none; box-shadow:none; backdrop-filter:none;
 }
-body[data-section-style="glassy"] .card, body[data-section-style="glassy"] .modal{
+body[data-section-style="glassy"] .card{
   background:rgba(var(--section-bg-rgb,255,255,255),var(--section-opacity,0.7)); border:1px solid rgba(255,255,255,.35);
   box-shadow:0 10px 30px rgba(0,0,0,.18); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
 }
-html[data-theme="dark"] body[data-section-style="glassy"] .card, html[data-theme="dark"] body[data-section-style="glassy"] .modal{
+body[data-section-style="glassy"] .modal{
+  background:rgba(var(--modal-bg-rgb,var(--section-bg-rgb,255,255,255)),var(--section-opacity,0.7)); border:1px solid rgba(255,255,255,.35);
+  box-shadow:0 10px 30px rgba(0,0,0,.18); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+html[data-theme="dark"] body[data-section-style="glassy"] .card{
   background:rgba(var(--section-bg-rgb-dark,30,32,30),var(--section-opacity,0.7)); border:1px solid rgba(255,255,255,.12);
 }
-body[data-section-style="image"] .card, body[data-section-style="image"] .modal{
+html[data-theme="dark"] body[data-section-style="glassy"] .modal{
+  background:rgba(var(--modal-bg-rgb-dark,var(--section-bg-rgb-dark,30,32,30)),var(--section-opacity,0.7)); border:1px solid rgba(255,255,255,.12);
+}
+body[data-section-style="image"] .card{
   background-image:linear-gradient(rgba(var(--section-bg-rgb,255,255,255),var(--section-opacity,0.7)),rgba(var(--section-bg-rgb,255,255,255),var(--section-opacity,0.7))), var(--section-bg-image,none);
   background-size:cover; background-position:center; border:1px solid rgba(255,255,255,.4);
   box-shadow:0 10px 30px rgba(0,0,0,.18);
 }
-html[data-theme="dark"] body[data-section-style="image"] .card, html[data-theme="dark"] body[data-section-style="image"] .modal{
+body[data-section-style="image"] .modal{
+  background-image:linear-gradient(rgba(var(--modal-bg-rgb,var(--section-bg-rgb,255,255,255)),var(--section-opacity,0.7)),rgba(var(--modal-bg-rgb,var(--section-bg-rgb,255,255,255)),var(--section-opacity,0.7))), var(--section-bg-image,none);
+  background-size:cover; background-position:center; border:1px solid rgba(255,255,255,.4);
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+html[data-theme="dark"] body[data-section-style="image"] .card{
   background-image:linear-gradient(rgba(var(--section-bg-rgb-dark,20,22,20),var(--section-opacity,0.7)),rgba(var(--section-bg-rgb-dark,20,22,20),var(--section-opacity,0.7))), var(--section-bg-image,none);
+}
+html[data-theme="dark"] body[data-section-style="image"] .modal{
+  background-image:linear-gradient(rgba(var(--modal-bg-rgb-dark,var(--section-bg-rgb-dark,20,22,20)),var(--section-opacity,0.7)),rgba(var(--modal-bg-rgb-dark,var(--section-bg-rgb-dark,20,22,20)),var(--section-opacity,0.7))), var(--section-bg-image,none);
 }
 body[data-topbar-style="blank"] .topbar{ background:transparent; border-bottom:1px solid var(--line); box-shadow:none;}
 body[data-topbar-style="blank"] .topbar .titles h2, body[data-topbar-style="blank"] .topbar .titles p, body[data-topbar-style="blank"] .clock-chip .time{ color:var(--ink);}
@@ -615,9 +656,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 
 .home-hero{ background:linear-gradient(135deg,var(--forest) 0%, var(--forest-dark) 100%); color:#F3EEDD; border-radius:14px; padding:26px 34px; margin-bottom:20px; position:relative; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,.22);}
 @media (min-width:821px){
-  /* Desktop only: roughly a quarter taller than the original, so more of the weather
+  /* Desktop only: taller than the original (but by less than half again), so more of the weather
      ambience illustration (sky, hills, sun/moon) shows behind the greeting text. */
-  .home-hero{ padding-top:34px; padding-bottom:44px; min-height:190px; display:flex; flex-direction:column; justify-content:center;}
+  .home-hero{ padding-top:46px; padding-bottom:56px; min-height:270px; display:flex; flex-direction:column; justify-content:center;}
 }
 .home-hero h1{ font-size:30px; color:#fff; max-width:640px; padding-right:130px;}
 .home-hero p{ color:#C9D3C2; font-size:14px; margin-top:10px; max-width:560px; line-height:1.5;}
@@ -817,6 +858,12 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   <div class="auth-wrap">
     <div class="auth-bg-image-layer" id="authBgImageLayer"></div>
     <div class="auth-decor-layer" id="authDecorLayer"><span class="auth-decor" onclick="cycleLockscreenDecorStyle()" title="Click to change the decoration style"></span></div>
+    <div class="auth-notif-bell" id="authNotifBell">
+      <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
+        🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
+      </button>
+      <div class="auth-notif-preview" id="authNotifPreview"></div>
+    </div>
     <div class="auth-info">
       <div class="auth-brand">
         <div class="stamp-badge" id="authBrandBadge">AL</div>
@@ -885,7 +932,13 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         </div>
       </div>
       <div class="topbar-right">
-        <button class="icon-btn" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)">🔎</button>
+        <div class="topbar-search" id="topbarSearch">
+          <button class="icon-btn topbar-search-icon" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)">🔎</button>
+          <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="Search titles, members, transactions…" autocomplete="off"
+            oninput="renderTopbarSearchResults(this.value)" onfocus="renderTopbarSearchResults(this.value)"
+            onkeydown="if(event.key==='Escape'){this.blur(); closeTopbarSearch();}">
+          <div class="topbar-search-results" id="topbarSearchResults"></div>
+        </div>
         <button class="icon-btn" id="notifBellBtn" onclick="event.stopPropagation();openNotificationCenter();" title="Notifications" style="position:relative">
           🔔<span id="notifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
         </button>
@@ -1017,7 +1070,7 @@ async function pickContactForField(fieldId){
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
 let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'light', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', headingScale:1, bodyScale:1, headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', authClockStyle:'digital', weatherAmbience:true, weatherAmbienceStyle:'soft', weatherAmbienceSet:'hills', paletteAuto:true, headingColor:'default', bodyColor:'default', mutedColor:'default', iconPack:'minimal', transitionStyle:'scale', sectionStyle:'solid', sectionOpacity:70, topbarStyle:'solid', authBoxOpacity:90, lockscreenDecorStyle:'circle',
-  lockscreenElements:{circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}};
+  lockscreenElements:{circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true, notifbell:true}};
 const DEFAULT_PREFS = JSON.parse(JSON.stringify(PREFS));
 const CLOCK_FONTS = {
   digital: {label:'Digital (default)', stack:"'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace"},
@@ -1188,6 +1241,8 @@ async function loadPrefs(){
   document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[PREFS.clockFont]||CLOCK_FONTS.digital).stack);
   const savedSectionRgb = hexToRgbStr(PREFS.sectionBgColor);
   if(savedSectionRgb){ document.documentElement.style.setProperty('--section-bg-rgb', savedSectionRgb); document.documentElement.style.setProperty('--section-bg-rgb-dark', savedSectionRgb); }
+  const savedModalRgb = hexToRgbStr(PREFS.modalBgColor);
+  if(savedModalRgb){ document.documentElement.style.setProperty('--modal-bg-rgb', savedModalRgb); document.documentElement.style.setProperty('--modal-bg-rgb-dark', savedModalRgb); }
   const savedAuthBoxRgb = hexToRgbStr(PREFS.authBoxColor);
   if(savedAuthBoxRgb){ document.documentElement.style.setProperty('--auth-box-bg-rgb', savedAuthBoxRgb); document.documentElement.style.setProperty('--auth-box-bg-rgb-dark', savedAuthBoxRgb); }
   const savedTopbarRgb = hexToRgbStr(PREFS.topbarBgColor);
@@ -1204,12 +1259,13 @@ async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
 function resetPersonalization(){
   if(!confirm('Reset all Personalization settings to their defaults? This resets theme, colours, typography, icons, backgrounds and the lockscreen — it does not delete any uploaded images or accounts.')) return;
   PREFS = JSON.parse(JSON.stringify(DEFAULT_PREFS));
-  delete PREFS.sectionBgColor; delete PREFS.topbarBgColor; delete PREFS.authBoxColor;
+  delete PREFS.sectionBgColor; delete PREFS.modalBgColor; delete PREFS.topbarBgColor; delete PREFS.authBoxColor;
   applyTheme(); applyPalette(PREFS.palette); applyTypography(); applyClockFont(PREFS.clockFont); applyDateFont(PREFS.dateFont);
   applyLockscreenElements(PREFS.lockscreenElements); applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
   document.body.setAttribute('data-section-style', PREFS.sectionStyle);
   document.body.setAttribute('data-topbar-style', PREFS.topbarStyle);
   document.documentElement.style.removeProperty('--section-bg-rgb'); document.documentElement.style.removeProperty('--section-bg-rgb-dark');
+  document.documentElement.style.removeProperty('--modal-bg-rgb'); document.documentElement.style.removeProperty('--modal-bg-rgb-dark');
   document.documentElement.style.removeProperty('--topbar-bg-rgb');
   document.documentElement.style.removeProperty('--auth-box-bg-rgb'); document.documentElement.style.removeProperty('--auth-box-bg-rgb-dark');
   document.documentElement.style.setProperty('--auth-box-opacity', PREFS.authBoxOpacity/100);
@@ -1221,7 +1277,7 @@ function resetPersonalization(){
    Personalization → Lockscreen. Applying just sets data attributes the CSS reacts to, so this works
    equally well as a live preview (not yet saved) or the real saved state on boot. */
 function applyLockscreenElements(elements){
-  const els = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, elements||{});
+  const els = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true, notifbell:true}, elements||{});
   Object.keys(els).forEach(key=>{
     document.body.setAttribute('data-lockscreen-'+key, els[key] ? 'on' : 'off');
   });
@@ -1750,6 +1806,7 @@ function showAuthScreen(){
   applyAuthBranding();
   applyAuthBackground();
   startAuthCarousel();
+  renderAuthNotifBell();
 }
 function applyAuthBranding(){
   const name = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS';
@@ -2466,13 +2523,14 @@ const LOCKSCREEN_RIBBON_ITEMS = [
   {key:'tips', ic:'💡', label:'Tips'},
   {key:'gettingstarted', ic:'🚀', label:'Getting started'},
   {key:'contact', ic:'✉', label:'Contact link'},
+  {key:'notifbell', ic:'🔔', label:'Notification bell'},
 ];
 // Draft of which lockscreen elements are on/off while this panel is open — mirrors the
 // appearancePreviewDirty pattern: previews live via applyLockscreenElements(), only written
 // into PREFS (and persisted) when "Save lockscreen appearance" is actually clicked.
 let lockscreenElementsDraft = null;
 function renderLockscreenRibbon(){
-  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, PREFS.lockscreenElements||{});
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true, notifbell:true}, PREFS.lockscreenElements||{});
   return LOCKSCREEN_RIBBON_ITEMS.map(item=>
     `<button type="button" class="ribbon-item ${lockscreenElementsDraft[item.key]?'active':''}" onclick="toggleLockscreenElement('${item.key}')">
       <span class="ic">${item.ic}</span><span>${esc(item.label)}</span>
@@ -2480,7 +2538,7 @@ function renderLockscreenRibbon(){
   ).join('');
 }
 function toggleLockscreenElement(key){
-  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, PREFS.lockscreenElements||{});
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true, notifbell:true}, PREFS.lockscreenElements||{});
   lockscreenElementsDraft[key] = !lockscreenElementsDraft[key];
   applyLockscreenElements(lockscreenElementsDraft); // live preview on the real (currently hidden) lockscreen
   const ribbon = document.getElementById('lockscreenRibbon');
@@ -2552,6 +2610,11 @@ function previewSectionStyle(){
     document.documentElement.style.setProperty('--section-bg-rgb', rgb);
     document.documentElement.style.setProperty('--section-bg-rgb-dark', rgb);
   }
+  const modalRgb = hexToRgbStr(document.getElementById('setModalBgColor')?.value);
+  if(modalRgb){
+    document.documentElement.style.setProperty('--modal-bg-rgb', modalRgb);
+    document.documentElement.style.setProperty('--modal-bg-rgb-dark', modalRgb);
+  }
 }
 function previewTopbarStyle(){
   document.body.setAttribute('data-topbar-style', document.getElementById('setTopbarStyle')?.value || 'solid');
@@ -2567,6 +2630,7 @@ function saveSectionStyle(){
   PREFS.sectionOpacity = +document.getElementById('setSectionOpacity')?.value || 70;
   PREFS.topbarStyle = document.getElementById('setTopbarStyle')?.value || 'solid';
   PREFS.sectionBgColor = document.getElementById('setSectionBgColor')?.value || '';
+  PREFS.modalBgColor = document.getElementById('setModalBgColor')?.value || '';
   PREFS.topbarBgColor = document.getElementById('setTopbarBgColor')?.value || '';
   document.body.setAttribute('data-section-style', PREFS.sectionStyle);
   document.body.setAttribute('data-topbar-style', PREFS.topbarStyle);
@@ -2574,6 +2638,9 @@ function saveSectionStyle(){
   if(DB.setup.appBackgroundImage) document.documentElement.style.setProperty('--section-bg-image', `url('${DB.setup.appBackgroundImage}')`);
   const sectionRgb = hexToRgbStr(PREFS.sectionBgColor);
   if(sectionRgb){ document.documentElement.style.setProperty('--section-bg-rgb', sectionRgb); document.documentElement.style.setProperty('--section-bg-rgb-dark', sectionRgb); }
+  const modalRgb = hexToRgbStr(PREFS.modalBgColor);
+  if(modalRgb){ document.documentElement.style.setProperty('--modal-bg-rgb', modalRgb); document.documentElement.style.setProperty('--modal-bg-rgb-dark', modalRgb); }
+  else{ document.documentElement.style.removeProperty('--modal-bg-rgb'); document.documentElement.style.removeProperty('--modal-bg-rgb-dark'); }
   const topbarRgb = hexToRgbStr(PREFS.topbarBgColor);
   if(topbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', topbarRgb);
   PREFS.authBoxColor = document.getElementById('setAuthBoxColor')?.value || '';
@@ -4800,6 +4867,38 @@ function timeAgo(iso){
   if(s<86400) return Math.floor(s/3600)+'h ago';
   return Math.floor(s/86400)+'d ago';
 }
+/* Lockscreen notification bell — shows a read-only preview of what's waiting, but never lets
+   you open, dismiss or navigate from a notification without signing in first. */
+function renderAuthNotifBell(){
+  const el = document.getElementById('authNotifBellCount'); if(!el) return;
+  const n = unreadNotificationCount();
+  el.textContent = n>99?'99+':String(n);
+  el.style.display = n>0 ? 'flex' : 'none';
+}
+function toggleAuthNotifPreview(){
+  const box = document.getElementById('authNotifPreview'); if(!box) return;
+  if(box.classList.contains('open')){ box.classList.remove('open'); box.innerHTML=''; document.removeEventListener('click', authNotifOutsideClickHandler); return; }
+  const list = (DB && DB.notifications) ? DB.notifications.slice(0,6) : [];
+  const rows = list.length ? list.map(n=>`
+    <div class="notif-row ${n.read?'':'unread'}">
+      <div class="notif-row-main">
+        <div class="notif-row-title">${esc(n.title)}</div>
+        <div class="notif-row-body">${esc(n.body)}</div>
+        <div class="notif-row-time">${timeAgo(n.ts)}</div>
+      </div>
+    </div>`).join('') : `<div class="empty" style="padding:20px 10px"><div class="big">🔔</div>Nothing yet</div>`;
+  box.innerHTML = rows + `<div class="auth-notif-signin-hint">Sign in to open, dismiss or manage these</div>`;
+  box.classList.add('open');
+  setTimeout(()=> document.addEventListener('click', authNotifOutsideClickHandler), 0);
+}
+function authNotifOutsideClickHandler(e){
+  const wrap = document.getElementById('authNotifBell');
+  if(wrap && !wrap.contains(e.target)){
+    const box = document.getElementById('authNotifPreview');
+    if(box){ box.classList.remove('open'); box.innerHTML=''; }
+    document.removeEventListener('click', authNotifOutsideClickHandler);
+  }
+}
 
 /* ================= RESERVATIONS / HOLDS ================= */
 function userRecipient(user){
@@ -4893,17 +4992,22 @@ function globalSearchGoto(kind, id){
   else if(kind==='txn'){ route='circulation'; render(); }
   else if(kind==='reservation'){ route='reservations'; render(); }
 }
-function renderGlobalSearchResults(q){
-  const el = document.getElementById('gsearchResults'); if(!el) return;
+/* Builds the categorised results markup shared by both the full-screen modal (mobile /
+   Ctrl+K) and the inline dropdown under the stretched desktop search bar.
+   A purely-numeric query (accession no., member ID, phone digits…) is treated as an
+   identifier lookup: it searches Catalogue and Members at once and returns more rows of
+   each (still grouped under their own headings) instead of the usual short preview list. */
+function buildGlobalSearchHTML(q){
   const query = (q||'').trim().toLowerCase();
-  if(!DB){ el.innerHTML = ''; return; }
+  if(!DB) return '';
   if(!query){
-    el.innerHTML = `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members and transactions across the whole app</div>`;
-    return;
+    return `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members and transactions across the whole app</div>`;
   }
-  const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).slice(0,6);
-  const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query)).slice(0,6);
-  const txns = DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).slice(0,6);
+  const isNumeric = /^\d+$/.test(query);
+  const limit = isNumeric ? 10 : 6;
+  const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).slice(0,limit);
+  const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query) || (isNumeric && (u.teacher||'').toLowerCase().includes(query))).slice(0,limit);
+  const txns = isNumeric ? [] : DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).slice(0,6);
   let html = '';
   if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`
     <div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><span class="ic">📚</span><div class="main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
@@ -4911,12 +5015,33 @@ function renderGlobalSearchResults(q){
     <div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><span class="ic">👤</span><div class="main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
   if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`
     <div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><span class="ic">⇄</span><div class="main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
-  el.innerHTML = html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
+  return html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
 }
+function renderGlobalSearchResults(q){
+  const el = document.getElementById('gsearchResults'); if(!el) return;
+  el.innerHTML = buildGlobalSearchHTML(q);
+}
+/* Inline desktop search bar — same data/logic as the modal, but the results drop down
+   directly under the stretched input instead of opening a centred overlay. */
+function renderTopbarSearchResults(q){
+  const box = document.getElementById('topbarSearchResults'); if(!box) return;
+  box.innerHTML = buildGlobalSearchHTML(q);
+  box.classList.add('open');
+}
+function closeTopbarSearch(){
+  const box = document.getElementById('topbarSearchResults');
+  if(box){ box.classList.remove('open'); box.innerHTML=''; }
+}
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('topbarSearch');
+  if(wrap && !wrap.contains(e.target)) closeTopbarSearch();
+});
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
     e.preventDefault();
     if(!SESSION) return;
+    const inline = document.getElementById('topbarSearchInput');
+    if(inline && inline.offsetParent!==null){ inline.focus(); inline.select(); return; }
     if(document.getElementById('gsearchBackdrop')) closeGlobalSearch(); else openGlobalSearch();
   }
 });
@@ -5910,13 +6035,13 @@ function pageSettings(){
       <div class="field"><label>Heading text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setHeadingColor" value="${resolveTextColorHex(PREFS.headingColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('heading')">Reset</button></div></div>
       <div class="field"><label>Body text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setBodyColor" value="${resolveTextColorHex(PREFS.bodyColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('body')">Reset</button></div></div>
       <div class="field"><label>Muted / secondary text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setMutedColor" value="${resolveMutedColorHex(PREFS.mutedColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('muted')">Reset</button></div></div>
+      <div class="field" style="display:flex;align-items:flex-end"><button type="button" class="btn secondary" style="width:100%" onclick="saveTypographyForm()">Save text colours</button></div>
     </div>
     <p class="field-hint" style="margin-top:-4px">Muted covers hints, captions, subtitles and table labels — everything that isn't a heading or main body text.</p>
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">
       <div class="field" style="flex:1;min-width:200px;margin:0"><label>Preset name</label><input type="text" id="cpName" placeholder="e.g. School Colours" value="${esc(customPaletteDraft.label||'')}"></div>
       <button class="btn secondary" onclick="saveCustomPalette()">💾 Save as preset</button>
       <button class="btn secondary" onclick="cancelCustomPaletteDraft()">Cancel / revert preview</button>
-      <button class="btn secondary" onclick="saveTypographyForm()">Save text colours</button>
     </div>
   </div>
   <div class="card panel">
@@ -5955,23 +6080,24 @@ function pageSettings(){
       ${DB.setup.appBackgroundImage? `<button class="btn danger" onclick="clearAppBackground()">Remove background</button>`:''}
     </div>
     <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Section, modal &amp; title bar backgrounds</h4><div class="hint">Applies to cards, panels, modals and the top header</div></div>
-    <div class="field-row field-row-3">
-      <div class="field"><label>Section &amp; modal style</label><select id="setSectionStyle" onchange="previewSectionStyle()">
+    <div class="field-row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field" style="flex:1;min-width:200px;margin:0"><label>Section &amp; modal style</label><select id="setSectionStyle" onchange="previewSectionStyle()" style="width:100%">
         <option value="solid" ${(PREFS.sectionStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
         <option value="blank" ${PREFS.sectionStyle==='blank'?'selected':''}>Blank / transparent</option>
         <option value="glassy" ${PREFS.sectionStyle==='glassy'?'selected':''}>Transparent glassy</option>
         <option value="image" ${PREFS.sectionStyle==='image'?'selected':''}>Picture (uses the in-app background above)</option>
       </select></div>
-      <div class="field"><label>Title bar (top header) style</label><select id="setTopbarStyle" onchange="previewTopbarStyle()">
+      <div class="field" style="flex:1;min-width:200px;margin:0"><label>Title bar (top header) style</label><select id="setTopbarStyle" onchange="previewTopbarStyle()" style="width:100%">
         <option value="solid" ${(PREFS.topbarStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
         <option value="blank" ${PREFS.topbarStyle==='blank'?'selected':''}>Blank / transparent</option>
         <option value="glassy" ${PREFS.topbarStyle==='glassy'?'selected':''}>Transparent glassy</option>
       </select></div>
-      <div class="field" id="sectionOpacityField" style="${PREFS.sectionStyle==='glassy'||PREFS.sectionStyle==='image'?'':'display:none'}"><label><span id="sectionOpacityLabel">${PREFS.sectionStyle==='image'?'Picture strength':'Glass opacity'}</span> (<span id="sectionOpacityVal">${PREFS.sectionOpacity??70}</span>%)</label><input type="range" id="setSectionOpacity" min="20" max="95" value="${PREFS.sectionOpacity??70}" oninput="document.getElementById('sectionOpacityVal').textContent=this.value; previewSectionStyle();"></div>
+      <div class="field" id="sectionOpacityField" style="flex:1;min-width:200px;margin:0;${PREFS.sectionStyle==='glassy'||PREFS.sectionStyle==='image'?'':'display:none'}"><label><span id="sectionOpacityLabel">${PREFS.sectionStyle==='image'?'Picture strength':'Glass opacity'}</span> (<span id="sectionOpacityVal">${PREFS.sectionOpacity??70}</span>%)</label><input type="range" id="setSectionOpacity" min="20" max="95" value="${PREFS.sectionOpacity??70}" oninput="document.getElementById('sectionOpacityVal').textContent=this.value; previewSectionStyle();" style="width:100%"></div>
     </div>
     <p class="field-hint">Picture style shows the image you set above (in "In-app background image") through every card and modal — the colour pickers here are separate from that image and tint on top of it.</p>
-    <div class="field-row">
-      <div class="field"><label>Section / modal background colour</label><input type="color" id="setSectionBgColor" value="${esc(PREFS.sectionBgColor||'#FFFFFF')}" oninput="previewSectionStyle()"></div>
+    <div class="color-picker-row">
+      <div class="field"><label>Section background colour</label><input type="color" id="setSectionBgColor" value="${esc(PREFS.sectionBgColor||'#FFFFFF')}" oninput="previewSectionStyle()"></div>
+      <div class="field"><label>Modal background colour</label><input type="color" id="setModalBgColor" value="${esc(PREFS.modalBgColor||PREFS.sectionBgColor||'#FFFFFF')}" oninput="previewSectionStyle()"></div>
       <div class="field"><label>Title bar background colour</label><input type="color" id="setTopbarBgColor" value="${esc(PREFS.topbarBgColor||'#1F3A2E')}" oninput="previewTopbarStyle()"></div>
       <div class="field"><label>Login container (sign-in box) colour</label><input type="color" id="setAuthBoxColor" value="${esc(PREFS.authBoxColor||'#FFFFFF')}" oninput="previewAuthBoxColor()"></div>
     </div>
@@ -6009,11 +6135,12 @@ function pageSettings(){
       <div class="field"><label>Login box opacity (<span id="authBoxOpacityVal">${PREFS.authBoxOpacity??90}</span>%)</label><input type="range" id="setAuthBoxOpacity" min="30" max="100" value="${PREFS.authBoxOpacity??90}" oninput="document.getElementById('authBoxOpacityVal').textContent=this.value; document.documentElement.style.setProperty('--auth-box-opacity', this.value/100);"></div>
     </div>
     <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background. Its colour is set above, in Backgrounds → Login container colour.</p>
-    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock</h4></div>
-    <div class="field" style="max-width:260px"><label>Clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
-    <div class="panel-head" style="margin-top:14px"><h4 style="font-size:13px">Decoration style</h4><div class="hint">The corner flourish behind the sign-in form — like the style gallery at the top of Microsoft Office</div></div>
-    <div class="field" style="max-width:260px"><label>Style</label><select id="setLockscreenDecorStyle" onchange="previewLockscreenDecorStyle(this.value)">${Object.entries(LOCKSCREEN_DECOR_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.lockscreenDecorStyle||'circle')===k?'selected':''}>${v}</option>`).join('')}</select></div>
-    <p class="field-hint" style="margin:4px 0 10px">Tip: clicking the clock on the sign-in screen also cycles through these styles.</p>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock &amp; decoration style</h4><div class="hint">Clock style, and the corner flourish behind the sign-in form — like the style gallery at the top of Microsoft Office</div></div>
+    <div class="field-row">
+      <div class="field"><label>Clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Decoration style</label><select id="setLockscreenDecorStyle" onchange="previewLockscreenDecorStyle(this.value)">${Object.entries(LOCKSCREEN_DECOR_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.lockscreenDecorStyle||'circle')===k?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <p class="field-hint" style="margin:4px 0 10px">Tip: clicking the clock on the sign-in screen also cycles through the decoration styles.</p>
     <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Elements shown on the lockscreen</h4><div class="hint">Pick which pieces appear — like the Insert ribbon in Microsoft Office</div></div>
     <div class="ribbon-picker" id="lockscreenRibbon">${renderLockscreenRibbon()}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -6258,6 +6385,16 @@ function pageAbout(){
     <h1>Automated Library &amp; Circulation Management System</h1>
     <p>ALCMS${DB.setup.institutionName? ' for '+esc(DB.setup.institutionName):''} — one desk for cataloguing, circulation, members, discipline, scheduling and reporting.</p>
   </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>What's new</h3></div>
+    <ul style="font-size:13px;line-height:1.9;color:var(--muted);padding-left:20px">
+      <li>The Home greeting is a little taller on desktop, so more of the animated weather scene shows behind it.</li>
+      <li>Global search (🔎, or Ctrl/Cmd+K) is now a full search bar on desktop — type straight into the topbar and results drop down underneath it. A purely numeric search (an accession number, member ID, or phone digits) now checks the Catalogue and Members together and returns more matches, still grouped by type.</li>
+      <li>The sign-in screen now has its own notification bell, with a live unread count and a preview of what's waiting — opening, dismissing or acting on a notification still requires signing in. Toggle it on/off in Personalization → Lockscreen → Elements shown on the lockscreen.</li>
+      <li>Personalization → Backgrounds now has a dedicated Modal background colour, separate from the Section colour, so cards and pop-up modals can be tinted independently.</li>
+      <li>Personalization layout tidy-ups: the section/modal/title-bar style dropdowns stretch to fill their row, the four background colour pickers sit together on one row, and the sign-in clock &amp; decoration style now sit side by side.</li>
+    </ul>
+  </div>
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>What this app does</h3></div>
@@ -6308,7 +6445,7 @@ function openDeveloperContactForm(){
 /* ================= PAGE: USER GUIDE ================= */
 function pageGuide(){
   const sections = [
-    {h:'Home', b:'Your landing page: a quick snapshot of the days activity, and shortcuts to every part of the desk.'},
+    {h:'Home', b:'Your landing page: a taller greeting banner showing more of the live weather scene, a quick snapshot of the days activity, and shortcuts to every part of the desk.'},
     {h:'Dashboard', b:'The full library overview — collection size, availability, active loans, recent circulation activity, todays schedule, and two headline charts. Use "Generate comprehensive report" here for a printable report over any period.'},
     {h:'Analytics', b:'Deeper trends: top borrowers and titles, monthly circulation, book condition, loan status, members by category, borrowing by class, and visit purpose — each chart includes a short caption explaining what it shows.'},
     {h:'Catalogue', b:'Search and browse every title. Admins can add, edit, delete, and export the current view (or the full catalogue) as CSV, Excel, or PDF. New titles get the next accession number automatically.'},
@@ -6319,7 +6456,7 @@ function pageGuide(){
     {h:'Schedule', b:'The weekly library timetable and each students subject combination. Admins can add, edit or delete periods, with a period dropdown, a native time picker, and Library, Free, or Other note types.'},
     {h:'Feedback', b:'Suggestions, complaints and requests from members and staff, with a status workflow (New, In review, Resolved).'},
     {h:'Setup', b:'Library configuration: classes and their teachers, staff designations, promoting students between classes, shelf locations, book conditions, subjects and each classs default subject list.'},
-    {h:'Personalization', b:'Everything else: theme and colour palette, clock and date format, typography, icons, lockscreen appearance and backgrounds.'},
+    {h:'Personalization', b:'Everything else: theme and colour palette, clock and date format, typography, icons, lockscreen appearance and backgrounds — including separate Section and Modal background colours, and a notification bell you can show or hide on the sign-in screen.'},
   ];
   return `
   <div class="card panel">
@@ -6341,7 +6478,9 @@ function pageGuide(){
     <div class="panel-head"><h3>Tips</h3></div>
     <ul style="font-size:13px;line-height:1.9;color:var(--muted);padding-left:20px">
       <li>Search boxes never lose focus while you type — search freely, results update as you go.</li>
+      <li>On desktop, the 🔎 in the topbar is a full search bar — just start typing and matching titles, members and transactions drop down underneath it, grouped by type. Type a pure number (an accession number, member ID, or phone) to search the Catalogue and Members together with more results. Ctrl/Cmd+K jumps straight into it.</li>
       <li>Every table can be searched and filtered; long lists show the first matches with a note to narrow your search further.</li>
+      <li>The 🔔 on the sign-in screen previews what's waiting for you, but you'll need to sign in to open, dismiss or act on anything.</li>
       <li>Use a <strong>Checkpoint</strong> before a big change (like end-of-term promotion) so you can roll back if needed.</li>
       <li>Switch theme (light/dark/system) and colour palette any time from the topbar or Personalization.</li>
     </ul>
