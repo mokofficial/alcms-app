@@ -189,8 +189,31 @@ input,select,textarea{font-family:inherit;}
   flex:1.1; color:#F3EEDD;
   padding:60px 50px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; min-width:320px;
 }
-.auth-info::before{ content:""; position:absolute; right:-160px; top:50%; transform:translateY(-50%); width:420px;height:420px;border-radius:50%; border:1px solid rgba(255,255,255,.08);}
-.auth-info::after{ content:""; position:absolute; right:-90px; top:50%; transform:translateY(-50%); width:280px;height:280px;border-radius:50%; border:1px solid rgba(255,255,255,.1);}
+/* Decoration flourish — anchored to the bottom-right corner of the whole auth screen
+   (not just the info side), since a single shared background now spans the entire screen. */
+.auth-decor-layer{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
+.auth-decor{ position:absolute; right:-220px; bottom:-220px; width:640px; height:640px; display:block; pointer-events:auto; cursor:pointer;}
+.auth-decor::before{ content:""; position:absolute; inset:0; border-radius:50%; border:1px solid rgba(255,255,255,.08);}
+.auth-decor::after{ content:""; position:absolute; inset:110px; border-radius:50%; border:1px solid rgba(255,255,255,.12);}
+/* Cloud: soft overlapping blob outlines instead of perfect rings */
+body[data-lockscreen-decor-style="cloud"] .auth-decor::before{ border:none; background:rgba(255,255,255,.05); border-radius:42% 58% 55% 45%/58% 42% 58% 42%;}
+body[data-lockscreen-decor-style="cloud"] .auth-decor::after{ border:none; background:rgba(255,255,255,.07); border-radius:58% 42% 45% 55%/42% 58% 42% 58%; inset:130px;}
+/* Lines: repeating diagonal strokes fanning out of the corner */
+body[data-lockscreen-decor-style="lines"] .auth-decor::before{ border-radius:0; border:none; background:repeating-linear-gradient(-35deg, rgba(255,255,255,.12) 0 2px, transparent 2px 28px);}
+body[data-lockscreen-decor-style="lines"] .auth-decor::after{ display:none;}
+/* Spiral: a soft conic sweep plus one dashed ring */
+body[data-lockscreen-decor-style="spiral"] .auth-decor::before{ border:none; border-radius:50%; background:conic-gradient(from 0deg, rgba(255,255,255,.02), rgba(255,255,255,.16), rgba(255,255,255,.02) 65%);}
+body[data-lockscreen-decor-style="spiral"] .auth-decor::after{ border:1px dashed rgba(255,255,255,.16); inset:150px;}
+/* Waves: concentric ripple rings, like a ripple in water spreading from the corner */
+body[data-lockscreen-decor-style="waves"] .auth-decor::before{ border:none; border-radius:50%; background:repeating-radial-gradient(circle at 100% 100%, rgba(255,255,255,.14) 0 2px, transparent 2px 34px);}
+body[data-lockscreen-decor-style="waves"] .auth-decor::after{ display:none;}
+/* Dots: a soft polka-dot field */
+body[data-lockscreen-decor-style="dots"] .auth-decor::before{ border:none; border-radius:50%; background-image:radial-gradient(rgba(255,255,255,.20) 2px, transparent 2.5px); background-size:26px 26px; -webkit-mask-image:radial-gradient(circle at 100% 100%, #000 60%, transparent 100%); mask-image:radial-gradient(circle at 100% 100%, #000 60%, transparent 100%);}
+body[data-lockscreen-decor-style="dots"] .auth-decor::after{ display:none;}
+/* Grid: a faint graph-paper grid fading out from the corner */
+body[data-lockscreen-decor-style="grid"] .auth-decor::before{ border:none; border-radius:50%; background-image:linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px); background-size:30px 30px; -webkit-mask-image:radial-gradient(circle at 100% 100%, #000 55%, transparent 100%); mask-image:radial-gradient(circle at 100% 100%, #000 55%, transparent 100%);}
+body[data-lockscreen-decor-style="grid"] .auth-decor::after{ display:none;}
+body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-brand{ display:flex; align-items:center; gap:12px;}
 .auth-brand .stamp-badge{ width:44px;height:44px;border-radius:50%;border:2px solid var(--brass-light); display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:var(--brass-light); overflow:hidden;}
 .auth-brand .stamp-badge img{ width:100%; height:100%; object-fit:cover;}
@@ -221,10 +244,11 @@ input,select,textarea{font-family:inherit;}
 .auth-slide-author{ font-size:12.5px; color:var(--brass-light); margin-top:6px; font-style:italic;}
 .auth-slide-info{ color:rgba(255,255,255,.55); font-style:normal;}
 
-body[data-lockscreen-circles="off"] .auth-info::before, body[data-lockscreen-circles="off"] .auth-info::after{ display:none;}
+body[data-lockscreen-circles="off"] .auth-decor-layer{ display:none;}
 body[data-lockscreen-quotes="off"] .auth-carousel-wrap, body[data-lockscreen-quotes="off"] .auth-dots{ display:none;}
 body[data-lockscreen-clock="off"] .auth-clock{ display:none;}
-body[data-lockscreen-tips="off"] .auth-carousel-actions{ display:none;}
+body[data-lockscreen-tips="off"] .auth-tips-btn{ display:none;}
+body[data-lockscreen-gettingstarted="off"] .auth-getting-started-btn{ display:none;}
 body[data-lockscreen-contact="off"] .auth-contact-dev-link{ display:none;}
 /* ===== Personalization ribbon (Office-style element picker) ===== */
 .ribbon-picker{ display:flex; gap:4px; flex-wrap:wrap; background:var(--parchment-dim); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:12px;}
@@ -239,8 +263,8 @@ body[data-lockscreen-contact="off"] .auth-contact-dev-link{ display:none;}
 .ribbon-item.active .ic{ color:var(--forest);}
 html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-light) inset;}
 .auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:48px 30px; position:relative; z-index:1;}
-.auth-box{ width:100%; max-width:380px; background:rgba(255,255,255,var(--auth-box-opacity,0.9)); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.5); border-radius:18px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,.2);}
-html[data-theme="dark"] .auth-box{ background:rgba(30,32,30,var(--auth-box-opacity,0.82)); border-color:rgba(255,255,255,.14);}
+.auth-box{ width:100%; max-width:380px; background:rgba(var(--auth-box-bg-rgb,255,255,255),var(--auth-box-opacity,0.9)); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.5); border-radius:18px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,.2);}
+html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30,32,30),var(--auth-box-opacity,0.82)); border-color:rgba(255,255,255,.14);}
 .auth-tabs{ display:flex; gap:4px; background:var(--parchment-dim); border-radius:9px; padding:4px; margin-bottom:24px;}
 .auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:var(--muted-label);}
 .auth-tabs button.active{ background:var(--card); color:var(--forest); box-shadow:var(--shadow);}
@@ -250,6 +274,8 @@ html[data-theme="dark"] .auth-box{ background:rgba(30,32,30,var(--auth-box-opaci
 .auth-box .field input, .auth-box .field select{ width:100%; padding:11px 12px; font-size:13.5px;}
 .role-choice{ display:flex; gap:10px;}
 .role-opt{ flex:1; border:1px solid var(--line); border-radius:9px; padding:12px; cursor:pointer; text-align:center; font-size:12px;}
+.role-opt.compact{ padding:7px 8px; font-size:11px; line-height:1.35;}
+.role-opt.compact .ic{ font-size:14px; margin-bottom:1px;}
 .role-opt.selected{ border-color:var(--brass); background:#FBF3DF;}
 .role-opt .ic{ font-size:18px; display:block; margin-bottom:4px;}
 .auth-error{ background:#F4E1DC; color:var(--terracotta); padding:9px 12px; border-radius:7px; font-size:12.5px; margin-bottom:14px; display:none;}
@@ -264,8 +290,8 @@ html[data-theme="dark"] .auth-box{ background:rgba(30,32,30,var(--auth-box-opaci
     grid-template-areas:"brand clock" "carousel carousel" "bottom bottom";
     align-items:start;
   }
-  .auth-info::before{ width:220px; height:220px; right:-80px;}
-  .auth-info::after{ width:140px; height:140px; right:-45px;}
+  .auth-decor{ width:320px; height:320px; right:-110px; bottom:-110px;}
+  .auth-decor::after{ inset:55px;}
   .auth-brand{
     grid-area:brand; margin-left:0; justify-content:flex-start; align-items:center;
     min-width:0; /* allow the name to actually shrink/wrap instead of overflowing */
@@ -356,7 +382,7 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
 .content{ padding:22px 26px 60px; flex:1;}
 
 /* ===== Components ===== */
-.grid{ display:grid; gap:16px;}
+.grid{ display:grid; gap:16px; margin-bottom:20px;}
 .kpis{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:18px;}
 .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
 body[data-section-style="blank"] .card, body[data-section-style="blank"] .modal{
@@ -554,6 +580,33 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .cloud-indicator.show{ opacity:1; transform:translateY(0);}
 .cloud-indicator.error{ background:var(--terracotta);}
 
+.notif-center{ position:fixed; top:64px; right:18px; width:340px; max-width:90vw; max-height:70vh; overflow:auto;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 16px 40px rgba(0,0,0,.22); z-index:400;}
+.notif-center-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--card);}
+.notif-center-head a{ font-size:11.5px; color:var(--forest); font-weight:600; text-decoration:none; margin-left:10px;}
+.notif-list{ padding:4px;}
+.notif-row{ display:flex; align-items:flex-start; gap:6px; padding:10px 10px; border-radius:8px;}
+.notif-row.unread{ background:rgba(31,58,46,.06);}
+.notif-row-main{ flex:1; cursor:pointer;}
+.notif-row-title{ font-size:12.5px; font-weight:700;}
+.notif-row-body{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4;}
+.notif-row-time{ font-size:10.5px; color:var(--muted); margin-top:4px;}
+.notif-row-close{ border:none; background:transparent; color:var(--muted); cursor:pointer; font-size:12px; padding:2px 4px;}
+.notif-row-close:hover{ color:var(--terracotta);}
+
+.gsearch-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:500; display:flex; align-items:flex-start; justify-content:center; padding-top:10vh;}
+.gsearch-box{ width:560px; max-width:92vw; max-height:70vh; background:var(--card); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;}
+.gsearch-input{ width:100%; border:none; border-bottom:1px solid var(--line); padding:16px 18px; font-size:15px; background:transparent; color:var(--ink);}
+.gsearch-input:focus{ outline:none;}
+.gsearch-results{ overflow:auto; padding:6px;}
+.gsearch-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); padding:8px 10px 4px;}
+.gsearch-row{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer;}
+.gsearch-row:hover, .gsearch-row.active{ background:rgba(31,58,46,.08);}
+.gsearch-row .ic{ font-size:15px; width:20px; text-align:center;}
+.gsearch-row .main{ flex:1; min-width:0;}
+.gsearch-row .ttl{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.gsearch-row .sub{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
 .empty{ text-align:center; padding:40px 20px; color:var(--muted);}
 .empty .big{ font-size:30px; margin-bottom:8px;}
 
@@ -561,6 +614,11 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 @media (max-width:900px){ .two-col{grid-template-columns:1fr;} .field-row{grid-template-columns:1fr;} }
 
 .home-hero{ background:linear-gradient(135deg,var(--forest) 0%, var(--forest-dark) 100%); color:#F3EEDD; border-radius:14px; padding:26px 34px; margin-bottom:20px; position:relative; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,.22);}
+@media (min-width:821px){
+  /* Desktop only: roughly a quarter taller than the original, so more of the weather
+     ambience illustration (sky, hills, sun/moon) shows behind the greeting text. */
+  .home-hero{ padding-top:34px; padding-bottom:44px; min-height:190px; display:flex; flex-direction:column; justify-content:center;}
+}
 .home-hero h1{ font-size:30px; color:#fff; max-width:640px; padding-right:130px;}
 .home-hero p{ color:#C9D3C2; font-size:14px; margin-top:10px; max-width:560px; line-height:1.5;}
 .hero-stamps{ position:static; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; margin-bottom:16px;}
@@ -569,10 +627,10 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   min-width:110px; box-sizing:border-box;}
 .home-hero .accession-stamp .n{ font-size:22px; font-weight:700;}
 .home-hero .accession-stamp .t{ font-size:9px; letter-spacing:1.5px;}
-.weather-ambience{ position:absolute; top:0; right:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; opacity:.7;}
+.weather-ambience{ position:absolute; top:0; right:0; left:0; width:100%; height:100%; pointer-events:auto; cursor:pointer; z-index:0; opacity:.7;}
 .weather-label{
   position:absolute !important; top:18px !important; right:22px !important; left:auto !important; bottom:auto !important;
-  z-index:5 !important; display:flex !important; align-items:center; gap:7px;
+  z-index:5 !important; display:flex !important; align-items:center; gap:7px; cursor:pointer;
   font-size:11.5px; font-weight:600; letter-spacing:.3px; color:#F3EEDD; text-shadow:0 1px 4px rgba(0,0,0,.4);
 }
 .weather-label-dot{ width:9px; height:9px; border-radius:50%; flex:none;}
@@ -620,7 +678,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .guest-lock{ font-size:11.5px; color:var(--muted); background:var(--parchment-dim); padding:8px 12px; border-radius:8px; margin-bottom:12px;}
 
 /* ===== print ===== */
-#printArea{ display:none; }
+#printArea{ display:none; background:#fff; color:#111;}
 .print-header{ margin:16mm 0 22px 14mm; display:flex; align-items:flex-start; gap:14px;}
 .print-header .print-logo{ width:52px; height:52px; object-fit:contain; flex:none; margin:0;}
 .print-header-text{ flex:1; min-width:0; padding-top:8px;}
@@ -631,9 +689,10 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .print-table th,.print-table td{ border:1px solid #ccc; padding:5px 7px; text-align:left;}
 .print-table th{ background:#eee;}
 @media print{
+  html, body.printing{ background:#fff !important; }
   body.printing #app, body.printing #authScreen, body.printing #splash, body.printing #modalRoot, body.printing .toast{ display:none !important; }
-  body.printing #printArea{ display:block !important; }
-  @page{ margin:18mm 16mm; }
+  body.printing #printArea{ display:block !important; background:#fff !important; color:#111 !important; }
+  @page{ margin:18mm 16mm; background:#fff; }
 }
 
 /* ===== export / format choice ===== */
@@ -651,7 +710,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .stage-badge{ background:var(--brass); color:#221704; border-radius:20px; padding:1px 8px; font-size:11px; font-weight:700;}
 
 /* ===== digital clock ===== */
-.auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-top:28px; margin-bottom:18px;}
+.auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-top:28px; margin-bottom:18px; cursor:pointer; transition:transform .15s ease; user-select:none;}
+.auth-clock:active{ transform:scale(.96);}
 .analogue-clock-svg{ width:84px; height:84px; display:block; margin-bottom:6px;}
 .auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:center; gap:6px; font-family:var(--clock-font);}
 .auth-clock .time .secs-ampm-stack{ display:inline-flex; flex-direction:column; align-items:flex-start; justify-content:center; line-height:1.05; margin-left:2px; gap:1px;}
@@ -661,6 +721,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .auth-clock.clockstyle-digital-bold .time{ font-size:52px; font-weight:900; letter-spacing:0;}
 .auth-clock.clockstyle-digital-slim .time{ font-size:36px; font-weight:300; letter-spacing:3px;}
 .auth-clock.clockstyle-digital-slim .time .secs{ font-weight:400;}
+.auth-clock.clockstyle-digital-outline .time{ color:transparent; -webkit-text-stroke:1.5px #F3EEDD; text-shadow:none;}
+.auth-clock.clockstyle-digital-mono .time{ font-family:'Courier New',Courier,monospace; letter-spacing:1px;}
+.auth-clock.clockstyle-analogue-brass .analogue-clock-svg{ filter:sepia(.6) saturate(2.2) hue-rotate(-12deg);}
 
 /* ===== profile picture ===== */
 .avatar-upload{ display:flex; align-items:center; gap:14px; margin-bottom:14px;}
@@ -753,12 +816,13 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 <div id="authScreen">
   <div class="auth-wrap">
     <div class="auth-bg-image-layer" id="authBgImageLayer"></div>
+    <div class="auth-decor-layer" id="authDecorLayer"><span class="auth-decor" onclick="cycleLockscreenDecorStyle()" title="Click to change the decoration style"></span></div>
     <div class="auth-info">
       <div class="auth-brand">
         <div class="stamp-badge" id="authBrandBadge">AL</div>
         <h1 id="authBrandTitle">ALCMS</h1>
       </div>
-      <div class="auth-clock" id="authClock"></div>
+      <div class="auth-clock" id="authClock" onclick="cycleAuthClockStyle()" title="Click to change the clock style"></div>
       <div class="auth-carousel-wrap">
         <div class="auth-carousel" id="authCarousel"></div>
       </div>
@@ -767,8 +831,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         <div class="auth-footer-row">
           <div class="auth-foot">Automated Library &amp; Circulation Management System</div>
           <div class="auth-carousel-actions">
-            <button class="getting-started-btn" onclick="openQuickTipsModal()" title="Quick tips">💡 Tips</button>
-            <button class="getting-started-btn" onclick="openGettingStartedModal()">🚀 Getting started</button>
+            <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡 Tips</button>
+            <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()">🚀 Getting started</button>
           </div>
         </div>
         <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
@@ -782,7 +846,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         </div>
         <div id="authError" class="auth-error"></div>
         <div id="authFormArea"></div>
-        <div class="auth-hint">Guest accounts can browse the catalogue and reports. Admin accounts can add, edit and issue or return titles.</div>
       </div>
     </div>
   </div>
@@ -822,6 +885,10 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         </div>
       </div>
       <div class="topbar-right">
+        <button class="icon-btn" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)">🔎</button>
+        <button class="icon-btn" id="notifBellBtn" onclick="event.stopPropagation();openNotificationCenter();" title="Notifications" style="position:relative">
+          🔔<span id="notifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
+        </button>
         <div class="clock-chip" id="topClock"></div>
         <div class="account-chip" id="accountChip" onclick="openAccountQuickModal()">
           <div class="av" id="accountAv">?</div>
@@ -949,8 +1016,9 @@ async function pickContactForField(fieldId){
 
 /* ================= preferences (clock/date format — available even before login) ================= */
 const PREFS_KEY = 'alcms_prefs_v1';
-let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'light', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', headingScale:1, bodyScale:1, headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', authClockStyle:'digital', weatherAmbience:true, weatherAmbienceStyle:'soft', paletteAuto:true, headingColor:'default', bodyColor:'default', mutedColor:'default', iconPack:'minimal', transitionStyle:'scale', sectionStyle:'solid', sectionOpacity:70, topbarStyle:'solid', authBoxOpacity:90,
-  lockscreenElements:{circles:true, quotes:true, clock:true, tips:true, contact:true}};
+let PREFS = {clockFormat:'24h', dateFormat:'DD MMM YYYY', theme:'light', palette:'forest', clockFont:'digital', dateFont:'default', appFont:'default', headingFont:'default', headingScale:1, bodyScale:1, headingWeight:'default', headingStyle:'normal', bodyWeight:'default', bodyStyle:'normal', authClockStyle:'digital', weatherAmbience:true, weatherAmbienceStyle:'soft', weatherAmbienceSet:'hills', paletteAuto:true, headingColor:'default', bodyColor:'default', mutedColor:'default', iconPack:'minimal', transitionStyle:'scale', sectionStyle:'solid', sectionOpacity:70, topbarStyle:'solid', authBoxOpacity:90, lockscreenDecorStyle:'circle',
+  lockscreenElements:{circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}};
+const DEFAULT_PREFS = JSON.parse(JSON.stringify(PREFS));
 const CLOCK_FONTS = {
   digital: {label:'Digital (default)', stack:"'Consolas','SF Mono','DejaVu Sans Mono','Courier New',monospace"},
   elegant: {label:'Elegant serif', stack:"Georgia,'Times New Roman',serif"},
@@ -1120,24 +1188,78 @@ async function loadPrefs(){
   document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[PREFS.clockFont]||CLOCK_FONTS.digital).stack);
   const savedSectionRgb = hexToRgbStr(PREFS.sectionBgColor);
   if(savedSectionRgb){ document.documentElement.style.setProperty('--section-bg-rgb', savedSectionRgb); document.documentElement.style.setProperty('--section-bg-rgb-dark', savedSectionRgb); }
+  const savedAuthBoxRgb = hexToRgbStr(PREFS.authBoxColor);
+  if(savedAuthBoxRgb){ document.documentElement.style.setProperty('--auth-box-bg-rgb', savedAuthBoxRgb); document.documentElement.style.setProperty('--auth-box-bg-rgb-dark', savedAuthBoxRgb); }
   const savedTopbarRgb = hexToRgbStr(PREFS.topbarBgColor);
   if(savedTopbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', savedTopbarRgb);
   applyLockscreenElements(PREFS.lockscreenElements);
+  applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
 }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
+/* Universal "back to default" button in Personalization. Resets every appearance/typography/
+   icons/lockscreen/weather preference to the factory defaults captured in DEFAULT_PREFS.
+   Uploaded background images themselves are left in place (not silently deleted) — resetting
+   just stops using them (section/lockscreen styles go back to solid), so an admin can still
+   remove or reuse them separately with the Remove buttons if they choose to. */
+function resetPersonalization(){
+  if(!confirm('Reset all Personalization settings to their defaults? This resets theme, colours, typography, icons, backgrounds and the lockscreen — it does not delete any uploaded images or accounts.')) return;
+  PREFS = JSON.parse(JSON.stringify(DEFAULT_PREFS));
+  delete PREFS.sectionBgColor; delete PREFS.topbarBgColor; delete PREFS.authBoxColor;
+  applyTheme(); applyPalette(PREFS.palette); applyTypography(); applyClockFont(PREFS.clockFont); applyDateFont(PREFS.dateFont);
+  applyLockscreenElements(PREFS.lockscreenElements); applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
+  document.body.setAttribute('data-section-style', PREFS.sectionStyle);
+  document.body.setAttribute('data-topbar-style', PREFS.topbarStyle);
+  document.documentElement.style.removeProperty('--section-bg-rgb'); document.documentElement.style.removeProperty('--section-bg-rgb-dark');
+  document.documentElement.style.removeProperty('--topbar-bg-rgb');
+  document.documentElement.style.removeProperty('--auth-box-bg-rgb'); document.documentElement.style.removeProperty('--auth-box-bg-rgb-dark');
+  document.documentElement.style.setProperty('--auth-box-opacity', PREFS.authBoxOpacity/100);
+  savePrefs();
+  render();
+  toast('Personalization reset to default');
+}
 /* Which lockscreen elements are shown — toggled from the Office-ribbon-style picker in
-   Settings → Lockscreen. Applying just sets data attributes the CSS reacts to, so this works
+   Personalization → Lockscreen. Applying just sets data attributes the CSS reacts to, so this works
    equally well as a live preview (not yet saved) or the real saved state on boot. */
 function applyLockscreenElements(elements){
-  const els = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, elements||{});
+  const els = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, elements||{});
   Object.keys(els).forEach(key=>{
     document.body.setAttribute('data-lockscreen-'+key, els[key] ? 'on' : 'off');
   });
 }
+/* Decoration style — the shape shown in the corner flourish on the sign-in screen.
+   Cycled by clicking the clock, or picked directly from the dropdown in Personalization → Lockscreen. */
+const LOCKSCREEN_DECOR_STYLES = {circle:'Circle', cloud:'Cloud', lines:'Lines', spiral:'Spiral', waves:'Waves', dots:'Dots', grid:'Grid', none:'None'};
+function applyLockscreenDecorStyle(style){
+  document.body.setAttribute('data-lockscreen-decor-style', style || 'circle');
+}
+/* Clicking the clock cycles through clock styles (digital/analogue variants) — independent
+   of the decoration shape, which is only cycled by clicking the decoration itself. */
+function cycleAuthClockStyle(){
+  const keys = Object.keys(AUTH_CLOCK_STYLES);
+  const cur = PREFS.authClockStyle || 'digital';
+  const next = keys[(keys.indexOf(cur)+1) % keys.length];
+  PREFS.authClockStyle = next;
+  tickClocks();
+  savePrefs();
+  const sel = document.getElementById('setAuthClockStyle');
+  if(sel) sel.value = next;
+  toast('Clock style: '+AUTH_CLOCK_STYLES[next].label);
+}
+function cycleLockscreenDecorStyle(){
+  const keys = Object.keys(LOCKSCREEN_DECOR_STYLES);
+  const cur = PREFS.lockscreenDecorStyle || 'circle';
+  const next = keys[(keys.indexOf(cur)+1) % keys.length];
+  PREFS.lockscreenDecorStyle = next;
+  applyLockscreenDecorStyle(next);
+  savePrefs();
+  const sel = document.getElementById('setLockscreenDecorStyle');
+  if(sel) sel.value = next;
+  toast('Lockscreen decoration: '+LOCKSCREEN_DECOR_STYLES[next]);
+}
 
 /* ================= admin key (required to create a new admin account) ================= */
 const ADMIN_KEY_STORAGE = 'alcms_admin_key_v1';
-let ADMIN_KEY = 'ALCMS-ADMIN-2026'; // default — change this in Settings
+let ADMIN_KEY = 'ALCMS-ADMIN-2026'; // default — change this in Personalization
 async function loadAdminKey(){
   try{ const v = await storeGet(ADMIN_KEY_STORAGE); if(v) ADMIN_KEY = v; }catch(e){}
 }
@@ -1207,10 +1329,13 @@ const AUTH_CLOCK_STYLES = {
   digital:{label:'Digital (default)'},
   'digital-bold':{label:'Digital — Bold'},
   'digital-slim':{label:'Digital — Slim'},
+  'digital-outline':{label:'Digital — Outline'},
+  'digital-mono':{label:'Digital — Mono'},
   'analogue-transparent':{label:'Analogue — Transparent face', face:'transparent', hands:'classic'},
   'analogue-solid':{label:'Analogue — Solid face', face:'solid', hands:'classic'},
   'analogue-roman':{label:'Analogue — Roman numerals', face:'solid', hands:'classic', numerals:'roman'},
   'analogue-minimal':{label:'Analogue — Minimalist', face:'transparent', hands:'thin', noTicks:true},
+  'analogue-brass':{label:'Analogue — Brass tint', face:'solid', hands:'classic'},
 };
 const ROMAN_NUMERALS = ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
 function renderAnalogueClockSvg(now, cfg){
@@ -1537,15 +1662,14 @@ function renderAuthForm(){
       <div class="field">
         <label>Access level</label>
         <div class="role-choice">
-          <div class="role-opt ${signupRole==='GUEST'?'selected':''}" id="roleOptGuest" onclick="setSignupRole('GUEST')"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
-          <div class="role-opt ${signupRole==='ADMIN'?'selected':''}" id="roleOptAdmin" onclick="setSignupRole('ADMIN')"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
+          <div class="role-opt compact ${signupRole==='GUEST'?'selected':''}" id="roleOptGuest" onclick="setSignupRole('GUEST')"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
+          <div class="role-opt compact ${signupRole==='ADMIN'?'selected':''}" id="roleOptAdmin" onclick="setSignupRole('ADMIN')"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
         </div>
       </div>
       <div id="suAdminKeyWrap" style="${signupRole==='ADMIN'||(DB&&DB.setup&&DB.setup.requireKeyForAllSignups)?'':'display:none'}">
-        <div class="field"><label>Admin key</label>${pwFieldHtml('suAdminKey','Ask your librarian/administrator for this')}<p class="field-hint">Required to create an account — set in Settings by an existing admin.</p></div>
+        <div class="field"><label>Admin key</label>${pwFieldHtml('suAdminKey','Ask your librarian/administrator for this')}<p class="field-hint">Required to create an account — set in Personalization by an existing admin.</p></div>
       </div>
       <button class="btn auth-submit" onclick="doSignup()">Create account</button>
-      <p class="field-hint" style="margin-top:12px">Email and phone are stored for account recovery and aren't sent anywhere by this app.</p>
       <p class="field-hint" style="margin-top:8px"><a href="#" onclick="authTab='signin';renderAuthForm();return false;" style="color:var(--forest);font-weight:600">← Back to sign in</a></p>
     `;
   }
@@ -1904,11 +2028,25 @@ async function loadDB(){
       const parsed = JSON.parse(v);
       if(parsed && Array.isArray(parsed.catalogue) && parsed.catalogue.length > 0){
         if(parsed.setup && Array.isArray(parsed.setup.userClasses)) parsed.setup.userClasses = sortClassesChrono(parsed.setup.userClasses);
+        migrateNewFeatureData(parsed);
         return parsed;
       }
     }
   }catch(e){ console.warn('No saved data yet, using seed data.', e); }
   return buildSeedDB();
+}
+/* Fills in arrays/settings added after the original save format, so older saved libraries
+   don't crash when opening reservations, fines, notifications, etc. for the first time. */
+function migrateNewFeatureData(db){
+  if(!Array.isArray(db.reservations)) db.reservations = [];
+  if(!Array.isArray(db.notifications)) db.notifications = [];
+  if(!db.setup) db.setup = {};
+  if(db.setup.fineEnabled===undefined) db.setup.fineEnabled = false;
+  if(db.setup.fineRatePerDay===undefined) db.setup.fineRatePerDay = 0;
+  if(db.setup.fineCurrency===undefined) db.setup.fineCurrency = '₦';
+  if(db.setup.maxRenewals===undefined) db.setup.maxRenewals = 2;
+  if(db.setup.renewalDays===undefined) db.setup.renewalDays = 7;
+  (db.circulation||[]).forEach(t=>{ if(t.renewCount===undefined) t.renewCount = 0; if(t.finePaid===undefined) t.finePaid = false; });
 }
 async function saveDB(){
   try{ return await storeSet(STORAGE_KEY, JSON.stringify(DB)); }
@@ -1920,7 +2058,7 @@ async function saveNow(){
   const ok = await saveDB();
   if(btn){ btn.textContent = ok ? '✓' : '⚠'; setTimeout(()=>{ btn.textContent='💾'; btn.disabled=false; }, 1200); }
   if(!ok){
-    toast('⚠ Save failed — your browser storage is likely full. This change will be lost on refresh. Delete some checkpoints (Settings → Backup) or download a backup now.');
+    toast('⚠ Save failed — your browser storage is likely full. This change will be lost on refresh. Delete some checkpoints (Backup &amp; Restore) or download a backup now.');
     return;
   }
   // When GitHub sync is configured and we appear to be online, quietly sync to GitHub too —
@@ -1993,11 +2131,17 @@ function buildSeedDB(){
 
   const setup = JSON.parse(JSON.stringify(SEED_SETUP));
   setup.userClasses = sortClassesChrono(setup.userClasses);
+  if(setup.fineEnabled===undefined) setup.fineEnabled = false;
+  if(setup.fineRatePerDay===undefined) setup.fineRatePerDay = 0;
+  if(setup.fineCurrency===undefined) setup.fineCurrency = '₦';
+  if(setup.maxRenewals===undefined) setup.maxRenewals = 2;
+  if(setup.renewalDays===undefined) setup.renewalDays = 7;
+  circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; });
 
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup, reminders: [], versions: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], reservations: [], notifications: [], versions: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -2033,9 +2177,10 @@ function openTimedAlert({title, bodyHtml, actions}){
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop';
   wrap.id = 'timedAlertBackdrop';
-  const btnHtml = actions && actions.length
-    ? actions.map((a,i)=>`<button class="btn ${a.primary?'':'secondary'}" id="timedAlertAction${i}">${esc(a.label)}</button>`).join('')
-    : `<button class="btn" id="timedAlertClose">Close</button>`;
+  // Every individual alert gets both: any View/Snooze/etc. action passed in, AND a Close
+  // button to dismiss it outright — they're independent, not one-or-the-other.
+  const actionBtns = (actions||[]).map((a,i)=>`<button class="btn ${a.primary?'':'secondary'}" id="timedAlertAction${i}">${esc(a.label)}</button>`).join('');
+  const btnHtml = actionBtns + `<button class="btn secondary" id="timedAlertClose">Close</button>`;
   wrap.innerHTML = `
     <div class="modal">
       <div class="modal-head"><h3>🔔 ${esc(title)}</h3></div>
@@ -2048,19 +2193,17 @@ function openTimedAlert({title, bodyHtml, actions}){
   alertBeepTimer = setInterval(playAlertBeep, 3000);
   clearTimeout(alertSnoozeTimer);
   const stop = ()=>{ clearInterval(alertBeepTimer); animatedCloseModal(wrap, ()=> wrap.remove()); };
-  if(actions && actions.length){
-    actions.forEach((a,i)=>{
-      document.getElementById('timedAlertAction'+i).onclick = ()=>{
-        clearTimeout(alertSnoozeTimer); stop(); if(a.onClick) a.onClick();
-      };
-    });
-  } else {
-    $('#timedAlertClose').onclick = ()=>{ clearTimeout(alertSnoozeTimer); stop(); };
-  }
+  (actions||[]).forEach((a,i)=>{
+    document.getElementById('timedAlertAction'+i).onclick = ()=>{
+      clearTimeout(alertSnoozeTimer); stop(); if(a.onClick) a.onClick();
+    };
+  });
+  $('#timedAlertClose').onclick = ()=>{ clearTimeout(alertSnoozeTimer); stop(); };
+  const reshowMs = ((DB&&DB.setup&&DB.setup.alertReshowMinutes)||2)*60*1000;
   alertSnoozeTimer = setTimeout(()=>{
     stop();
-    alertSnoozeTimer = setTimeout(()=> openTimedAlert({title, bodyHtml, actions}), 2*60*1000);
-  }, 2*60*1000);
+    alertSnoozeTimer = setTimeout(()=> openTimedAlert({title, bodyHtml, actions}), reshowMs);
+  }, reshowMs);
 }
 let scheduleAlertDayKey = null, scheduleAlertedSlots = new Set();
 function checkScheduleAlerts(){
@@ -2076,7 +2219,8 @@ function checkScheduleAlerts(){
   if(!due.length) return;
   scheduleAlertedSlots.add(slotKey);
   const bodyHtml = due.map(r=>`<p style="margin:0 0 8px"><strong>${esc(r[1])} period</strong> — ${esc(r[3])}${r[4]?` <span style="color:var(--muted)">(${esc(r[4])})</span>`:''}</p>`).join('');
-  openTimedAlert({title:'Class period starting now', bodyHtml});
+  pushNotification({type:'schedule', title:'Class period starting now', body:due.map(r=>r[1]+' — '+r[3]).join(', '), route:'schedule'});
+  openTimedAlert({title:'Class period starting now', bodyHtml, actions:[{label:'View schedule', primary:true, onClick:()=>{ route='schedule'; render(); }}]});
 }
 let reminderAlertedIds = new Set();
 function checkReminderAlerts(){
@@ -2088,7 +2232,8 @@ function checkReminderAlerts(){
   const shown = newOnes.slice(0,8);
   const bodyHtml = shown.map(x=>`<p style="margin:0 0 8px"><strong>${esc(x.title)}</strong> — ${esc(x.name)} (${esc(x.userId)})</p>`).join('')
     + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more overdue</p>` : '');
-  openTimedAlert({title:`${newOnes.length} loan${newOnes.length>1?'s':''} now overdue`, bodyHtml});
+  pushNotification({type:'overdue', title:`${newOnes.length} loan${newOnes.length>1?'s':''} now overdue`, body:shown.map(x=>x.title+' — '+x.name).join(', '), route:'reminders'});
+  openTimedAlert({title:`${newOnes.length} loan${newOnes.length>1?'s':''} now overdue`, bodyHtml, actions:[{label:'View', primary:true, onClick:()=>{ route='reminders'; render(); }}]});
 }
 // Loans that are still borrowed but due within 2 days — shared by the near-overdue alert below
 // and the "Needs your attention" summary, so both agree on exactly what counts as "near overdue".
@@ -2116,6 +2261,7 @@ function checkNearOverdueAlerts(){
     const daysLeft = daysBetween(new Date(), parseAnyDate(x.dueDate));
     return `<p style="margin:0 0 8px"><strong>${esc(x.title)}</strong> — ${esc(x.name)} (${esc(x.userId)}) <span style="color:var(--muted)">— due in ${daysLeft} day${daysLeft===1?'':'s'}</span></p>`;
   }).join('') + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more due soon</p>` : '');
+  pushNotification({type:'due-soon', title:`${newOnes.length} loan${newOnes.length>1?'s':''} due soon`, body:shown.map(x=>x.title+' — '+x.name).join(', '), route:'reminders'});
   openTimedAlert({
     title:`${newOnes.length} loan${newOnes.length>1?'s':''} due soon`,
     bodyHtml,
@@ -2133,6 +2279,7 @@ function checkFeedbackAlerts(){
   const shown = newOnes.slice(0,8);
   const bodyHtml = shown.map(f=>`<p style="margin:0 0 8px"><strong>${esc(f.subject||f.type||'Feedback')}</strong> — ${esc(f.userName||'Anonymous')}</p>`).join('')
     + (newOnes.length>8? `<p style="color:var(--muted)">+${newOnes.length-8} more unresolved</p>` : '');
+  pushNotification({type:'feedback', title:`${newOnes.length} unresolved feedback item${newOnes.length>1?'s':''}`, body:shown.map(f=>f.subject||f.type||'Feedback').join(', '), route:'feedback'});
   openTimedAlert({
     title:`${newOnes.length} unresolved feedback item${newOnes.length>1?'s':''}`,
     bodyHtml,
@@ -2151,7 +2298,7 @@ function checkOutstandingSummaryAlert(){
   if(overdueCount) parts.push(`<p style="margin:0 0 6px">There ${overdueCount>1?'are':'is'} <strong>${overdueCount}</strong> loan${overdueCount>1?'s':''} still overdue</p>`);
   if(nearOverdueCount) parts.push(`<p style="margin:0 0 6px">There ${nearOverdueCount>1?'are':'is'} <strong>${nearOverdueCount}</strong> loan${nearOverdueCount>1?'s':''} due within 2 days</p>`);
   if(feedbackCount) parts.push(`<p style="margin:0">There ${feedbackCount>1?'are':'is'} <strong>${feedbackCount}</strong> unresolved feedback item${feedbackCount>1?'s':''}</p>`);
-  const actions = [{label:'Snooze', onClick:()=>{ outstandingSnoozeUntil = Date.now() + 15*60*1000; }}];
+  const actions = [{label:'Snooze', onClick:()=>{ outstandingSnoozeUntil = Date.now() + ((DB.setup.alertFrequencyMinutes||15)*60*1000); }}];
   const needsCount = [overdueCount, nearOverdueCount, feedbackCount].filter(Boolean).length;
   if(needsCount>1){
     if(overdueCount || nearOverdueCount) actions.push({label:'View reminders', onClick:()=>{ route='reminders'; render(); }});
@@ -2159,13 +2306,20 @@ function checkOutstandingSummaryAlert(){
   } else {
     actions.push({label:'Attend to it', primary:true, onClick:()=>{ route = feedbackCount ? 'feedback' : 'reminders'; render(); }});
   }
+  pushNotification({type:'summary', title:'Needs your attention', body:[overdueCount&&overdueCount+' overdue', nearOverdueCount&&nearOverdueCount+' due soon', feedbackCount&&feedbackCount+' unresolved feedback'].filter(Boolean).join(', '), route: feedbackCount && !overdueCount && !nearOverdueCount ? 'feedback' : 'reminders'});
   openTimedAlert({
     title: 'Needs your attention',
     bodyHtml: parts.join(''),
     actions,
   });
 }
-setInterval(checkOutstandingSummaryAlert, 15*60*1000);
+let outstandingSummaryTimer = null;
+function restartOutstandingSummaryTimer(){
+  clearInterval(outstandingSummaryTimer);
+  const ms = ((DB&&DB.setup&&DB.setup.alertFrequencyMinutes)||15)*60*1000;
+  outstandingSummaryTimer = setInterval(checkOutstandingSummaryAlert, ms);
+}
+restartOutstandingSummaryTimer();
 setInterval(()=>{ checkScheduleAlerts(); checkReminderAlerts(); checkNearOverdueAlerts(); checkFeedbackAlerts(); }, 20000);
 
 /* ================= navigation ================= */
@@ -2179,6 +2333,7 @@ const NAV = [
     {id:'catalogue', label:'Catalogue', ico:'▥'},
     {id:'users', label:'Members', ico:'👥'},
     {id:'circulation', label:'Circulation', ico:'⇄'},
+    {id:'reservations', label:'Reservations', ico:'🔖'},
     {id:'reminders', label:'Reminder Log', ico:'✉'},
   ]},
   {group:'Operations', items:[
@@ -2224,6 +2379,14 @@ const ICON_PACKS = {
   duotone: {label:'Duotone squares', icons:{
     home:'◧',analytics:'◨',dashboard:'▦',catalogue:'▤',users:'▥',circulation:'◫',reminders:'▧',register:'▨',schedule:'▩',feedback:'◪',setup:'◩',settings:'◭',security:'◮',backup:'◱',guide:'◳',about:'◲',account:'◰',
     email:'▧',whatsapp:'◨',call:'◧',query:'▨',camera:'▦',theme:'◫',lock:'◩',save:'◪',close:'✕',menu:'☰',
+  }},
+  nature: {label:'Nature', icons:{
+    home:'🌳',analytics:'🌱',dashboard:'🍃',catalogue:'🌿',users:'🐿️',circulation:'🍂',reminders:'🌾',register:'🪶',schedule:'🌤️',feedback:'🦋',setup:'🌲',security:'🦉',backup:'🌦️',guide:'🍄',about:'🌻',account:'🐦',
+    email:'🍁',whatsapp:'🐝',call:'🐦',query:'🌾',camera:'📷',theme:'🌙',lock:'🔒',save:'💧',close:'🍂',menu:'🌳',
+  }},
+  vintage: {label:'Vintage', icons:{
+    home:'⌘',analytics:'❧',dashboard:'✥',catalogue:'❦',users:'ⵁ',circulation:'∞',reminders:'✒',register:'✎',schedule:'⌛',feedback:'❝',setup:'⚙',settings:'✺',security:'♜',backup:'☔',guide:'☙',about:'✦',account:'☺',
+    email:'✎',whatsapp:'☏',call:'☏',query:'❧',camera:'◎',theme:'☼',lock:'⚷',save:'✔',close:'✗',menu:'≡',
   }},
 };
 function renderCustomQuoteRows(){
@@ -2297,10 +2460,11 @@ function saveAuthBackground(){
   reader.readAsDataURL(file);
 }
 const LOCKSCREEN_RIBBON_ITEMS = [
-  {key:'circles', ic:'◯', label:'Circles'},
+  {key:'circles', ic:'◯', label:'Decoration'},
   {key:'quotes', ic:'❝', label:'Quotes'},
   {key:'clock', ic:'🕐', label:'Clock'},
   {key:'tips', ic:'💡', label:'Tips'},
+  {key:'gettingstarted', ic:'🚀', label:'Getting started'},
   {key:'contact', ic:'✉', label:'Contact link'},
 ];
 // Draft of which lockscreen elements are on/off while this panel is open — mirrors the
@@ -2308,7 +2472,7 @@ const LOCKSCREEN_RIBBON_ITEMS = [
 // into PREFS (and persisted) when "Save lockscreen appearance" is actually clicked.
 let lockscreenElementsDraft = null;
 function renderLockscreenRibbon(){
-  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, PREFS.lockscreenElements||{});
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, PREFS.lockscreenElements||{});
   return LOCKSCREEN_RIBBON_ITEMS.map(item=>
     `<button type="button" class="ribbon-item ${lockscreenElementsDraft[item.key]?'active':''}" onclick="toggleLockscreenElement('${item.key}')">
       <span class="ic">${item.ic}</span><span>${esc(item.label)}</span>
@@ -2316,18 +2480,21 @@ function renderLockscreenRibbon(){
   ).join('');
 }
 function toggleLockscreenElement(key){
-  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, contact:true}, PREFS.lockscreenElements||{});
+  if(!lockscreenElementsDraft) lockscreenElementsDraft = Object.assign({circles:true, quotes:true, clock:true, tips:true, gettingstarted:true, contact:true}, PREFS.lockscreenElements||{});
   lockscreenElementsDraft[key] = !lockscreenElementsDraft[key];
   applyLockscreenElements(lockscreenElementsDraft); // live preview on the real (currently hidden) lockscreen
   const ribbon = document.getElementById('lockscreenRibbon');
   if(ribbon) ribbon.innerHTML = renderLockscreenRibbon();
 }
+function previewLockscreenDecorStyle(style){ applyLockscreenDecorStyle(style); }
 function saveLockscreenAppearance(){
-  // One save button for the whole lockscreen row: background image + its opacity + login box opacity + elements shown.
+  // One save button for the whole lockscreen row: background image + its opacity + login box opacity + elements shown + decoration style.
   PREFS.authBoxOpacity = +document.getElementById('setAuthBoxOpacity')?.value || 90;
   document.documentElement.style.setProperty('--auth-box-opacity', PREFS.authBoxOpacity/100);
   if(lockscreenElementsDraft) PREFS.lockscreenElements = Object.assign({}, lockscreenElementsDraft);
   applyLockscreenElements(PREFS.lockscreenElements);
+  PREFS.lockscreenDecorStyle = document.getElementById('setLockscreenDecorStyle')?.value || PREFS.lockscreenDecorStyle || 'circle';
+  applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
   savePrefs();
   saveAuthBackground();
 }
@@ -2391,6 +2558,10 @@ function previewTopbarStyle(){
   const rgb = hexToRgbStr(document.getElementById('setTopbarBgColor')?.value);
   if(rgb) document.documentElement.style.setProperty('--topbar-bg-rgb', rgb);
 }
+function previewAuthBoxColor(){
+  const rgb = hexToRgbStr(document.getElementById('setAuthBoxColor')?.value);
+  if(rgb){ document.documentElement.style.setProperty('--auth-box-bg-rgb', rgb); document.documentElement.style.setProperty('--auth-box-bg-rgb-dark', rgb); }
+}
 function saveSectionStyle(){
   PREFS.sectionStyle = document.getElementById('setSectionStyle')?.value || 'solid';
   PREFS.sectionOpacity = +document.getElementById('setSectionOpacity')?.value || 70;
@@ -2405,6 +2576,9 @@ function saveSectionStyle(){
   if(sectionRgb){ document.documentElement.style.setProperty('--section-bg-rgb', sectionRgb); document.documentElement.style.setProperty('--section-bg-rgb-dark', sectionRgb); }
   const topbarRgb = hexToRgbStr(PREFS.topbarBgColor);
   if(topbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', topbarRgb);
+  PREFS.authBoxColor = document.getElementById('setAuthBoxColor')?.value || '';
+  const authBoxRgb = hexToRgbStr(PREFS.authBoxColor);
+  if(authBoxRgb){ document.documentElement.style.setProperty('--auth-box-bg-rgb', authBoxRgb); document.documentElement.style.setProperty('--auth-box-bg-rgb-dark', authBoxRgb); }
   savePrefs(); toast('Background style saved');
 }
 function previewPersonalizationExtras(){
@@ -2431,6 +2605,8 @@ const PAGE_META = {
   catalogue:['Catalogue','Every accessioned title in the collection'],
   users:['Members','Students and staff registered to borrow'],
   circulation:['Circulation','Issue and return titles'],
+  reservations:['Reservations','Holds placed on titles that are currently out'],
+  memberProfile:['Member profile','Loans, history, fines and visits for this member'],
   reminders:['Reminder Log','Overdue loans awaiting a reminder'],
   register:['Register','Desk sign-ins and class period visits, in one place'],
   schedule:['Schedule','Weekly library timetable'],
@@ -2455,11 +2631,12 @@ function renderNav(){
   const el = $('#navlist'); el.innerHTML='';
   const reminderCount = (DB && DB.circulation) ? reminderNeedsCount() : 0;
   const feedbackCount = (DB && Array.isArray(DB.feedback)) ? DB.feedback.filter(f=>f.status!=='RESOLVED').length : 0;
+  const readyReservationCount = (DB && Array.isArray(DB.reservations)) ? DB.reservations.filter(r=>r.status==='READY').length : 0;
   NAV.forEach(g=>{
     const lab=document.createElement('div'); lab.className='navgroup-label'; lab.textContent=g.group; el.appendChild(lab);
     g.items.forEach(it=>{
       const b=document.createElement('button');
-      const count = it.id==='reminders' ? reminderCount : it.id==='feedback' ? feedbackCount : 0;
+      const count = it.id==='reminders' ? reminderCount : it.id==='feedback' ? feedbackCount : it.id==='reservations' ? readyReservationCount : 0;
       const badge = count>0 ? `<span class="nav-badge">${count>99?'99+':count}</span>` : '';
       b.innerHTML = `<span class="ico">${navIcon(it.id, it.ico)}</span><span>${it.label}</span>${badge}`;
       b.className = it.id===route ? 'active':'';
@@ -2543,12 +2720,12 @@ function openTipsCarouselModal(title, tips){
 const QUICK_TIPS = [
   {ico:'🔍', heading:'Find anything fast', body:'Use the search bar at the top of Catalogue, Members or any list — results filter as you type, and the ✕ clears it.'},
   {ico:'⇄', heading:'Issue & return', body:'Circulation lets you issue a title to a member in a few keystrokes, and batch several titles together with "+ Add to batch".'},
-  {ico:'💾', heading:'Save often', body:'Use the save icon in the sidebar, or a checkpoint in Settings → Backup, so nothing is lost if the browser closes.'},
+  {ico:'💾', heading:'Save often', body:'Use the save icon in the sidebar, or a checkpoint in Backup & Restore, so nothing is lost if the browser closes.'},
   {ico:'🔔', heading:'Stay on top of overdue loans', body:'The Reminder Log flags overdue titles, and can message the borrower (or their class teacher) on WhatsApp directly.'},
   {ico:'🗓️', heading:'Schedule alerts', body:'When a class period starts, a popup with sound lets you know — it snoozes and comes back every 2 minutes until you close it.'},
   {ico:'📊', heading:'See the bigger picture', body:'Dashboard and Analytics summarise borrowing trends, overdue rates and your busiest categories at a glance.'},
   {ico:'🖶', heading:'Print & export', body:'Every list has Print and Export buttons — pick CSV, Excel or PDF for whatever you need to hand off.'},
-  {ico:'🎨', heading:'Make it yours', body:'Settings → Personalization lets you change the theme, colour palette, fonts, icon pack and more.'},
+  {ico:'🎨', heading:'Make it yours', body:'Personalization lets you change the theme, colour palette, fonts, icon pack and more.'},
   {ico:'🔐', heading:'Lock it down', body:'Privacy & Security has login lockout, inactivity auto-lock and the admin key — all in one place.'},
   {ico:'⭱', heading:'Back it up', body:'Backup & Restore can download a copy, sync to GitHub, or save toward Google Drive — good habit before big changes.'},
 ];
@@ -2556,7 +2733,7 @@ function openQuickTipsModal(){ openTipsCarouselModal('Quick tips', QUICK_TIPS); 
 const GETTING_STARTED_TIPS = [
   {ico:'👋', heading:'Welcome to ALCMS', body:'This is your library and circulation desk in one place — catalogue, members, loans, schedule and more.'},
   {ico:'🔑', heading:'Sign in to get started', body:'Sign in with an admin account to manage records, or continue as a guest to browse and search only.'},
-  {ico:'▥', heading:'Everything lives in the sidebar', body:'Catalogue, Members, Circulation, Schedule and Settings are all one click away from the sidebar menu.'},
+  {ico:'▥', heading:'Everything lives in the sidebar', body:'Catalogue, Members, Circulation, Schedule and Personalization are all one click away from the sidebar menu.'},
   {ico:'📚', heading:'Add your first titles', body:'Catalogue → "+ Add title", or Import a spreadsheet of your existing collection to get going quickly.'},
   {ico:'👥', heading:'Register your members', body:'Members → "+ Add member" for staff and students — each gets their own borrowing limit and history.'},
   {ico:'⚙', heading:'Set up your institution', body:'Setup lets you add your institution name, logo, academic term and classes before you start using the app daily.'},
@@ -2742,7 +2919,7 @@ function GenericModule(cfg){
             <button class="btn secondary" data-act="export-${cfg.key}">⭳ Export</button>`:''}
             ${cfg.onImport && isAdmin() ? `<button class="btn secondary" data-act="import-${cfg.key}">⭱ Import</button>`:''}
             ${cfg.onAdd && isAdmin() ? `<button class="btn" data-act="add-${cfg.key}">${cfg.addLabel||'+ Add'}</button>`:''}
-            ${(cfg.extraActions||[]).filter(()=>isAdmin()).map((a,i)=>`<button class="btn ${a.danger?'danger':'secondary'}" data-act="extra${i}-${cfg.key}">${esc(a.label)}</button>`).join('')}
+            ${(cfg.extraActions||[]).map((a,i)=> (a.alwaysShow||isAdmin()) ? `<button class="btn ${a.danger?'danger':'secondary'}" data-act="extra${i}-${cfg.key}">${esc(a.label)}</button>` : '').join('')}
             ${cfg.onAdd && !isAdmin() ? `<span class="badge grey">View only</span>`:''}
           </div>
         </div>
@@ -2979,6 +3156,40 @@ function inRange(dateVal, from, to){
   if(from && d < new Date(from.getFullYear(),from.getMonth(),from.getDate())) return false;
   if(to && d > new Date(to.getFullYear(),to.getMonth(),to.getDate(),23,59,59)) return false;
   return true;
+}
+/* A quick, one-page, KPI-only snapshot — for when the full comprehensive report (with every
+   detail table) is more than what's needed. Always covers "right now", no period picker. */
+function generateSummaryReport(){
+  const c = DB.catalogue, u = DB.users, t = DB.circulation;
+  const available = c.filter(b=>b.available==='AVAILABLE').length;
+  const issued = c.filter(b=>b.available==='ISSUED').length;
+  const overdue = t.filter(x=>txnStatus(x)==='OVERDUE').length;
+  const active = t.filter(x=>txnStatus(x)!=='RETURNED').length;
+  const today = todayISO();
+  const issuedToday = t.filter(x=>(x.dateBorrowed||'').slice(0,10)===today).length;
+  const returnedToday = t.filter(x=>(x.returnDate||'').slice(0,10)===today).length;
+  const visitsToday = DB.registerLog.filter(x=> fmtDate(x.date)===fmtDate(today)).length;
+  printMultiSection('Summary Report', 'Snapshot as of '+new Date().toLocaleString('en-GB'), [
+    { heading:'Collection', kpis:[
+      {label:'Titles in collection', value:c.length},
+      {label:'Available now', value:available},
+      {label:'Currently issued', value:issued},
+    ]},
+    { heading:'Members', kpis:[
+      {label:'Registered members', value:u.length},
+      {label:'Staff', value:u.filter(x=>x.category==='STAFF').length},
+      {label:'Students', value:u.filter(x=>x.category==='STUDENT').length},
+    ]},
+    { heading:'Today', kpis:[
+      {label:'Issued today', value:issuedToday},
+      {label:'Returned today', value:returnedToday},
+      {label:'Library visits today', value:visitsToday},
+    ]},
+    { heading:'Circulation right now', kpis:[
+      {label:'Active loans', value:active},
+      {label:'Overdue', value:overdue},
+    ]},
+  ]);
 }
 function openReportModal(){
   const html = `
@@ -3266,19 +3477,27 @@ function openImportModal(cfg){
 
 /* ================= PAGE: HOME ================= */
 const WEATHER_PERIODS = {
+  lateNight:{skyTop:'#0B1730', skyBot:'#16294A', hillBack:'#24406B', hillFront:'#241740', hillFrontDark:'#170F2C', moon:'#EDEAE0', label:'Late night', stars:true},
+  dawn:     {skyTop:'#3A4A73', skyBot:'#7688AC', hillBack:'#4A5E82', hillFront:'#2B3A55', hillFrontDark:'#202B40', moon:'#EDEAE0', label:'Dawn', stars:true},
   sunrise:  {skyTop:'#2FA79A', skyBot:'#5FC2B4', hillBack:'#2E8E7E', hillFront:'#0E4B41', hillFrontDark:'#0A3A32', sun:'#FBEFC6', sunGlow:'#8FD6C4', label:'Sunrise'},
   morning:  {skyTop:'#AFE0F5', skyBot:'#DCF1FA', hillBack:'#4FAE5E', hillFront:'#1F8A3C', hillFrontDark:'#166B2E', sun:'#FDF6D8', sunGlow:'#EAF6D8', label:'Morning'},
   noon:     {skyTop:'#F6EFC2', skyBot:'#FBF8E4', hillBack:'#9BC93F', hillFront:'#6FA02A', hillFrontDark:'#588022', sun:'#FFFBEF', sunGlow:'#F3EFC0', label:'Noon'},
   afternoon:{skyTop:'#F3AE91', skyBot:'#FAD8C6', hillBack:'#B06A4C', hillFront:'#7A3527', hillFrontDark:'#5E271C', sun:'#FCEEDB', sunGlow:'#F6C9AE', label:'Afternoon'},
+  goldenHour:{skyTop:'#F7C873', skyBot:'#FCE3B0', hillBack:'#C98B45', hillFront:'#8A4E22', hillFrontDark:'#6B3A18', sun:'#FFEFC2', sunGlow:'#F8C879', label:'Golden hour'},
+  sunset:   {skyTop:'#E4573D', skyBot:'#F2946B', hillBack:'#8C3B2E', hillFront:'#4A2030', hillFrontDark:'#341625', sun:'#FFDFAE', sunGlow:'#F4805A', label:'Sunset'},
   evening:  {skyTop:'#B6A0D6', skyBot:'#CFC0E6', hillBack:'#6B4568', hillFront:'#3E2A46', hillFrontDark:'#2E1F35', sun:'#EDE6F4', sunGlow:'#9E86BE', label:'Evening', stars:true},
   night:    {skyTop:'#1B2F52', skyBot:'#2A4A72', hillBack:'#3C5E86', hillFront:'#332255', hillFrontDark:'#241740', moon:'#F3F0E8', label:'Night', stars:true},
 };
 function weatherPeriodForHour(hour){
-  if(hour>=5 && hour<8) return 'sunrise';
-  if(hour>=8 && hour<12) return 'morning';
-  if(hour>=12 && hour<15) return 'noon';
-  if(hour>=15 && hour<18) return 'afternoon';
-  if(hour>=18 && hour<20) return 'evening';
+  if(hour>=0 && hour<4) return 'lateNight';
+  if(hour>=4 && hour<6) return 'dawn';
+  if(hour>=6 && hour<8) return 'sunrise';
+  if(hour>=8 && hour<11) return 'morning';
+  if(hour>=11 && hour<13) return 'noon';
+  if(hour>=13 && hour<16) return 'afternoon';
+  if(hour>=16 && hour<18) return 'goldenHour';
+  if(hour>=18 && hour<19) return 'sunset';
+  if(hour>=19 && hour<21) return 'evening';
   return 'night';
 }
 function renderWeatherLabel(){
@@ -3286,8 +3505,64 @@ function renderWeatherLabel(){
   const key = weatherPeriodForHour(new Date().getHours());
   const p = WEATHER_PERIODS[key];
   const dotColor = p.moon || p.sun;
-  return `<div class="weather-label"><span class="weather-label-dot" style="background:${dotColor};box-shadow:0 0 10px 2px ${dotColor}"></span>It's ${esc(p.label)}</div>`;
+  return `<div class="weather-label" onclick="cycleWeatherAmbienceSet()" title="Click to change the weather scene"><span class="weather-label-dot" style="background:${dotColor};box-shadow:0 0 10px 2px ${dotColor}"></span>It's ${esc(p.label)}</div>`;
 }
+/* WEATHER_SETS — the actual choosable "look" of the ambience illustration (the landscape drawn
+   in front of the sky/sun/moon). Independent of time-of-day (WEATHER_PERIODS), which only
+   controls colours/lighting. Each render fn returns SVG for the w×h canvas using the current
+   period's colours, so any scene works at any time of day. */
+const WEATHER_SETS = {
+  hills:   {label:'Rolling hills (default)', render:(p,w,h,op)=>`
+    <path d="M0,95 Q60,78 130,92 T${w},85 V${h} H0 Z" fill="${p.hillBack}" opacity="${op*0.85}"/>
+    <path d="M120,${h} C120,${h-42} 155,${h-70} 185,${h-70} C210,${h-70} 235,${h-50} 245,${h-30} C258,${h-55} 285,${h-62} ${w},${h-40} V${h} Z" fill="${p.hillFront}" opacity="${op}"/>
+    <path d="M60,${h} C60,${h-28} 90,${h-48} 115,${h-48} C135,${h-48} 152,${h-36} 158,${h-20} V${h} Z" fill="${p.hillFrontDark}" opacity="${op*0.95}"/>`},
+  mountains:{label:'Mountains', render:(p,w,h,op)=>`
+    <path d="M0,${h} L40,58 L75,94 L112,38 L152,90 L192,54 L232,98 L272,64 L${w},${h-30} V${h} Z" fill="${p.hillBack}" opacity="${op*0.8}"/>
+    <path d="M0,${h} L58,86 L100,110 L150,68 L200,106 L${w},80 V${h} Z" fill="${p.hillFront}" opacity="${op}"/>
+    <path d="M32,66 L40,58 L48,66 Z" fill="#fff" opacity="${op*0.55}"/>
+    <path d="M104,46 L112,38 L120,46 Z" fill="#fff" opacity="${op*0.55}"/>
+    <path d="M184,62 L192,54 L200,62 Z" fill="#fff" opacity="${op*0.55}"/>`},
+  ocean:   {label:'Ocean waves', render:(p,w,h,op)=>{
+    let waves='';
+    for(let i=0;i<4;i++){ const yy=h-36+i*9; waves+=`<path d="M0,${yy} Q${w/4},${yy-7} ${w/2},${yy} T${w},${yy}" stroke="${i%2?p.hillFront:p.hillBack}" stroke-width="2" fill="none" opacity="${op*(0.55-i*0.08)}"/>`; }
+    return `<rect x="0" y="${h-40}" width="${w}" height="40" fill="${p.hillBack}" opacity="${op*0.55}"/>${waves}`;
+  }},
+  city:    {label:'City skyline', render:(p,w,h,op)=>{
+    const buildings=[[8,50,38],[52,68,28],[90,40,52],[148,62,32],[188,86,44],[240,54,38],[286,72,30]];
+    return buildings.map(([x,bh,bw],i)=>{
+      const y=h-bh; let windows='';
+      for(let wy=y+8; wy<h-6; wy+=13) for(let wx=x+6; wx<x+bw-6; wx+=12) windows+=`<rect x="${wx}" y="${wy}" width="4" height="5" fill="${p.sun||p.moon}" opacity="${op*0.55}"/>`;
+      return `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${i%2?p.hillFront:p.hillBack}" opacity="${op*0.9}"/>${windows}`;
+    }).join('');
+  }},
+  desert:  {label:'Desert dunes', render:(p,w,h,op)=>`
+    <path d="M0,${h} C40,${h-30} 90,${h-15} 140,${h-35} C190,${h-55} 230,${h-20} ${w},${h-40} V${h} Z" fill="${p.hillBack}" opacity="${op*0.8}"/>
+    <path d="M0,${h} C50,${h-15} 100,${h-5} 160,${h-22} C210,${h-35} 260,${h-8} ${w},${h-18} V${h} Z" fill="${p.hillFront}" opacity="${op}"/>
+    <path d="M250,${h-18} L250,${h-46} M244,${h-38} L232,${h-30} M256,${h-40} L268,${h-32}" stroke="${p.hillFrontDark}" stroke-width="4" stroke-linecap="round" fill="none" opacity="${op*0.85}"/>`},
+  forest:  {label:'Forest', render:(p,w,h,op)=>{
+    const xs=[18,52,86,124,168,208,248,286]; let trees='';
+    xs.forEach((x,i)=>{ const th=54+(i%3)*11; trees+=`<polygon points="${x},${h-th} ${x-15},${h-9} ${x+15},${h-9}" fill="${i%2?p.hillFront:p.hillBack}" opacity="${op*(i%2?1:0.75)}"/>`; });
+    return `<rect x="0" y="${h-9}" width="${w}" height="9" fill="${p.hillFrontDark}" opacity="${op*0.8}"/>${trees}`;
+  }},
+  lake:    {label:'Lake reflection', render:(p,w,h,op)=>`
+    <path d="M0,80 Q60,66 130,78 T${w},72 V${h-18} H0 Z" fill="${p.hillBack}" opacity="${op*0.85}"/>
+    <path d="M120,${h-18} C120,${h-52} 155,${h-76} 185,${h-76} C215,${h-76} 240,${h-56} 248,${h-38} V${h-18} Z" fill="${p.hillFront}" opacity="${op}"/>
+    <rect x="0" y="${h-18}" width="${w}" height="18" fill="${p.hillBack}" opacity="${op*0.3}"/>
+    <path d="M0,${h-10} Q${w/4},${h-14} ${w/2},${h-10} T${w},${h-10}" stroke="${p.hillFront}" stroke-width="1.5" fill="none" opacity="${op*0.4}"/>
+    <path d="M0,${h-4} Q${w/4},${h-7} ${w/2},${h-4} T${w},${h-4}" stroke="${p.hillFront}" stroke-width="1.5" fill="none" opacity="${op*0.3}"/>`},
+  meadow:  {label:'Meadow', render:(p,w,h,op)=>{
+    const rand=(seed)=>{ const x=Math.sin(seed*777)*10000; return x-Math.floor(x); };
+    let flowers='';
+    for(let i=0;i<10;i++){ const x=(rand(i+1)*w).toFixed(1), y=(h-6-rand(i+9)*16).toFixed(1); flowers+=`<circle cx="${x}" cy="${y}" r="2.2" fill="${p.sun||p.moon}" opacity="${op*0.6}"/>`; }
+    return `<path d="M0,${h-18} Q${w/2},${h-30} ${w},${h-16} V${h} H0 Z" fill="${p.hillFront}" opacity="${op*0.9}"/>${flowers}`;
+  }},
+  savanna: {label:'Savanna', render:(p,w,h,op)=>`
+    <path d="M0,${h-14} Q${w/2},${h-22} ${w},${h-12} V${h} H0 Z" fill="${p.hillFront}" opacity="${op*0.85}"/>
+    <path d="M248,${h-14} L248,${h-46}" stroke="${p.hillFrontDark}" stroke-width="4" opacity="${op}"/>
+    <ellipse cx="248" cy="${h-50}" rx="30" ry="8" fill="${p.hillFrontDark}" opacity="${op*0.9}"/>`},
+  minimal: {label:'Minimal', render:(p,w,h,op)=>`
+    <rect x="0" y="${h-14}" width="${w}" height="14" fill="${p.hillFront}" opacity="${op*0.7}"/>`},
+};
 function renderWeatherAmbience(){
   if(!PREFS.weatherAmbience) return '';
   const hour = new Date().getHours();
@@ -3304,12 +3579,31 @@ function renderWeatherAmbience(){
       return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${0.55*op}"/>`;
     }).join('');
   }
+  let clouds = '';
+  if(!p.stars){
+    // Soft overlapping ellipses read as a puffy cloud, with a slightly darker underside for depth.
+    const cloudFn = (x,y,scale,fade)=>`
+      <g opacity="${op*fade}" transform="translate(${x},${y}) scale(${scale})">
+        <ellipse cx="0" cy="6" rx="26" ry="8" fill="#000" opacity="0.06"/>
+        <ellipse cx="-14" cy="0" rx="15" ry="11" fill="#fff"/>
+        <ellipse cx="10" cy="-3" rx="19" ry="14" fill="#fff"/>
+        <ellipse cx="26" cy="2" rx="13" ry="9" fill="#fff"/>
+      </g>`;
+    clouds = cloudFn(52,26,0.8,0.5) + cloudFn(150,18,0.55,0.38);
+  }
   const celestial = p.moon
-    ? `<circle cx="${cx}" cy="${cy}" r="26" fill="${p.moon}" opacity="${op}"/>
-       <circle cx="${cx+9}" cy="${cy-7}" r="23" fill="${p.hillBack}" opacity="1"/>`
+    ? `<circle cx="${cx}" cy="${cy}" r="40" fill="${p.moon}" opacity="${op*0.12}"/>
+       <mask id="wxMoonMask-${key}"><rect x="0" y="0" width="${w}" height="${h}" fill="#fff"/><circle cx="${cx+11}" cy="${cy-8}" r="23" fill="#000"/></mask>
+       <g mask="url(#wxMoonMask-${key})">
+         <circle cx="${cx}" cy="${cy}" r="26" fill="${p.moon}" opacity="${op}"/>
+         <circle cx="${cx-8}" cy="${cy-6}" r="3.4" fill="${p.hillBack}" opacity="${op*0.3}"/>
+         <circle cx="${cx-2}" cy="${cy+8}" r="2.2" fill="${p.hillBack}" opacity="${op*0.25}"/>
+         <circle cx="${cx-11}" cy="${cy+4}" r="1.6" fill="${p.hillBack}" opacity="${op*0.22}"/>
+       </g>`
     : `<circle cx="${cx}" cy="${cy}" r="44" fill="${p.sunGlow}" opacity="${op*0.35}"/>
        <circle cx="${cx}" cy="${cy}" r="30" fill="${p.sunGlow}" opacity="${op*0.5}"/>
        <circle cx="${cx}" cy="${cy}" r="18" fill="${p.sun}" opacity="${op}"/>`;
+  const scene = (WEATHER_SETS[PREFS.weatherAmbienceSet]||WEATHER_SETS.hills).render(p,w,h,op);
   const inner = `
     <defs>
       <linearGradient id="wxSky-${key}" x1="0" y1="0" x2="0" y2="1">
@@ -3319,11 +3613,23 @@ function renderWeatherAmbience(){
     <rect x="0" y="0" width="${w}" height="${h}" fill="url(#wxSky-${key})" opacity="${op*0.9}"/>
     ${stars}
     ${celestial}
-    <path d="M0,95 Q60,78 130,92 T${w},85 V${h} H0 Z" fill="${p.hillBack}" opacity="${op*0.85}"/>
-    <path d="M120,${h} C120,${h-42} 155,${h-70} 185,${h-70} C210,${h-70} 235,${h-50} 245,${h-30} C258,${h-55} 285,${h-62} ${w},${h-40} V${h} Z" fill="${p.hillFront}" opacity="${op}"/>
-    <path d="M60,${h} C60,${h-28} 90,${h-48} 115,${h-48} C135,${h-48} 152,${h-36} 158,${h-20} V${h} Z" fill="${p.hillFrontDark}" opacity="${op*0.95}"/>
+    ${clouds}
+    ${scene}
   `;
-  return `<svg class="weather-ambience" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">${inner}</svg>`;
+  return `<svg class="weather-ambience" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" onclick="cycleWeatherAmbienceSet()"><title>Click to change the weather scene</title>${inner}</svg>`;
+}
+/* Clicking the weather illustration (or its "It's Night" label) on the Home hero cycles
+   through the 10 scene sets, live — same click-to-cycle pattern as the lockscreen clock/decor. */
+function cycleWeatherAmbienceSet(){
+  const keys = Object.keys(WEATHER_SETS);
+  const cur = PREFS.weatherAmbienceSet || 'hills';
+  const next = keys[(keys.indexOf(cur)+1) % keys.length];
+  PREFS.weatherAmbienceSet = next;
+  savePrefs();
+  render();
+  const sel = document.getElementById('setWeatherSet');
+  if(sel) sel.value = next;
+  toast('Weather scene: '+WEATHER_SETS[next].label);
 }
 function pageHome(){
   const c = DB.catalogue, u = DB.users, t = DB.circulation;
@@ -3379,7 +3685,10 @@ function pageDashboard(){
   return `
   <div class="panel-head" style="margin-bottom:14px">
     <div></div>
-    <button class="btn secondary" onclick="openReportModal()">📋 Generate comprehensive report</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="generateSummaryReport()">🧾 Generate summary report</button>
+      <button class="btn secondary" onclick="openReportModal()">📋 Generate comprehensive report</button>
+    </div>
   </div>
   <div class="grid kpis">
     ${kpi('Titles in collection', c.length, '')}
@@ -3389,7 +3698,7 @@ function pageDashboard(){
   </div>
   <div class="grid charts-row">
     <div class="card chart-box"><h4>Collection by main class</h4><p class="chart-caption">Your catalogue grouped by Dewey main class, so you can see where the collection is strongest.</p><div class="chart-canvas-wrap"><canvas id="chMainClass"></canvas></div></div>
-    <div class="card chart-box"><h4>Loans issued by month</h4><p class="chart-caption">Circulation volume over time.</p><div class="chart-canvas-wrap"><canvas id="chMonthly"></canvas></div></div>
+    <div class="card chart-box"><h4>Members by class / role / designation</h4><p class="chart-caption">How your registered members are spread across classes, roles and staff designations.</p><div class="chart-canvas-wrap"><canvas id="chMemberClass"></canvas></div></div>
   </div>
   <div class="grid two-col">
     <div class="card panel">
@@ -3416,16 +3725,16 @@ function groupCount(arr, keyFn){
   const m={}; arr.forEach(x=>{ const k=keyFn(x); if(k===undefined||k===null||k==='') return; m[k]=(m[k]||0)+1; }); return m;
 }
 function drawDashboardCharts(){
-  const c = DB.catalogue, t = DB.circulation;
+  const c = DB.catalogue, t = DB.circulation, u = DB.users;
   const byClass = groupCount(c, b=>(b.mainClass||'UNCLASSIFIED').replace(/^\d+\s*–\s*/,''));
   const classEntries = Object.entries(byClass).sort((a,b)=>b[1]-a[1]);
   makeChart('chMainClass',{type:'doughnut', data:{labels:classEntries.map(e=>e[0]), datasets:[{data:classEntries.map(e=>e[1]), backgroundColor:PALETTE}]},
     options:{plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:10}}}}}});
 
-  const byMonth = {};
-  t.forEach(x=>{ const d=parseAnyDate(x.dateBorrowed); if(!d) return; const k=d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); byMonth[k]=(byMonth[k]||0)+1; });
-  makeChart('chMonthly',{type:'line', data:{labels:Object.keys(byMonth), datasets:[{data:Object.values(byMonth), borderColor:'#A8452F', backgroundColor:'rgba(168,69,47,.15)', fill:true, tension:.3}]},
-    options:{plugins:{legend:{display:false}}}});
+  const byMemberClass = groupCount(u, x=>x.cls||'UNSPECIFIED');
+  const memberClassEntries = Object.entries(byMemberClass).sort((a,b)=>b[1]-a[1]);
+  makeChart('chMemberClass',{type:'doughnut', data:{labels:memberClassEntries.map(e=>e[0]), datasets:[{data:memberClassEntries.map(e=>e[1]), backgroundColor:PALETTE}]},
+    options:{plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:10}}}}}});
 }
 
 /* ================= PAGE: ANALYTICS ================= */
@@ -3438,6 +3747,13 @@ function pageAnalytics(){
   const byTitle = {}; t.forEach(x=>{ if(x.title) byTitle[x.title]=(byTitle[x.title]||0)+1; });
   const topT = Object.entries(byTitle).sort((a,b)=>b[1]-a[1]).slice(0,5);
   return `
+  <div class="panel-head" style="margin-bottom:14px">
+    <div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="printAnalyticsReport()">🖨 Print</button>
+      <button class="btn secondary" onclick="exportAnalyticsData()">⭳ Export</button>
+    </div>
+  </div>
   <div class="grid two-col">
     <div class="card panel">
       <div class="panel-head"><h3>Top 5 borrowers</h3></div>
@@ -3463,6 +3779,40 @@ function pageAnalytics(){
     <div class="table-wrap"><table class="datatable"><thead><tr><th>Member ID</th><th>Name</th><th>Class</th><th>Acc. No</th><th>Title</th><th>Due date</th><th>Days overdue</th></tr></thead>
     <tbody>${overdueRows.map(r=>`<tr><td>${esc(r.userId)}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td><td>${esc(r.acc)}</td><td>${esc(r.title)}</td><td>${fmtDate(r.dueDate)}</td><td><span class="badge red">${r.daysOverdue}</span></td></tr>`).join('')||'<tr><td colspan=7><div class="empty"><div class="big">✓</div>Nothing overdue</div></td></tr>'}</tbody></table></div>
   </div>`;
+}
+/* Print / export for the Analytics page — the top borrowers, top titles, and full overdue
+   detail table, which together are the actual data (not just charts) shown on this page. */
+function analyticsReportSections(){
+  const t = DB.circulation;
+  const overdueRows = t.filter(x=>txnStatus(x)==='OVERDUE').map(x=>({...x, daysOverdue: daysBetween(parseAnyDate(x.dueDate), new Date())}))
+    .sort((a,b)=>b.daysOverdue-a.daysOverdue);
+  const byBorrower = {}; t.forEach(x=>{ if(x.name) (byBorrower[x.name]=byBorrower[x.name]||{cls:x.cls,count:0}).count++; });
+  const topB = Object.entries(byBorrower).sort((a,b)=>b[1].count-a[1].count).slice(0,5);
+  const byTitle = {}; t.forEach(x=>{ if(x.title) byTitle[x.title]=(byTitle[x.title]||0)+1; });
+  const topT = Object.entries(byTitle).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  return { overdueRows, topB, topT };
+}
+function printAnalyticsReport(){
+  const { overdueRows, topB, topT } = analyticsReportSections();
+  printMultiSection('Analytics', 'Top borrowers, top titles &amp; overdue detail', [
+    { heading:'Top 5 borrowers', columns:[
+      {label:'Name', get:r=>r[0]}, {label:'Class / Designation', get:r=>r[1].cls}, {label:'Books borrowed', get:r=>r[1].count},
+    ], rows: topB },
+    { heading:'Top 5 borrowed titles', columns:[
+      {label:'Title', get:r=>r[0]}, {label:'Times borrowed', get:r=>r[1]},
+    ], rows: topT },
+    { heading:'Overdue detail', columns:[
+      {label:'Member', get:r=>r.name}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
+      {label:'Due date', get:r=>fmtDate(r.dueDate)}, {label:'Days overdue', get:r=>r.daysOverdue},
+    ], rows: overdueRows },
+  ]);
+}
+function exportAnalyticsData(){
+  const { overdueRows } = analyticsReportSections();
+  openExportModal('Analytics — overdue detail', 'analytics_overdue', [
+    {label:'Member', get:r=>r.name}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
+    {label:'Due date', get:r=>fmtDate(r.dueDate)}, {label:'Days overdue', get:r=>r.daysOverdue},
+  ], ()=>analyticsReportSections().overdueRows);
 }
 function drawAnalyticsCharts(){
   const c = DB.catalogue, t = DB.circulation.map(x=>({...x, status:txnStatus(x)})), u = DB.users, reg = DB.registerLog;
@@ -3564,7 +3914,7 @@ function pageCatalogue(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">View</button> <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">View</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
   });
   return `<div id="mod_catalogue"></div>`;
 }
@@ -3722,7 +4072,7 @@ function pageUsers(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="viewMember('${esc(r.id)}')">View</button> <button class="btn secondary small" onclick="viewSubjects('${r.id}')">Subjects</button> <button class="btn secondary small" onclick="openUserForm('${r.id}')">Edit</button> <button class="btn danger small" onclick="deleteUser('${r.id}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="openMemberProfile('${esc(r.id)}')">Profile</button> <button class="btn secondary small" onclick="viewMember('${esc(r.id)}')">View</button> <button class="btn secondary small" onclick="viewSubjects('${r.id}')">Subjects</button> <button class="btn secondary small" onclick="openUserForm('${r.id}')">Edit</button> <button class="btn danger small" onclick="deleteUser('${r.id}')">Delete</button>`,
   });
   return `<div id="mod_users"></div>`;
 }
@@ -3861,6 +4211,77 @@ function viewSubjects(userId){
 
 /* ================= PAGE: CIRCULATION ================= */
 let issuePicker, returnPicker;
+/* ================= PAGE: MEMBER PROFILE ================= */
+let currentProfileMemberId = null;
+function openMemberProfile(id){ currentProfileMemberId = id; route = 'memberProfile'; render(); }
+function pageMemberProfile(){
+  const u = DB.users.find(x=>x.id===currentProfileMemberId);
+  if(!u){
+    return `<div class="empty"><div class="big">👤</div>No member selected — go to Members and click "Profile" on someone.<br><button class="btn secondary" style="margin-top:12px" onclick="route='users';render();">← Back to Members</button></div>`;
+  }
+  const allTxns = DB.circulation.filter(t=>t.userId===u.id).sort((a,b)=>(parseAnyDate(b.dateBorrowed)||0)-(parseAnyDate(a.dateBorrowed)||0));
+  const active = allTxns.filter(t=>!t.returnDate);
+  const history = allTxns.filter(t=>t.returnDate);
+  const fines = DB.setup.fineEnabled ? allTxns.map(t=>({t, fine:fineForTxn(t)})).filter(x=>x.fine.amount>0) : [];
+  const outstanding = fines.filter(x=>!x.t.finePaid).reduce((s,x)=>s+x.fine.amount,0);
+  const visits = DB.registerLog.filter(r=>r.id===u.id).sort((a,b)=>(parseAnyDate(b.date)||0)-(parseAnyDate(a.date)||0)).slice(0,15);
+  const holds = DB.reservations.filter(r=>r.userId===u.id);
+  return `
+  <button class="btn secondary" style="margin-bottom:14px" onclick="route='users';render();">← Back to Members</button>
+  <div class="grid two-col">
+    <div class="card panel">
+      <div class="panel-head"><h3>${esc(u.name)}</h3><span class="badge ${u.status==='ACTIVE'?'green':'grey'}">${esc(u.status)}</span></div>
+      <table class="datatable">
+        <tr><td style="font-weight:600;width:40%">Member ID</td><td>${esc(u.id)}</td></tr>
+        <tr><td style="font-weight:600">Category</td><td>${esc(u.category||'—')}</td></tr>
+        <tr><td style="font-weight:600">Class / Designation</td><td>${esc(u.cls||'—')}</td></tr>
+        <tr><td style="font-weight:600">Phone / contact</td><td>${esc(u.teacher||'—')}</td></tr>
+        <tr><td style="font-weight:600">Currently borrowed</td><td>${u.borrowed||0} / ${u.maxAllowed||0}</td></tr>
+        <tr><td style="font-weight:600">Total borrowed (all time)</td><td>${u.totalBorrowed||0}</td></tr>
+        <tr><td style="font-weight:600">Strikes</td><td>${u.strike||0}</td></tr>
+        ${DB.setup.fineEnabled? `<tr><td style="font-weight:600">Outstanding fines</td><td style="color:${outstanding?'var(--terracotta)':'inherit'};font-weight:${outstanding?'700':'400'}">${fmtCurrency(outstanding)}</td></tr>`:''}
+      </table>
+    </div>
+    <div class="card panel">
+      <div class="panel-head"><h3>Current loans (${active.length})</h3></div>
+      ${active.length? `<table class="datatable"><thead><tr><th>Title</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>
+        ${active.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dueDate)}</td><td><span class="badge ${txnStatus(t)==='OVERDUE'?'red':'gold'}">${txnStatus(t)}</span></td>
+          <td><button class="btn secondary small" onclick="renewLoan('${esc(t.trxId)}')">Renew</button></td></tr>`).join('')}
+      </tbody></table>` : `<div class="empty" style="padding:16px"><div class="big">📗</div>No active loans</div>`}
+    </div>
+  </div>
+  <div class="grid two-col">
+    <div class="card panel">
+      <div class="panel-head"><h3>Loan history (${history.length})</h3></div>
+      ${history.length? `<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="datatable"><thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead><tbody>
+        ${history.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dateBorrowed)}</td><td>${fmtDate(t.returnDate)}</td><td>${esc(txnStatus(t))}</td></tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">📚</div>No past loans yet</div>`}
+    </div>
+    <div class="card panel">
+      <div class="panel-head"><h3>Recent visits (${visits.length})</h3></div>
+      ${visits.length? `<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="datatable"><thead><tr><th>Date</th><th>Purpose</th></tr></thead><tbody>
+        ${visits.map(v=>`<tr><td>${fmtDate(v.date)}</td><td>${esc(v.purpose||'—')}</td></tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">🚪</div>No register visits on file</div>`}
+    </div>
+  </div>
+  ${DB.setup.fineEnabled && fines.length ? `
+  <div class="card panel">
+    <div class="panel-head"><h3>Fines</h3></div>
+    <table class="datatable"><thead><tr><th>Title</th><th>Days overdue</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
+      ${fines.map(({t,fine})=>`<tr><td>${esc(t.title)}</td><td>${fine.days}</td><td>${fmtCurrency(fine.amount)}</td>
+        <td><span class="badge ${t.finePaid?'green':'red'}">${t.finePaid?'Paid':'Outstanding'}</span></td>
+        <td>${!t.finePaid? `<button class="btn secondary small" onclick="markFinePaid('${esc(t.trxId)}')">Mark paid</button>`:''}</td></tr>`).join('')}
+    </tbody></table>
+  </div>` : ''}
+  ${holds.length ? `
+  <div class="card panel">
+    <div class="panel-head"><h3>Reservations</h3></div>
+    <table class="datatable"><thead><tr><th>Title</th><th>Requested</th><th>Status</th></tr></thead><tbody>
+      ${holds.map(r=>`<tr><td>${esc(r.title)}</td><td>${fmtDate(r.dateRequested)}</td><td><span class="badge ${r.status==='READY'?'green':r.status==='FULFILLED'?'grey':'gold'}">${esc(r.status)}</span></td></tr>`).join('')}
+    </tbody></table>
+  </div>` : ''}`;
+}
+
 function pageCirculation(){
   const t = DB.circulation.map(x=>({...x, status:txnStatus(x)}));
   const active = t.filter(x=>x.status!=='RETURNED');
@@ -3876,6 +4297,7 @@ function pageCirculation(){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="issueBook()">Issue title</button>
         <button class="btn secondary" onclick="addIssueToStaging()" title="Add to a batch of titles for this member">+ Add to batch</button>
+        <button class="btn secondary" onclick="openScanModal('issue')" title="Scan a barcode">📷 Scan</button>
       </div>
       <div id="issueStagingArea"></div>
     </div>
@@ -3886,15 +4308,9 @@ function pageCirculation(){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="returnBook()">Mark as returned</button>
         <button class="btn secondary" onclick="addReturnToStaging()" title="Add to a batch of loans to return together">+ Add to batch</button>
+        <button class="btn secondary" onclick="openScanModal('return')" title="Scan a barcode">📷 Scan</button>
       </div>
       <div id="returnStagingArea"></div>
-    </div>
-  </div>
-  <div class="panel-head" style="margin:0 0 -6px 4px">
-    <div></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn secondary" onclick="openCirculationPrintModal()">🖨 Print transactions</button>
-      ${isAdmin()? `<button class="btn danger" onclick="clearAllCirculation()">🗑 Clear all</button>`:''}
     </div>
   </div>
   <div id="mod_circulation"></div>`;
@@ -4017,11 +4433,91 @@ function pageCirculationTable(){
       {key:'dateBorrowed', label:'Borrowed', render:r=>fmtDate(r.dateBorrowed)},
       {key:'dueDate', label:'Due', render:r=>fmtDate(r.dueDate)},
       {key:'returnDate', label:'Returned', render:r=>r.returnDate?fmtDate(r.returnDate):'—'},
-      {key:'status', label:'Status', render:r=>`<span class="badge ${r.status==='RETURNED'?'green':r.status==='OVERDUE'?'red':r.status==='MISSING'?'red':'gold'}">${r.status}</span>`},
+      {key:'status', label:'Status', render:r=>{
+        const badge = `<span class="badge ${r.status==='RETURNED'?'green':r.status==='OVERDUE'?'red':r.status==='MISSING'?'red':'gold'}">${r.status}</span>`;
+        if(!DB.setup.fineEnabled) return badge;
+        const fine = fineForTxn(r);
+        if(!fine.amount) return badge;
+        return badge + `<div style="font-size:10.5px;margin-top:3px;color:${r.finePaid?'var(--muted)':'var(--terracotta)'}">${r.finePaid?'Paid':fmtCurrency(fine.amount)}</div>`;
+      }},
     ],
-    rowActions:r=>`<button class="btn secondary small" onclick="viewTransaction('${esc(r.trxId)}')">View</button> <button class="btn danger small" onclick="deleteTransaction('${esc(r.trxId)}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="viewTransaction('${esc(r.trxId)}')">View</button>
+      ${!r.returnDate? `<button class="btn secondary small" onclick="renewLoan('${esc(r.trxId)}')">Renew</button>`:''}
+      ${DB.setup.fineEnabled && !r.finePaid && fineForTxn(r).amount>0? `<button class="btn secondary small" onclick="markFinePaid('${esc(r.trxId)}')">Mark fine paid</button>`:''}
+      <button class="btn danger small" onclick="deleteTransaction('${esc(r.trxId)}')">Delete</button>`,
+    extraActions:[
+      {label:'🖨 Print transactions', onClick:openCirculationPrintModal},
+      {label:'🗑 Clear all', onClick:clearAllCirculation, danger:true},
+    ],
   });
   return circulationModule.render();
+}
+let reservationsModule;
+let reservationsModuleState = {q:'', filters:{}};
+let reserveUserPicker, reserveBookPicker;
+let pendingReserveAcc = null;
+function goReserveBook(acc){ pendingReserveAcc = acc; route = 'reservations'; render(); }
+function bindReservationPickers(){
+  if(!isAdmin()) return;
+  const userItems = DB.users.map(u=>({id:u.id, label:u.name+' — '+u.cls}));
+  reserveUserPicker = bindQuickPicker('reserveUser', {
+    items:userItems,
+    formatPicked: it=>`<strong>${esc(it.id)}</strong> — ${esc(it.label)}`,
+  });
+  const bookItems = DB.catalogue.filter(b=>b.available==='ISSUED').map(b=>({id:b.acc, label:b.title}));
+  reserveBookPicker = bindQuickPicker('reserveBook', {
+    items:bookItems,
+    formatPicked: it=>`<strong>${esc(it.id)}</strong> — ${esc(it.label)}`,
+  });
+  if(pendingReserveAcc){
+    const match = bookItems.find(b=>b.id===pendingReserveAcc);
+    const inputEl = document.getElementById('qp_input_reserveBook');
+    if(match && inputEl){ inputEl.value = match.id; inputEl.dispatchEvent(new Event('input')); }
+    pendingReserveAcc = null;
+  }
+}
+function pageReservations(){
+  reservationsModule = GenericModule({
+    state:reservationsModuleState, key:'reservations', title:'Reservations', hint:'Holds placed by members on titles that are currently out — the oldest waiting reservation is promoted automatically when the title is returned',
+    data:()=>[...DB.reservations].sort((a,b)=> (parseAnyDate(b.dateRequested)||0)-(parseAnyDate(a.dateRequested)||0)),
+    searchKeys:['title','acc','name','userId'],
+    filters:[{key:'status', label:'Status', options:['WAITING','READY','FULFILLED']}],
+    columns:[
+      {key:'title', label:'Title'}, {key:'acc', label:'Acc. No'},
+      {key:'name', label:'Member', render:r=>`${esc(r.name)}<div style="color:var(--muted);font-size:11px">${esc(r.userId)}</div>`},
+      {key:'dateRequested', label:'Requested', render:r=>fmtDate(r.dateRequested)},
+      {key:'status', label:'Status', render:r=>`<span class="badge ${r.status==='READY'?'green':r.status==='FULFILLED'?'grey':'gold'}">${esc(r.status)}</span>`},
+    ],
+    exportColumns:[
+      {label:'Title', get:r=>r.title}, {label:'Acc. No', get:r=>r.acc}, {label:'Member', get:r=>r.name}, {label:'Member ID', get:r=>r.userId},
+      {label:'Requested', get:r=>fmtDate(r.dateRequested)}, {label:'Status', get:r=>r.status},
+    ],
+    rowActions:r=>`
+      ${r.status==='READY'? `<button class="btn secondary small" onclick="fulfillReservation('${esc(r.id)}')">Mark fulfilled</button>`:''}
+      ${r.status!=='FULFILLED'? `<button class="btn danger small" onclick="cancelReservation('${esc(r.id)}')">Cancel</button>`:''}
+    `,
+  });
+  if(!isAdmin()){
+    return `<div class="guest-lock">You're signed in as a guest — placing reservations needs an admin account.</div>${reservationsModule.render()}`;
+  }
+  return `
+  <div class="card panel">
+    <div class="panel-head"><h3>Place a reservation</h3><div class="hint">For a title that's currently issued — pick who's waiting for it</div></div>
+    <div class="field-row">
+      <div class="field"><label>Member ID</label>${quickPickerHtml('reserveUser','Type a member ID')}</div>
+      <div class="field"><label>Accession No.</label>${quickPickerHtml('reserveBook','Type an accession no. of an issued title')}</div>
+    </div>
+    <button class="btn" onclick="submitReservationForm()">Place reservation</button>
+  </div>
+  ${reservationsModule.render()}`;
+}
+function submitReservationForm(){
+  const userPick = reserveUserPicker && reserveUserPicker.value;
+  const bookPick = reserveBookPicker && reserveBookPicker.value;
+  if(!userPick || !bookPick){ toast('Pick a member and a title from the suggestions'); return; }
+  requestReservation(bookPick.id, userPick.id);
+  if(reserveUserPicker && reserveUserPicker.clear) reserveUserPicker.clear();
+  if(reserveBookPicker && reserveBookPicker.clear) reserveBookPicker.clear();
 }
 function viewTransaction(trxId){
   const trx = DB.circulation.find(x=>x.trxId===trxId);
@@ -4157,6 +4653,7 @@ function doReturnOne(trx, condition, opts={}){
   if(book){ book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition; }
   if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
   if(!opts.quiet && !isMissing) sendTransactionReceiptIfEnabled(trx, 'RETURNED');
+  if(!isMissing && book) fulfillReservationsForReturn(trx.acc, book);
   return {wasOverdue, isMissing, book};
 }
 function returnBook(){
@@ -4206,6 +4703,276 @@ function returnStagedBooks(){
   returnStaging = [];
   saveDB(); render(); toast(`${count} item(s) returned`);
 }
+/* ================= FINES ================= */
+function fineForTxn(t){
+  if(!DB.setup.fineEnabled || !DB.setup.fineRatePerDay) return {days:0, amount:0};
+  const due = parseAnyDate(t.dueDate); if(!due) return {days:0, amount:0};
+  const end = t.returnDate ? parseAnyDate(t.returnDate) : new Date();
+  const days = Math.max(0, daysBetween(due, end||new Date()));
+  return {days, amount: days * DB.setup.fineRatePerDay};
+}
+function fmtCurrency(n){ return (DB.setup.fineCurrency||'₦') + Number(n||0).toLocaleString(); }
+function markFinePaid(trxId){
+  if(!isAdmin()) return requireAdmin('mark fines as paid');
+  const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
+  t.finePaid = true; saveDB(); render(); toast('Fine marked as paid');
+}
+function totalOutstandingFines(userId){
+  return DB.circulation.filter(t=>t.userId===userId && !t.finePaid).reduce((sum,t)=> sum + fineForTxn(t).amount, 0);
+}
+
+/* ================= NOTIFICATIONS ================= */
+/* Every alert that pops up also leaves a persistent record here, so closing/missing a pop-up
+   doesn't lose it — the bell icon in the topbar shows the running list. */
+function pushNotification({type, title, body, route: toRoute}){
+  if(!DB.notifications) DB.notifications = [];
+  DB.notifications.unshift({id:'N-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:type||'info', title, body:body||'', route:toRoute||'', ts:new Date().toISOString(), read:false});
+  if(DB.notifications.length > 150) DB.notifications.length = 150;
+  saveDB();
+  renderNotificationBell();
+}
+function unreadNotificationCount(){ return (DB && DB.notifications) ? DB.notifications.filter(n=>!n.read).length : 0; }
+function renderNotificationBell(){
+  const el = document.getElementById('notifBellCount');
+  if(!el) return;
+  const n = unreadNotificationCount();
+  el.textContent = n>99?'99+':String(n);
+  el.style.display = n>0 ? 'flex' : 'none';
+}
+function markAllNotificationsRead(){
+  (DB.notifications||[]).forEach(n=> n.read = true);
+  saveDB(); renderNotificationBell();
+}
+function dismissNotification(id){
+  DB.notifications = (DB.notifications||[]).filter(n=>n.id!==id);
+  saveDB(); openNotificationCenter(true);
+}
+function openNotification(id){
+  const n = (DB.notifications||[]).find(x=>x.id===id);
+  if(!n) return;
+  n.read = true; saveDB(); renderNotificationBell();
+  closeNotificationCenter();
+  if(n.route){ route = n.route; render(); }
+}
+function openNotificationCenter(refreshOnly){
+  let wrap = document.getElementById('notifCenter');
+  const list = (DB.notifications||[]);
+  const bodyHtml = list.length ? list.map(n=>`
+    <div class="notif-row ${n.read?'':'unread'}">
+      <div class="notif-row-main" onclick="openNotification('${n.id}')">
+        <div class="notif-row-title">${esc(n.title)}</div>
+        <div class="notif-row-body">${esc(n.body)}</div>
+        <div class="notif-row-time">${timeAgo(n.ts)}</div>
+      </div>
+      <button class="notif-row-close" onclick="dismissNotification('${n.id}')" title="Dismiss">✕</button>
+    </div>`).join('') : `<div class="empty" style="padding:26px 10px"><div class="big">🔔</div>Nothing yet — alerts you get will show up here</div>`;
+  if(refreshOnly && wrap){ wrap.querySelector('.notif-list').innerHTML = bodyHtml; return; }
+  if(wrap) wrap.remove();
+  wrap = document.createElement('div');
+  wrap.id = 'notifCenter';
+  wrap.className = 'notif-center';
+  wrap.innerHTML = `
+    <div class="notif-center-head">
+      <strong>Notifications</strong>
+      <div style="display:flex;gap:8px">
+        <a href="#" onclick="markAllNotificationsRead();openNotificationCenter(true);return false;">Mark all read</a>
+        <a href="#" onclick="closeNotificationCenter();return false;">Close</a>
+      </div>
+    </div>
+    <div class="notif-list">${bodyHtml}</div>`;
+  document.body.appendChild(wrap);
+  markAllNotificationsRead();
+  setTimeout(()=>{ document.addEventListener('click', notifOutsideClickHandler); }, 0);
+}
+function notifOutsideClickHandler(e){
+  const wrap = document.getElementById('notifCenter');
+  const bell = document.getElementById('notifBellBtn');
+  if(wrap && !wrap.contains(e.target) && !(bell && bell.contains(e.target))) closeNotificationCenter();
+}
+function closeNotificationCenter(){
+  const wrap = document.getElementById('notifCenter'); if(wrap) wrap.remove();
+  document.removeEventListener('click', notifOutsideClickHandler);
+}
+function timeAgo(iso){
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime())/1000);
+  if(s<60) return 'just now';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+/* ================= RESERVATIONS / HOLDS ================= */
+function userRecipient(user){
+  if(!user) return null;
+  if(user.category==='STAFF') return user.teacher ? {phone:user.teacher, label:user.name+' (staff, own number)'} : null;
+  const ct = DB.setup.classTeachers && DB.setup.classTeachers[user.cls];
+  if(ct && ct.staffId){
+    const teacher = DB.users.find(u=>u.id===ct.staffId);
+    if(teacher && teacher.teacher) return {phone:teacher.teacher, label:teacher.name+' (class teacher of '+user.cls+')'};
+  }
+  return null;
+}
+function requestReservation(acc, userId){
+  if(!isAdmin()) return requireAdmin('place a reservation');
+  const book = DB.catalogue.find(b=>b.acc===acc);
+  const user = DB.users.find(u=>u.id===userId);
+  if(!book || !user){ toast('Pick a member and a title'); return; }
+  if(book.available==='AVAILABLE'){ toast('This title is available right now — no need to reserve, just issue it'); return; }
+  if(DB.reservations.some(r=>r.acc===acc && r.userId===userId && (r.status==='WAITING'||r.status==='READY'))){ toast(`${user.name} already has a reservation on this title`); return; }
+  DB.reservations.push({id:'RSV-'+Date.now(), acc, title:book.title, userId:user.id, name:user.name, cls:user.cls,
+    dateRequested:todayISO(), status:'WAITING', notifiedAt:null});
+  saveDB(); render(); toast(`Reservation placed for ${user.name} — they'll be notified when it's returned`);
+}
+function cancelReservation(id){
+  if(!isAdmin()) return requireAdmin('cancel a reservation');
+  DB.reservations = DB.reservations.filter(r=>r.id!==id);
+  saveDB(); render(); toast('Reservation cancelled');
+}
+function fulfillReservation(id){
+  if(!isAdmin()) return requireAdmin('fulfil a reservation');
+  const r = DB.reservations.find(x=>x.id===id); if(!r) return;
+  r.status = 'FULFILLED';
+  saveDB(); render(); toast('Reservation marked fulfilled');
+}
+/* Called right after a book is marked AVAILABLE again — if someone's waiting for this exact
+   title, promote their reservation to READY and try to notify them via WhatsApp. */
+function fulfillReservationsForReturn(acc, book){
+  const waiting = DB.reservations.filter(r=>r.acc===acc && r.status==='WAITING').sort((a,b)=> (parseAnyDate(a.dateRequested)||0) - (parseAnyDate(b.dateRequested)||0));
+  if(!waiting.length) return;
+  const next = waiting[0];
+  next.status = 'READY'; next.notifiedAt = new Date().toISOString();
+  pushNotification({type:'reservation', title:'Reservation ready', body:`${next.name} — "${next.title}" is back and ready for pickup`, route:'reservations'});
+  const user = DB.users.find(u=>u.id===next.userId);
+  const recipient = userRecipient(user);
+  if(recipient && book){
+    const msg = `Hi — good news, the title "${next.title}" reserved for ${next.name} is now back and available for pickup at the library.`;
+    window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+  }
+}
+
+/* ================= RENEWALS ================= */
+function renewLoan(trxId){
+  if(!isAdmin()) return requireAdmin('renew a loan');
+  const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
+  if(t.returnDate){ toast('This loan is already returned'); return; }
+  const max = DB.setup.maxRenewals ?? 2;
+  if((t.renewCount||0) >= max){ toast(`Already renewed the maximum ${max} time(s) — please return and re-issue instead`); return; }
+  if(DB.reservations.some(r=>r.acc===t.acc && (r.status==='WAITING'||r.status==='READY'))){ toast('Someone else has reserved this title — it can\'t be renewed'); return; }
+  const days = DB.setup.renewalDays || 7;
+  const due = parseAnyDate(t.dueDate) || new Date();
+  due.setDate(due.getDate()+days);
+  t.dueDate = due.toISOString().slice(0,10);
+  t.renewCount = (t.renewCount||0)+1;
+  saveDB(); render(); toast(`Renewed — new due date ${fmtDate(t.dueDate)} (${t.renewCount}/${max} renewals used)`);
+}
+
+/* ================= GLOBAL SEARCH (Ctrl/Cmd+K) ================= */
+function openGlobalSearch(){
+  if(document.getElementById('gsearchBackdrop')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'gsearch-backdrop';
+  wrap.id = 'gsearchBackdrop';
+  wrap.innerHTML = `
+    <div class="gsearch-box">
+      <input type="text" class="gsearch-input" id="gsearchInput" placeholder="Search titles, members, transactions…" autocomplete="off">
+      <div class="gsearch-results" id="gsearchResults"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.onclick = e=>{ if(e.target===wrap) closeGlobalSearch(); };
+  const input = document.getElementById('gsearchInput');
+  input.oninput = ()=> renderGlobalSearchResults(input.value);
+  input.onkeydown = e=>{ if(e.key==='Escape') closeGlobalSearch(); };
+  renderGlobalSearchResults('');
+  setTimeout(()=> input.focus(), 30);
+}
+function closeGlobalSearch(){ const w = document.getElementById('gsearchBackdrop'); if(w) w.remove(); }
+function globalSearchGoto(kind, id){
+  closeGlobalSearch();
+  if(kind==='book'){ route='catalogue'; render(); }
+  else if(kind==='member'){ openMemberProfile(id); return; }
+  else if(kind==='txn'){ route='circulation'; render(); }
+  else if(kind==='reservation'){ route='reservations'; render(); }
+}
+function renderGlobalSearchResults(q){
+  const el = document.getElementById('gsearchResults'); if(!el) return;
+  const query = (q||'').trim().toLowerCase();
+  if(!DB){ el.innerHTML = ''; return; }
+  if(!query){
+    el.innerHTML = `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members and transactions across the whole app</div>`;
+    return;
+  }
+  const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).slice(0,6);
+  const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query)).slice(0,6);
+  const txns = DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).slice(0,6);
+  let html = '';
+  if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`
+    <div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><span class="ic">📚</span><div class="main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
+  if(members.length){ html += `<div class="gsearch-group-label">Members</div>` + members.map(u=>`
+    <div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><span class="ic">👤</span><div class="main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
+  if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`
+    <div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><span class="ic">⇄</span><div class="main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
+  el.innerHTML = html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
+}
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
+    e.preventDefault();
+    if(!SESSION) return;
+    if(document.getElementById('gsearchBackdrop')) closeGlobalSearch(); else openGlobalSearch();
+  }
+});
+
+/* ================= BARCODE / SCANNER ================= */
+/* Works with any USB or Bluetooth barcode scanner in "keyboard wedge" mode — it just types the
+   code followed by Enter, very fast. True camera-based scanning needs the page served over
+   HTTPS (getUserMedia is blocked on plain file:// / http://), so we detect that and fall back
+   to this reliable route with a clear explanation rather than a broken camera prompt. */
+let scanBuffer = '';
+let scanBufferTimer = null;
+function openScanModal(mode){
+  // mode: 'issue' | 'return' | 'lookup'
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  const cameraOk = !!(navigator.mediaDevices && window.isSecureContext);
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>📷 Scan a barcode</h3><button id="mClose">✕</button></div>
+      <div class="modal-body">
+        <p class="field-hint">Point a USB or Bluetooth barcode scanner at an accession number or member ID barcode, and scan — it fills the box below automatically.</p>
+        <div class="field"><label>Scanned code</label><input type="text" id="scanCodeInput" placeholder="Waiting for a scan…" autocomplete="off"></div>
+        <div id="scanResult"></div>
+        ${cameraOk? '' : `<p class="field-hint" style="color:var(--muted)">Camera scanning needs this app hosted over HTTPS — it isn't available when opened as a local file. A USB/Bluetooth scanner (or typing the code) works everywhere.</p>`}
+      </div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
+  const input = wrap.querySelector('#scanCodeInput');
+  const handle = ()=>{
+    const code = input.value.trim();
+    if(!code) return;
+    const book = DB.catalogue.find(b=>b.acc.toLowerCase()===code.toLowerCase());
+    const user = DB.users.find(u=>u.id.toLowerCase()===code.toLowerCase());
+    const resEl = wrap.querySelector('#scanResult');
+    if(book){
+      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(book.title)}</strong> — ${esc(book.acc)} <span class="badge ${book.available==='AVAILABLE'?'green':'gold'}">${esc(book.available)}</span></p>`;
+      if(mode==='return' && book.available==='ISSUED'){
+        const trx = DB.circulation.find(t=>t.acc===book.acc && !t.returnDate);
+        if(trx){ const r = doReturnOne(trx,'GOOD'); saveDB(); render(); toast(`Returned: ${book.title}`); close(); return; }
+      }
+    } else if(user){
+      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(user.name)}</strong> — ${esc(user.id)} <span class="badge grey">${esc(user.cls||user.category||'')}</span></p>`;
+    } else {
+      resEl.innerHTML = `<p style="margin:8px 0;color:var(--terracotta)">No book or member matches "${esc(code)}"</p>`;
+    }
+    input.value=''; input.focus();
+  };
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handle(); } });
+  setTimeout(()=> input.focus(), 30);
+}
+
 function clearAllCirculation(){
   if(!isAdmin()) return requireAdmin('clear circulation records');
   if(!confirm('Clear ALL circulation transactions? Books currently marked ISSUED will be set back to AVAILABLE and every member active-loan count will reset to 0. Titles marked MISSING stay missing. This cannot be undone — consider a checkpoint first.')) return;
@@ -4395,6 +5162,10 @@ function pageRegister(){
       {key:'note', label:'Note'},
     ],
     rowActions:r=>`<button class="btn secondary small" onclick="openRegisterEdit('${esc(r.entryId)}')">Edit</button>`,
+    extraActions:[
+      {label:'🖨 Print register', onClick:openRegisterPrintModal, alwaysShow:true},
+      {label:'🗑 Clear all', onClick:clearAllRegister, danger:true},
+    ],
   });
   return `
   <div class="card panel">
@@ -4408,13 +5179,6 @@ function pageRegister(){
       <div><h3>Batch check-out</h3><div class="hint">Everyone currently signed in at the desk today</div></div>
     </div>
     <div id="checkoutStagingArea"></div>
-  </div>
-  <div class="panel-head" style="margin:0 0 -6px 4px">
-    <div></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn secondary" onclick="openRegisterPrintModal()">🖨 Print register</button>
-      ${isAdmin()? `<button class="btn danger" onclick="clearAllRegister()">🗑 Clear all</button>`:''}
-    </div>
   </div>
   <div id="mod_register"></div>`;
 }
@@ -4488,7 +5252,10 @@ function renderBatchStagingHtml(){
       <label>Add a whole class</label>
       <select id="batchClassSelect"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select>
     </div>
-    <button class="btn secondary" onclick="addClassToBatch()">+ Add class</button>
+    <div class="field">
+      <label style="visibility:hidden">Add class</label>
+      <button class="btn secondary" onclick="addClassToBatch()">+ Add class</button>
+    </div>
     <div class="spacer"></div>
     <div class="field">
       <label>Purpose (applies to all)</label>
@@ -4921,6 +5688,20 @@ function pageSetup(){
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
   </div>
   <div class="card panel">
+    <div class="panel-head"><h3>Fines &amp; renewals</h3><div class="hint">How overdue fines are calculated, and how many times a loan can be renewed</div></div>
+    <div class="field"><label><input type="checkbox" id="setFineEnabled" ${DB.setup.fineEnabled?'checked':''}> Charge a fine for overdue loans</label></div>
+    <div class="field-row">
+      <div class="field"><label>Fine per day overdue</label><input type="number" id="setFineRate" min="0" step="1" value="${DB.setup.fineRatePerDay||0}"></div>
+      <div class="field"><label>Currency symbol</label><input type="text" id="setFineCurrency" value="${esc(DB.setup.fineCurrency||'₦')}" maxlength="3" style="max-width:80px"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Max renewals per loan</label><select id="setMaxRenewals">${[0,1,2,3,4].map(n=>`<option value="${n}" ${(DB.setup.maxRenewals??2)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label>Days added per renewal</label><select id="setRenewalDays">${[3,7,14,21].map(n=>`<option value="${n}" ${(DB.setup.renewalDays||7)===n?'selected':''}>${n} days</option>`).join('')}</select></div>
+    </div>
+    <p class="field-hint">A loan can't be renewed if another member has reserved that title.</p>
+    <button class="btn secondary" onclick="saveFineSettings()">Save</button>
+  </div>
+  <div class="card panel">
     <div class="panel-head"><h3>Academic term &amp; session</h3><div class="hint">Shown on every export and printed report</div></div>
     <div class="field-row">
       <div class="field"><label>Term naming style</label><select id="setTermScheme" onchange="previewTermScheme()">${Object.entries(TERM_LABEL_SCHEMES).map(([k,v])=>`<option value="${k}" ${scheme===k?'selected':''}>${v.label} (${v.terms.join(' / ')})</option>`).join('')}</select></div>
@@ -5094,11 +5875,15 @@ function applyPalette(name){
 }
 function pageSettings(){
   if(!isAdmin()){
-    return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Settings are only available to admin accounts.</div></div>`;
+    return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Personalization is only available to admin accounts.</div></div>`;
   }
   return `
+  <div class="panel-head" style="margin-bottom:14px">
+    <div><div class="hint">Grouped by how they're actually used — colours &amp; type, backgrounds, icons &amp; motion, clock &amp; date, the sign-in screen, then the Home greeting.</div></div>
+    <button class="btn danger" onclick="resetPersonalization()">↺ Reset personalization to default</button>
+  </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Appearance</h3></div>
+    <div class="panel-head"><h3>Appearance — theme &amp; colours</h3></div>
     <div class="field-row">
       <div class="field"><label>Theme</label><select id="setTheme" onchange="previewTheme(this.value)"><option value="system" ${PREFS.theme==='system'?'selected':''}>Match system</option><option value="light" ${PREFS.theme==='light'?'selected':''}>Light</option><option value="dark" ${PREFS.theme==='dark'?'selected':''}>Dark</option></select></div>
       <div class="field"><label>Colour palette</label><select id="setPalette" onchange="previewPalette(this.value)">${Object.entries(allPalettes()).map(([k,p])=>`<option value="${k}" ${PREFS.palette===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
@@ -5133,29 +5918,6 @@ function pageSettings(){
       <button class="btn secondary" onclick="cancelCustomPaletteDraft()">Cancel / revert preview</button>
       <button class="btn secondary" onclick="saveTypographyForm()">Save text colours</button>
     </div>
-
-    <div class="panel-head" style="margin-top:20px"><h3 style="font-size:14px">Section, modal &amp; title bar backgrounds</h3><div class="hint">Applies to cards, panels, modals and the top header</div></div>
-    <div class="field-row field-row-3">
-      <div class="field"><label>Section &amp; modal style</label><select id="setSectionStyle" onchange="previewSectionStyle()">
-        <option value="solid" ${(PREFS.sectionStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
-        <option value="blank" ${PREFS.sectionStyle==='blank'?'selected':''}>Blank / transparent</option>
-        <option value="glassy" ${PREFS.sectionStyle==='glassy'?'selected':''}>Transparent glassy</option>
-        <option value="image" ${PREFS.sectionStyle==='image'?'selected':''}>Picture (uses the in-app background below)</option>
-      </select></div>
-      <div class="field"><label>Title bar (top header) style</label><select id="setTopbarStyle" onchange="previewTopbarStyle()">
-        <option value="solid" ${(PREFS.topbarStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
-        <option value="blank" ${PREFS.topbarStyle==='blank'?'selected':''}>Blank / transparent</option>
-        <option value="glassy" ${PREFS.topbarStyle==='glassy'?'selected':''}>Transparent glassy</option>
-      </select></div>
-      <div class="field" id="sectionOpacityField" style="${PREFS.sectionStyle==='glassy'||PREFS.sectionStyle==='image'?'':'display:none'}"><label><span id="sectionOpacityLabel">${PREFS.sectionStyle==='image'?'Picture strength':'Glass opacity'}</span> (<span id="sectionOpacityVal">${PREFS.sectionOpacity??70}</span>%)</label><input type="range" id="setSectionOpacity" min="20" max="95" value="${PREFS.sectionOpacity??70}" oninput="document.getElementById('sectionOpacityVal').textContent=this.value; previewSectionStyle();"></div>
-    </div>
-    <p class="field-hint">Picture style shows the image you set below (in "In-app background") through every card and modal — the colour pickers here are separate from that image and tint on top of it.</p>
-    <div class="field-row">
-      <div class="field"><label>Section / modal background colour</label><input type="color" id="setSectionBgColor" value="${esc(PREFS.sectionBgColor||'#FFFFFF')}" oninput="previewSectionStyle()"></div>
-      <div class="field"><label>Title bar background colour</label><input type="color" id="setTopbarBgColor" value="${esc(PREFS.topbarBgColor||'#1F3A2E')}" oninput="previewTopbarStyle()"></div>
-    </div>
-    <p class="field-hint">Only visible when the style above is set to Transparent glassy or Picture.</p>
-    <button class="btn secondary" onclick="saveSectionStyle()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Typography</h3><div class="hint">Fonts, weight and size — applies across the whole app</div></div>
@@ -5182,21 +5944,39 @@ function pageSettings(){
     <p class="field-hint" style="margin-top:8px">Text size uses your browser's zoom support — it may not apply in every browser.</p>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Clock &amp; date</h3></div>
+    <div class="panel-head"><h3>Backgrounds</h3><div class="hint">The in-app background image, and section, modal &amp; title bar background styles — all in one place</div></div>
+    <div class="panel-head" style="margin-top:0"><h4 style="font-size:13px">In-app background image</h4><div class="hint">A subtle image behind the app content — cards stay readable on top of it</div></div>
     <div class="field-row">
-      <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
-      <div class="field"><label>Date format</label><select id="setDateFormat">
-        ${['DD MMM YYYY','MM-DD-YYYY','DD-MM-YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY','Wkday, DD MMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
+      <div class="field"><label>Background image</label><input type="file" accept="image/*" id="appBgInput"></div>
+      <div class="field"><label>Opacity (${DB.setup.appBackgroundOpacity??15}%)</label><input type="range" id="appBgOpacity" min="0" max="60" value="${DB.setup.appBackgroundOpacity??15}" oninput="this.previousElementSibling.textContent=this.value;"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn secondary" onclick="saveAppBackground()">Save background</button>
+      ${DB.setup.appBackgroundImage? `<button class="btn danger" onclick="clearAppBackground()">Remove background</button>`:''}
+    </div>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Section, modal &amp; title bar backgrounds</h4><div class="hint">Applies to cards, panels, modals and the top header</div></div>
+    <div class="field-row field-row-3">
+      <div class="field"><label>Section &amp; modal style</label><select id="setSectionStyle" onchange="previewSectionStyle()">
+        <option value="solid" ${(PREFS.sectionStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
+        <option value="blank" ${PREFS.sectionStyle==='blank'?'selected':''}>Blank / transparent</option>
+        <option value="glassy" ${PREFS.sectionStyle==='glassy'?'selected':''}>Transparent glassy</option>
+        <option value="image" ${PREFS.sectionStyle==='image'?'selected':''}>Picture (uses the in-app background above)</option>
       </select></div>
+      <div class="field"><label>Title bar (top header) style</label><select id="setTopbarStyle" onchange="previewTopbarStyle()">
+        <option value="solid" ${(PREFS.topbarStyle||'solid')==='solid'?'selected':''}>Solid (default)</option>
+        <option value="blank" ${PREFS.topbarStyle==='blank'?'selected':''}>Blank / transparent</option>
+        <option value="glassy" ${PREFS.topbarStyle==='glassy'?'selected':''}>Transparent glassy</option>
+      </select></div>
+      <div class="field" id="sectionOpacityField" style="${PREFS.sectionStyle==='glassy'||PREFS.sectionStyle==='image'?'':'display:none'}"><label><span id="sectionOpacityLabel">${PREFS.sectionStyle==='image'?'Picture strength':'Glass opacity'}</span> (<span id="sectionOpacityVal">${PREFS.sectionOpacity??70}</span>%)</label><input type="range" id="setSectionOpacity" min="20" max="95" value="${PREFS.sectionOpacity??70}" oninput="document.getElementById('sectionOpacityVal').textContent=this.value; previewSectionStyle();"></div>
     </div>
+    <p class="field-hint">Picture style shows the image you set above (in "In-app background image") through every card and modal — the colour pickers here are separate from that image and tint on top of it.</p>
     <div class="field-row">
-      <div class="field"><label>Clock font</label><select id="setClockFont" onchange="applyClockFont(this.value)">${Object.entries(CLOCK_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.clockFont||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
-      <div class="field"><label>Date font</label><select id="setDateFontDisplay" onchange="applyDateFont(this.value)">${Object.entries(DATE_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.dateFont||'default')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Section / modal background colour</label><input type="color" id="setSectionBgColor" value="${esc(PREFS.sectionBgColor||'#FFFFFF')}" oninput="previewSectionStyle()"></div>
+      <div class="field"><label>Title bar background colour</label><input type="color" id="setTopbarBgColor" value="${esc(PREFS.topbarBgColor||'#1F3A2E')}" oninput="previewTopbarStyle()"></div>
+      <div class="field"><label>Login container (sign-in box) colour</label><input type="color" id="setAuthBoxColor" value="${esc(PREFS.authBoxColor||'#FFFFFF')}" oninput="previewAuthBoxColor()"></div>
     </div>
-    <div class="field-row">
-      <div class="field"><label>Sign-in screen clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
-    </div>
-    <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
+    <p class="field-hint" style="margin-top:-4px">The login container's opacity is set separately, in Lockscreen below. Colours above are only visible when the style is Transparent glassy or Picture.</p>
+    <button class="btn secondary" onclick="saveSectionStyle()">Save backgrounds</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Icons &amp; motion</h3><div class="hint">Nav icon style and how modals animate</div></div>
@@ -5208,24 +5988,32 @@ function pageSettings(){
     <button class="btn secondary" style="margin-top:10px" onclick="savePersonalizationExtras()">Save</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>In-app background</h3><div class="hint">A subtle image behind the app content — cards stay readable on top of it</div></div>
+    <div class="panel-head"><h3>Clock &amp; date</h3><div class="hint">How the clock and date display across the app</div></div>
     <div class="field-row">
-      <div class="field"><label>Background image</label><input type="file" accept="image/*" id="appBgInput"></div>
-      <div class="field"><label>Opacity (${DB.setup.appBackgroundOpacity??15}%)</label><input type="range" id="appBgOpacity" min="0" max="60" value="${DB.setup.appBackgroundOpacity??15}" oninput="this.previousElementSibling.textContent=this.value;"></div>
+      <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
+      <div class="field"><label>Date format</label><select id="setDateFormat">
+        ${['DD MMM YYYY','MM-DD-YYYY','DD-MM-YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY','Wkday, DD MMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
+      </select></div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn secondary" onclick="saveAppBackground()">Save background</button>
-      ${DB.setup.appBackgroundImage? `<button class="btn danger" onclick="clearAppBackground()">Remove background</button>`:''}
+    <div class="field-row">
+      <div class="field"><label>Clock font</label><select id="setClockFont" onchange="applyClockFont(this.value)">${Object.entries(CLOCK_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.clockFont||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Date font</label><select id="setDateFontDisplay" onchange="applyDateFont(this.value)">${Object.entries(DATE_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.dateFont||'default')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
     </div>
+    <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Lockscreen (sign-in screen)</h3><div class="hint">Background image, its opacity, the login box opacity, and the quotes shown in the carousel</div></div>
+    <div class="panel-head"><h3>Lockscreen (sign-in screen)</h3><div class="hint">Background image, its opacity, the login box appearance, the clock style, decoration and quotes shown in the carousel</div></div>
     <div class="field-row field-row-3">
       <div class="field"><label>Sign-in background image</label><input type="file" accept="image/*" id="authBgInput"></div>
       <div class="field"><label>Background opacity (${DB.setup.authBackgroundOpacity??45}%)</label><input type="range" id="authBgOpacity" min="10" max="90" value="${DB.setup.authBackgroundOpacity??45}" oninput="this.previousElementSibling.textContent=this.previousElementSibling.textContent.replace(/\\d+/,this.value);"></div>
       <div class="field"><label>Login box opacity (<span id="authBoxOpacityVal">${PREFS.authBoxOpacity??90}</span>%)</label><input type="range" id="setAuthBoxOpacity" min="30" max="100" value="${PREFS.authBoxOpacity??90}" oninput="document.getElementById('authBoxOpacityVal').textContent=this.value; document.documentElement.style.setProperty('--auth-box-opacity', this.value/100);"></div>
     </div>
-    <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background.</p>
+    <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background. Its colour is set above, in Backgrounds → Login container colour.</p>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock</h4></div>
+    <div class="field" style="max-width:260px"><label>Clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+    <div class="panel-head" style="margin-top:14px"><h4 style="font-size:13px">Decoration style</h4><div class="hint">The corner flourish behind the sign-in form — like the style gallery at the top of Microsoft Office</div></div>
+    <div class="field" style="max-width:260px"><label>Style</label><select id="setLockscreenDecorStyle" onchange="previewLockscreenDecorStyle(this.value)">${Object.entries(LOCKSCREEN_DECOR_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.lockscreenDecorStyle||'circle')===k?'selected':''}>${v}</option>`).join('')}</select></div>
+    <p class="field-hint" style="margin:4px 0 10px">Tip: clicking the clock on the sign-in screen also cycles through these styles.</p>
     <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Elements shown on the lockscreen</h4><div class="hint">Pick which pieces appear — like the Insert ribbon in Microsoft Office</div></div>
     <div class="ribbon-picker" id="lockscreenRibbon">${renderLockscreenRibbon()}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -5250,9 +6038,13 @@ function pageSettings(){
     <button class="btn secondary" onclick="addCustomQuote()">+ Add quote</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Weather ambience</h3><div class="hint">A soft touch on the Home greeting — sunrise, morning, noon, afternoon, evening and night, each with its own look</div></div>
+    <div class="panel-head"><h3>Weather ambience</h3><div class="hint">A soft touch on the Home greeting — 10 times of day (late night, dawn, sunrise, morning, noon, afternoon, golden hour, sunset, evening, night), each with its own look</div></div>
     <div class="field"><label><input type="checkbox" id="setWeatherAmbience" ${PREFS.weatherAmbience?'checked':''}> Show weather ambience on the Home greeting</label></div>
-    <div class="field"><label>Intensity</label><select id="setWeatherStyle"><option value="soft" ${PREFS.weatherAmbienceStyle==='soft'?'selected':''}>Soft (subtle)</option><option value="vivid" ${PREFS.weatherAmbienceStyle==='vivid'?'selected':''}>Vivid (more visible)</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Scene</label><select id="setWeatherSet">${Object.entries(WEATHER_SETS).map(([k,v])=>`<option value="${k}" ${(PREFS.weatherAmbienceSet||'hills')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Intensity</label><select id="setWeatherStyle"><option value="soft" ${PREFS.weatherAmbienceStyle==='soft'?'selected':''}>Soft (subtle)</option><option value="vivid" ${PREFS.weatherAmbienceStyle==='vivid'?'selected':''}>Vivid (more visible)</option></select></div>
+    </div>
+    <p class="field-hint">Pick the scene that's drawn behind the greeting — the colours still change automatically with the time of day.</p>
     <button class="btn secondary" onclick="saveWeatherAmbiencePrefs()">Save</button>
   </div>`;
 }
@@ -5473,12 +6265,12 @@ function pageAbout(){
     </div>
     <div class="card panel">
       <div class="panel-head"><h3>How your data is stored</h3></div>
-      <p style="font-size:13px;line-height:1.7;color:var(--muted)">Everything you add or change is saved automatically to your Claude account's private storage, and reloads the next time you open this app. Use the <strong>💾 Save changes</strong> button any time for peace of mind, <strong>🕐 Checkpoints</strong> for named restore points, and Settings → Data &amp; backup to download a full copy for your own Drive.</p>
+      <p style="font-size:13px;line-height:1.7;color:var(--muted)">Everything you add or change is saved automatically to your Claude account's private storage, and reloads the next time you open this app. Use the <strong>💾 Save changes</strong> button any time for peace of mind, <strong>🕐 Checkpoints</strong> for named restore points, and Backup &amp; Restore to download a full copy for your own Drive.</p>
     </div>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Roles</h3></div>
-    <p style="font-size:13px;line-height:1.7;color:var(--muted)"><strong>Admin</strong> accounts can add, edit, delete, issue/return, print and export. <strong>Guest</strong> accounts can browse and search everything, but can't change data. An admin key is required to create a new admin account — set or change it in Settings.</p>
+    <p style="font-size:13px;line-height:1.7;color:var(--muted)"><strong>Admin</strong> accounts can add, edit, delete, issue/return, print and export. <strong>Guest</strong> accounts can browse and search everything, but can't change data. An admin key is required to create a new admin account — set or change it in Personalization.</p>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Version</h3></div>
@@ -5527,13 +6319,13 @@ function pageGuide(){
     {h:'Schedule', b:'The weekly library timetable and each students subject combination. Admins can add, edit or delete periods, with a period dropdown, a native time picker, and Library, Free, or Other note types.'},
     {h:'Feedback', b:'Suggestions, complaints and requests from members and staff, with a status workflow (New, In review, Resolved).'},
     {h:'Setup', b:'Library configuration: classes and their teachers, staff designations, promoting students between classes, shelf locations, book conditions, subjects and each classs default subject list.'},
-    {h:'Settings', b:'Everything else: institution name and logo, theme and colour palette, clock and date format, the term/session used by reports, accounts, the admin key, and backups.'},
+    {h:'Personalization', b:'Everything else: theme and colour palette, clock and date format, typography, icons, lockscreen appearance and backgrounds.'},
   ];
   return `
   <div class="card panel">
     <div class="panel-head"><h3>Quick start</h3><div style="display:flex;gap:8px"><button class="btn secondary small" onclick="openQuickTipsModal()">💡 Quick tips</button><button class="btn secondary small" onclick="openGettingStartedModal()">🚀 Getting started</button></div></div>
     <ol style="font-size:13px;line-height:1.9;color:var(--muted);padding-left:20px">
-      <li>Sign in (or create an account — admin accounts need the admin key from Settings).</li>
+      <li>Sign in (or create an account — admin accounts need the admin key from Personalization).</li>
       <li>Check the Home page for a quick snapshot of the day.</li>
       <li>To lend a book: go to <strong>Circulation</strong>, type the member's ID and the book's accession number, then Issue.</li>
       <li>To take it back: <strong>Circulation → Return</strong>, find the loan, set its condition, and confirm.</li>
@@ -5551,7 +6343,7 @@ function pageGuide(){
       <li>Search boxes never lose focus while you type — search freely, results update as you go.</li>
       <li>Every table can be searched and filtered; long lists show the first matches with a note to narrow your search further.</li>
       <li>Use a <strong>Checkpoint</strong> before a big change (like end-of-term promotion) so you can roll back if needed.</li>
-      <li>Switch theme (light/dark/system) and colour palette any time from the topbar or Settings.</li>
+      <li>Switch theme (light/dark/system) and colour palette any time from the topbar or Personalization.</li>
     </ul>
   </div>
   <div class="card panel">
@@ -5561,9 +6353,9 @@ function pageGuide(){
 }
 const GUIDE_FAQ = [
   {q:'I forgot my password — what do I do?', a:'On the sign-in screen, use "Forgot password?" and answer your security question to reset it. If you never set one, ask an admin to reset your account.'},
-  {q:'Why can\'t I edit or delete anything?', a:'Guest accounts can browse and search but can\'t change data. Sign in with an admin account, or ask an admin to change your role in Settings.'},
-  {q:'My changes disappeared after I refreshed the page — why?', a:'Make sure you pressed "💾 Save changes" (or a Checkpoint) before closing the tab. If your browser storage is full, saves can fail — Settings → Backup will show a warning when that happens.'},
-  {q:'How do I move my data to another device or browser?', a:'Use Settings → Backup: either download a full backup file and restore it on the other device, or set up GitHub sync to push/pull the same data from anywhere.'},
+  {q:'Why can\'t I edit or delete anything?', a:'Guest accounts can browse and search but can\'t change data. Sign in with an admin account, or ask an admin to change your role in Personalization.'},
+  {q:'My changes disappeared after I refreshed the page — why?', a:'Make sure you pressed "💾 Save changes" (or a Checkpoint) before closing the tab. If your browser storage is full, saves can fail — Backup &amp; Restore will show a warning when that happens.'},
+  {q:'How do I move my data to another device or browser?', a:'Use Backup &amp; Restore: either download a full backup file and restore it on the other device, or set up GitHub sync to push/pull the same data from anywhere.'},
   {q:'How do I get in touch about a bug or request?', a:'Use the "Send a query / complaint" button on the About page, or reach the developer directly by email or WhatsApp — both are listed there.'},
 ];
 function openEditClass(oldName){
@@ -6133,6 +6925,19 @@ function pageSecurity(){
     <button class="btn secondary" onclick="saveIdleLockSettings()">Save</button>
   </div>
   <div class="card panel">
+    <div class="panel-head"><h3>Alerts &amp; reminders</h3><div class="hint">How often the pop-up alerts (overdue, due soon, class periods, feedback, "Needs your attention") check in and re-show</div></div>
+    <div class="field-row">
+      <div class="field"><label>"Needs your attention" summary — recheck every</label><select id="setAlertFrequency">
+        ${[5,15,30,60].map(m=>`<option value="${m}" ${(DB.setup.alertFrequencyMinutes||15)===m?'selected':''}>${m} minutes</option>`).join('')}
+      </select></div>
+      <div class="field"><label>A closed alert re-shows after</label><select id="setAlertReshow">
+        ${[1,2,5,10].map(m=>`<option value="${m}" ${(DB.setup.alertReshowMinutes||2)===m?'selected':''}>${m} minute${m>1?'s':''}</option>`).join('')}
+      </select></div>
+    </div>
+    <p class="field-hint">Applies to overdue, due-soon, class-period and feedback alerts alike — each has its own View and Close button.</p>
+    <button class="btn secondary" onclick="saveAlertFrequencySettings()">Save</button>
+  </div>
+  <div class="card panel">
     <div class="panel-head"><h3>Account creation</h3><div class="hint">Controls who can create new accounts from the sign-in screen</div></div>
     <div class="field"><label><input type="checkbox" id="setRequireKeyForAllSignups" ${DB.setup.requireKeyForAllSignups?'checked':''}> Require the admin key for every new account, including guests</label></div>
     <p class="field-hint">Off by default — guests can currently create their own view-only account with no key. Turn this on to route every signup through an admin.</p>
@@ -6158,6 +6963,21 @@ function saveLoginLockoutSettings(){
   DB.setup.loginAttemptLimit = val;
   saveDB(); toast('Login lockout settings saved');
 }
+function saveFineSettings(){
+  DB.setup.fineEnabled = document.getElementById('setFineEnabled')?.checked || false;
+  DB.setup.fineRatePerDay = +document.getElementById('setFineRate')?.value || 0;
+  DB.setup.fineCurrency = document.getElementById('setFineCurrency')?.value || '₦';
+  DB.setup.maxRenewals = +document.getElementById('setMaxRenewals')?.value ?? 2;
+  DB.setup.renewalDays = +document.getElementById('setRenewalDays')?.value || 7;
+  saveDB(); render(); toast('Fines & renewals settings saved');
+}
+function saveAlertFrequencySettings(){
+  DB.setup.alertFrequencyMinutes = +document.getElementById('setAlertFrequency')?.value || 15;
+  DB.setup.alertReshowMinutes = +document.getElementById('setAlertReshow')?.value || 2;
+  saveDB();
+  restartOutstandingSummaryTimer();
+  toast('Alert settings saved');
+}
 function saveIdleLockSettings(){
   DB.setup.idleLockEnabled = document.getElementById('setIdleLockEnabled')?.checked ?? true;
   const minsEl = document.getElementById('setIdleLockMinutes');
@@ -6174,6 +6994,7 @@ function previewTermScheme(){
 function saveWeatherAmbiencePrefs(){
   if($('#setWeatherAmbience')) PREFS.weatherAmbience = $('#setWeatherAmbience').checked;
   if($('#setWeatherStyle')) PREFS.weatherAmbienceStyle = $('#setWeatherStyle').value;
+  if($('#setWeatherSet')) PREFS.weatherAmbienceSet = $('#setWeatherSet').value;
   savePrefs(); render(); toast('Preferences saved');
 }
 function toggleWhatsAppReceipts(on){
@@ -6344,6 +7165,8 @@ function render(){
     case 'catalogue': html = pageCatalogue(); break;
     case 'users': html = pageUsers(); break;
     case 'circulation': html = pageCirculation() + pageCirculationTable(); break;
+    case 'reservations': html = pageReservations(); break;
+    case 'memberProfile': html = pageMemberProfile(); break;
     case 'reminders': html = pageReminders(); break;
     case 'register': html = pageRegister(); break;
     case 'schedule': html = pageSchedule(); break;
@@ -6371,6 +7194,7 @@ function render(){
   if((route==='settings'||route==='setup') && isAdmin()){ bindSettingsUploaders(); }
   if(route==='account'){ bindAccountPage(); }
   if(route==='circulation'){ bindCirculationPickers(); renderIssueStaging(); renderReturnStaging(); }
+  if(route==='reservations'){ bindReservationPickers(); }
 
   if(route==='dashboard') requestAnimationFrame(drawDashboardCharts);
   if(route==='analytics') requestAnimationFrame(drawAnalyticsCharts);
@@ -6391,6 +7215,7 @@ async function enterApp(){
     }
     render();
     applyAppBackground();
+    restartOutstandingSummaryTimer();
   }catch(e){
     console.error('Boot failed', e);
     $('#content').innerHTML =
