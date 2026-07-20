@@ -236,6 +236,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-contact-dev-link{ display:block; margin-top:1px; font-size:11px; color:rgba(255,255,255,.55); text-decoration:underline; text-align:left;}
 .auth-contact-dev-link:hover{ color:#fff;}
 .auth-notif-bell{ position:absolute; top:22px; right:26px; z-index:6;}
+.auth-top-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
 .auth-notif-bell .icon-btn{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#EFE8D3; position:relative;}
 .auth-notif-bell .icon-btn:hover{ border-color:var(--brass-light);}
 .auth-notif-preview{ display:none; position:absolute; top:calc(100% + 8px); right:0; width:300px; max-width:88vw; max-height:360px; overflow:auto;
@@ -243,7 +244,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-notif-preview.open{ display:block;}
 .auth-notif-preview .notif-row{ cursor:default;}
 .auth-notif-preview .auth-notif-signin-hint{ font-size:11px; color:var(--muted); text-align:center; padding:8px 6px 4px; border-top:1px solid var(--line); margin-top:4px;}
-@media (max-width:640px){ .auth-notif-bell{ top:14px; right:14px;} }
+@media (max-width:640px){ .auth-notif-bell{ top:14px; right:14px; max-width:calc(100vw - 28px);} .auth-top-actions .getting-started-btn{ font-size:9.5px; padding:5px 7px;} }
 .auth-slide{ display:none; animation:fadeSlide .6s ease;}
 .auth-slide.active{ display:block;}
 @keyframes fadeSlide{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
@@ -273,7 +274,8 @@ body[data-lockscreen-notifbell="off"] .auth-notif-bell{ display:none;}
 .ribbon-item.active .ic{ color:var(--forest);}
 html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-light) inset;}
 .auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:48px 30px; position:relative; z-index:1;}
-.auth-box{ width:100%; max-width:380px; background:rgba(var(--auth-box-bg-rgb,255,255,255),var(--auth-box-opacity,0.9)); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.5); border-radius:18px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,.2);}
+.auth-box{ width:100%; max-width:380px; background:rgba(var(--auth-box-bg-rgb,255,255,255),var(--auth-box-opacity,0.9)); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.5); border-radius:18px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,.2); transition:max-width .2s ease;}
+.auth-box.wide{ max-width:560px;}
 html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30,32,30),var(--auth-box-opacity,0.82)); border-color:rgba(255,255,255,.14);}
 .auth-tabs{ display:flex; gap:4px; background:var(--parchment-dim); border-radius:9px; padding:4px; margin-bottom:24px;}
 .auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:7px; font-size:13px; font-weight:600; color:var(--muted-label);}
@@ -311,7 +313,7 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
   .auth-clock{ grid-area:clock; margin-bottom:0; text-align:right; justify-self:end;}
   .auth-clock .time{ font-size:22px;}
   .auth-clock .date{ font-size:10px;}
-  .analogue-clock-svg{ width:60px; height:60px;}
+  .analogue-clock-svg{ width:120px; height:120px;}
   .auth-carousel-wrap{ grid-area:carousel; min-height:auto; margin-top:4px;}
   .auth-slide p{ display:block; font-size:12px; max-width:none; margin-top:8px;}
   .auth-slide .big{ font-size:22px;}
@@ -381,9 +383,9 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
 .topbar-right{ display:flex; align-items:center; gap:14px;}
 .topbar-search{ position:relative; display:flex; align-items:center;}
 .topbar-search-input{ display:none;}
-.topbar-search-results{ display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:60vh; overflow:auto;
-  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.32); padding:6px; z-index:60;}
-.topbar-search-results.open{ display:block;}
+.topbar-search-results{ display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:280px; overflow-y:auto; overflow-x:hidden;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.32); padding:6px; z-index:60; flex-direction:column;}
+.topbar-search-results.open{ display:flex;}
 @media (min-width:821px){
   .topbar-right{ flex:1; justify-content:flex-end;}
   .topbar-search{ flex:1; max-width:440px; margin-right:6px;}
@@ -639,14 +641,15 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .gsearch-box{ width:560px; max-width:92vw; max-height:70vh; background:var(--card); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;}
 .gsearch-input{ width:100%; border:none; border-bottom:1px solid var(--line); padding:16px 18px; font-size:15px; background:transparent; color:var(--ink);}
 .gsearch-input:focus{ outline:none;}
-.gsearch-results{ overflow:auto; padding:6px;}
-.gsearch-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); padding:8px 10px 4px;}
-.gsearch-row{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer;}
+.gsearch-results{ overflow:auto; padding:4px 6px; display:flex; flex-direction:column; gap:0;}
+.gsearch-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:0; padding:6px 6px 2px;}
+.gsearch-group-label:first-child{ padding-top:2px;}
+.gsearch-row{ display:flex; align-items:center; gap:8px; margin:0; padding:5px 6px; border-radius:0; cursor:pointer; border-bottom:1px solid var(--line); line-height:1.25;}
+.gsearch-row:last-child{ border-bottom:none;}
 .gsearch-row:hover, .gsearch-row.active{ background:rgba(31,58,46,.08);}
-.gsearch-row .ic{ font-size:15px; width:20px; text-align:center;}
-.gsearch-row .main{ flex:1; min-width:0;}
-.gsearch-row .ttl{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.gsearch-row .sub{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.gsearch-row .gs-main{ flex:1; min-width:0;}
+.gsearch-row .ttl{ font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; line-height:1.25;}
+.gsearch-row .sub{ font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; line-height:1.25;}
 
 .empty{ text-align:center; padding:40px 20px; color:var(--muted);}
 .empty .big{ font-size:30px; margin-bottom:8px;}
@@ -658,7 +661,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 @media (min-width:821px){
   /* Desktop only: taller than the original (but by less than half again), so more of the weather
      ambience illustration (sky, hills, sun/moon) shows behind the greeting text. */
-  .home-hero{ padding-top:46px; padding-bottom:56px; min-height:270px; display:flex; flex-direction:column; justify-content:center;}
+  .home-hero{ padding-top:34px; padding-bottom:42px; min-height:220px; display:flex; flex-direction:column; justify-content:center;}
 }
 .home-hero h1{ font-size:30px; color:#fff; max-width:640px; padding-right:130px;}
 .home-hero p{ color:#C9D3C2; font-size:14px; margin-top:10px; max-width:560px; line-height:1.5;}
@@ -720,20 +723,29 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 
 /* ===== print ===== */
 #printArea{ display:none; background:#fff; color:#111;}
-.print-header{ margin:16mm 0 22px 14mm; display:flex; align-items:flex-start; gap:14px;}
+.print-page{ display:flex; flex-direction:column; min-height:261mm; box-sizing:border-box;}
+.print-page-body{ flex:1 0 auto;}
+.print-header{ margin:0 0 20px; display:flex; align-items:flex-start; gap:14px;}
 .print-header .print-logo{ width:52px; height:52px; object-fit:contain; flex:none; margin:0;}
 .print-header-text{ flex:1; min-width:0; padding-top:8px;}
 .print-header h1.print-org-name{ font-size:22px; font-weight:800; margin:0 0 4px;}
 .print-header h2{ font-size:15px; font-weight:600; color:#333; margin:0 0 4px;}
 .print-header p{ font-size:12px; color:#555; margin-top:2px;}
-.print-table{ width:100%; border-collapse:collapse; font-size:11.5px;}
-.print-table th,.print-table td{ border:1px solid #ccc; padding:5px 7px; text-align:left;}
+.print-table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
+.print-table th,.print-table td{ border:1px solid #ccc; padding:5px 7px; text-align:left; page-break-inside:avoid;}
 .print-table th{ background:#eee;}
+.print-sec-heading{ margin:18px 0 8px; font-size:14px; border-bottom:1px solid #999; padding-bottom:4px;}
+.print-sec-continued{ margin:14px 0 6px; font-size:11.5px; font-style:italic; color:#555;}
+.print-kpis{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px;}
+.print-kpi{ font-size:11.5px;}
+.print-kpi strong{ font-size:16px; display:block;}
+.print-chart-img{ width:100%; max-height:220px; object-fit:contain; margin-bottom:8px;}
+.print-footer{ margin-top:auto; padding-top:8px; border-top:1px solid #ccc; display:flex; justify-content:space-between; gap:12px; font-size:9.5px; color:#555; page-break-inside:avoid;}
 @media print{
   html, body.printing{ background:#fff !important; }
   body.printing #app, body.printing #authScreen, body.printing #splash, body.printing #modalRoot, body.printing .toast{ display:none !important; }
   body.printing #printArea{ display:block !important; background:#fff !important; color:#111 !important; }
-  @page{ margin:18mm 16mm; background:#fff; }
+  @page{ size:A4; margin:18mm 16mm; background:#fff; }
 }
 
 /* ===== export / format choice ===== */
@@ -753,7 +765,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 /* ===== digital clock ===== */
 .auth-clock{ font-family:'Montserrat','Arial Black',Impact,sans-serif; color:#F3EEDD; margin-top:28px; margin-bottom:18px; cursor:pointer; transition:transform .15s ease; user-select:none;}
 .auth-clock:active{ transform:scale(.96);}
-.analogue-clock-svg{ width:84px; height:84px; display:block; margin-bottom:6px;}
+.analogue-clock-svg{ width:168px; height:168px; display:block; margin-bottom:6px;}
 .auth-clock .time{ font-size:44px; font-weight:900; letter-spacing:.5px; display:flex; align-items:center; gap:6px; font-family:var(--clock-font);}
 .auth-clock .time .secs-ampm-stack{ display:inline-flex; flex-direction:column; align-items:flex-start; justify-content:center; line-height:1.05; margin-left:2px; gap:1px;}
 .auth-clock .time .secs{ font-size:16px; font-weight:700; color:rgba(255,255,255,.7); display:inline-flex; align-items:center;}
@@ -859,9 +871,13 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
     <div class="auth-bg-image-layer" id="authBgImageLayer"></div>
     <div class="auth-decor-layer" id="authDecorLayer"><span class="auth-decor" onclick="cycleLockscreenDecorStyle()" title="Click to change the decoration style"></span></div>
     <div class="auth-notif-bell" id="authNotifBell">
-      <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
-        🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
-      </button>
+      <div class="auth-top-actions">
+        <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡 Tips</button>
+        <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()">🚀 Getting started</button>
+        <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
+          🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
+        </button>
+      </div>
       <div class="auth-notif-preview" id="authNotifPreview"></div>
     </div>
     <div class="auth-info">
@@ -877,10 +893,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         <div class="auth-dots" id="authDots"></div>
         <div class="auth-footer-row">
           <div class="auth-foot">Automated Library &amp; Circulation Management System</div>
-          <div class="auth-carousel-actions">
-            <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡 Tips</button>
-            <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()">🚀 Getting started</button>
-          </div>
         </div>
         <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
       </div>
@@ -936,7 +948,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
           <button class="icon-btn topbar-search-icon" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)">🔎</button>
           <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="Search titles, members, transactions…" autocomplete="off"
             oninput="renderTopbarSearchResults(this.value)" onfocus="renderTopbarSearchResults(this.value)"
-            onkeydown="if(event.key==='Escape'){this.blur(); closeTopbarSearch();}">
+            onkeydown="if(event.key==='Escape'){this.value=''; this.blur(); closeTopbarSearch();}">
           <div class="topbar-search-results" id="topbarSearchResults"></div>
         </div>
         <button class="icon-btn" id="notifBellBtn" onclick="event.stopPropagation();openNotificationCenter();" title="Notifications" style="position:relative">
@@ -1644,6 +1656,8 @@ function setAuthTab(tab){
   $('#tabSignin').classList.toggle('active', tab==='signin');
   $('#tabSignup').classList.toggle('active', tab==='signup');
   $('#authError').classList.remove('show');
+  const box = document.querySelector('.auth-box');
+  if(box) box.classList.toggle('wide', tab==='signup');
   renderAuthForm();
 }
 function renderAuthForm(){
@@ -2389,11 +2403,11 @@ const NAV = [
   {group:'Library', items:[
     {id:'catalogue', label:'Catalogue', ico:'▥'},
     {id:'users', label:'Members', ico:'👥'},
+  ]},
+  {group:'Operations', items:[
     {id:'circulation', label:'Circulation', ico:'⇄'},
     {id:'reservations', label:'Reservations', ico:'🔖'},
     {id:'reminders', label:'Reminder Log', ico:'✉'},
-  ]},
-  {group:'Operations', items:[
     {id:'register', label:'Register', ico:'✎'},
     {id:'schedule', label:'Schedule', ico:'▦'},
     {id:'feedback', label:'Feedback', ico:'💬'},
@@ -3171,18 +3185,67 @@ function printHeaderHtml(title, subtitle){
         <h2>ALCMS — ${esc(title)}</h2>
         ${period? `<p style="font-weight:600">${esc(period)}</p>` : ''}
         <p>${esc(subtitle)}</p>
-        <p>Generated ${new Date().toLocaleString('en-GB')} by ${esc((SESSION&&SESSION.fullName)||'—')}</p>
       </div>
     </div>`;
 }
+/* ---- paginated print engine ----
+   Native browser print has no reliable way to report "which page am I on", so accurate
+   "Page X of Y" numbering (and avoiding a stray trailing blank page) means paginating the
+   report ourselves: chunk the content into fixed-height page containers sized to the @page
+   content box, each with page-break-after except the last, with its own footer pinned to the
+   bottom via flexbox. Row/heading heights below are conservative estimates on purpose — it's
+   safer to slightly under-fill a page than to risk overflowing one and getting a genuine extra
+   page the footer numbering wouldn't know about. */
+const PRINT_PAGE_HEIGHT_PX = 900;   // usable content budget per page (conservative; real box is ~986px)
+const PRINT_HEADER_HEIGHT_PX = 170; // header block reserve, first page only
+const PRINT_FOOTER_HEIGHT_PX = 50;  // footer reserve, every page
+const PRINT_ROW_HEIGHT_PX = 26;
+const PRINT_THEAD_HEIGHT_PX = 28;
+const PRINT_SEC_HEADING_HEIGHT_PX = 34;
+const PRINT_KPI_ROW_HEIGHT_PX = 54;
+const PRINT_IMAGE_HEIGHT_PX = 230;
+function printFooterHtml(pageNum, totalPages){
+  const fullName = (SESSION && SESSION.fullName) || '—';
+  const role = (SESSION && SESSION.role) || '—';
+  return `<div class="print-footer">
+    <span>Account name: ${esc(fullName)} &nbsp;·&nbsp; Role: ${esc(role)}</span>
+    <span>Generated ${esc(new Date().toLocaleString('en-GB'))}</span>
+    <span>Page ${pageNum} of ${totalPages}</span>
+  </div>`;
+}
+function printRenderPages(headerHtml, pagesContent){
+  const total = pagesContent.length || 1;
+  const pages = pagesContent.length ? pagesContent : [''];
+  return pages.map((bodyHtml,idx)=>`
+    <div class="print-page"${idx<total-1?' style="page-break-after:always"':''}>
+      <div class="print-page-body">
+        ${idx===0? headerHtml : ''}
+        ${bodyHtml}
+      </div>
+      ${printFooterHtml(idx+1, total)}
+    </div>`).join('');
+}
+function printRowsToPages(theadHtml, rowsHtml, columnCount){
+  const rows = rowsHtml.length ? rowsHtml : [`<tr><td colspan="${columnCount}">No records match this selection</td></tr>`];
+  const firstAvail = PRINT_PAGE_HEIGHT_PX - PRINT_HEADER_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX;
+  const restAvail = PRINT_PAGE_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX;
+  const firstCount = Math.max(1, Math.floor(firstAvail/PRINT_ROW_HEIGHT_PX));
+  const restCount = Math.max(1, Math.floor(restAvail/PRINT_ROW_HEIGHT_PX));
+  const chunks = [];
+  let i = 0, first = true;
+  while(i < rows.length){
+    const count = first ? firstCount : restCount;
+    chunks.push(rows.slice(i, i+count));
+    i += count; first = false;
+  }
+  if(!chunks.length) chunks.push([]);
+  return chunks.map(chunk=>`<table class="print-table"><thead>${theadHtml}</thead><tbody>${chunk.join('')}</tbody></table>`);
+}
 function printReport(title, subtitle, columns, rows){
-  const html = `
-    ${printHeaderHtml(title, subtitle)}
-    <table class="print-table">
-      <thead><tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
-      <tbody>${rows.length? rows.map(r=>`<tr>${columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}">No records match this selection</td></tr>`}</tbody>
-    </table>`;
-  $('#printArea').innerHTML = html;
+  const theadHtml = `<tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`;
+  const rowsHtml = rows.map(r=>`<tr>${columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`);
+  const pagesContent = printRowsToPages(theadHtml, rowsHtml, columns.length);
+  $('#printArea').innerHTML = printRenderPages(printHeaderHtml(title, subtitle), pagesContent);
   document.body.classList.add('printing');
   setTimeout(()=>{ window.print(); }, 80);
 }
@@ -3194,16 +3257,54 @@ window.addEventListener('beforeunload', (e)=>{
 });
 
 function printMultiSection(title, subtitle, sections){
-  const html = `
-    ${printHeaderHtml(title, subtitle)}
-    ${sections.map(sec=>`
-      <h3 style="margin:18px 0 8px;font-size:14px;border-bottom:1px solid #999;padding-bottom:4px">${esc(sec.heading)}</h3>
-      ${sec.kpis? `<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px">${sec.kpis.map(k=>`<div style="font-size:11.5px"><strong style="font-size:16px;display:block">${esc(k.value)}</strong>${esc(k.label)}</div>`).join('')}</div>`:''}
-      ${sec.columns? `<table class="print-table"><thead><tr>${sec.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
-        <tbody>${sec.rows.length? sec.rows.map(r=>`<tr>${sec.columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${sec.columns.length}">No records for this period</td></tr>`}</tbody></table>`:''}
-    `).join('')}
-  `;
-  $('#printArea').innerHTML = html;
+  // Each section becomes one or more non-splittable "units" (a unit is never torn across a
+  // page break): a heading+KPI block is always one unit; a section with a table is chunked
+  // into row-pages the same way printReport does, so long tables can still span pages while
+  // still never breaking a row in half.
+  const units = [];
+  sections.forEach(sec=>{
+    let headingHtml = `<h3 class="print-sec-heading">${esc(sec.heading)}</h3>`;
+    let headingHeight = PRINT_SEC_HEADING_HEIGHT_PX;
+    if(sec.kpis){
+      headingHtml += `<div class="print-kpis">${sec.kpis.map(k=>`<div class="print-kpi"><strong>${esc(k.value)}</strong>${esc(k.label)}</div>`).join('')}</div>`;
+      headingHeight += PRINT_KPI_ROW_HEIGHT_PX;
+    }
+    if(sec.image){
+      units.push({html: headingHtml + `<img class="print-chart-img" src="${sec.image}" alt="${esc(sec.heading)}">`, height: headingHeight + PRINT_IMAGE_HEIGHT_PX});
+      return;
+    }
+    if(sec.columns){
+      const theadHtml = `<tr>${sec.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`;
+      const rowsHtml = sec.rows.length
+        ? sec.rows.map(r=>`<tr>${sec.columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`)
+        : [`<tr><td colspan="${sec.columns.length}">No records for this period</td></tr>`];
+      const restAvail = PRINT_PAGE_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX - headingHeight;
+      const restCount = Math.max(1, Math.floor(restAvail/PRINT_ROW_HEIGHT_PX));
+      let i = 0, first = true;
+      while(i < rowsHtml.length){
+        const chunk = rowsHtml.slice(i, i+restCount);
+        const tableHtml = `<table class="print-table"><thead>${theadHtml}</thead><tbody>${chunk.join('')}</tbody></table>`;
+        if(first){
+          units.push({html: headingHtml + tableHtml, height: headingHeight + PRINT_THEAD_HEIGHT_PX + chunk.length*PRINT_ROW_HEIGHT_PX});
+        } else {
+          units.push({html: `<div class="print-sec-continued">${esc(sec.heading)} (continued)</div>` + tableHtml, height: 20 + PRINT_THEAD_HEIGHT_PX + chunk.length*PRINT_ROW_HEIGHT_PX});
+        }
+        i += restCount; first = false;
+      }
+    } else {
+      units.push({html: headingHtml, height: headingHeight});
+    }
+  });
+  const pagesContent = [];
+  let current = [], used = PRINT_HEADER_HEIGHT_PX;
+  units.forEach(u=>{
+    if(current.length && used + u.height > PRINT_PAGE_HEIGHT_PX){
+      pagesContent.push(current.join('')); current = []; used = 0;
+    }
+    current.push(u.html); used += u.height;
+  });
+  if(current.length || !pagesContent.length) pagesContent.push(current.join(''));
+  $('#printArea').innerHTML = printRenderPages(printHeaderHtml(title, subtitle), pagesContent);
   document.body.classList.add('printing');
   setTimeout(()=>{ window.print(); }, 80);
 }
@@ -3236,6 +3337,10 @@ function generateSummaryReport(){
   const issuedToday = t.filter(x=>(x.dateBorrowed||'').slice(0,10)===today).length;
   const returnedToday = t.filter(x=>(x.returnDate||'').slice(0,10)===today).length;
   const visitsToday = DB.registerLog.filter(x=> fmtDate(x.date)===fmtDate(today)).length;
+  const byClass = groupCount(c, b=>(b.mainClass||'UNCLASSIFIED').replace(/^\d+\s*–\s*/,''));
+  const classEntries = Object.entries(byClass).sort((a,b)=>b[1]-a[1]);
+  const byMemberClass = groupCount(u, x=>x.cls||'UNSPECIFIED');
+  const memberClassEntries = Object.entries(byMemberClass).sort((a,b)=>b[1]-a[1]);
   printMultiSection('Summary Report', 'Snapshot as of '+new Date().toLocaleString('en-GB'), [
     { heading:'Collection', kpis:[
       {label:'Titles in collection', value:c.length},
@@ -3256,6 +3361,12 @@ function generateSummaryReport(){
       {label:'Active loans', value:active},
       {label:'Overdue', value:overdue},
     ]},
+    { heading:'Collection by main class', columns:[
+      {label:'Class', get:r=>r[0]}, {label:'Titles', get:r=>r[1]},
+    ], rows: classEntries},
+    { heading:'Members by class', columns:[
+      {label:'Class', get:r=>r[0]}, {label:'Members', get:r=>r[1]},
+    ], rows: memberClassEntries},
   ]);
 }
 function openReportModal(){
@@ -3637,11 +3748,14 @@ function renderWeatherAmbience(){
   const p = WEATHER_PERIODS[key];
   const vivid = PREFS.weatherAmbienceStyle==='vivid';
   const op = vivid ? 0.85 : 0.4;
-  const w=320,h=150, cx=255, cy=48;
+  // The ground scene (and clouds) repeat side-by-side several times so the illustration can
+  // bleed edge-to-edge on any hero width without ever cropping — but the sun/moon is a single,
+  // one-of-a-kind element drawn once near the right, same spot every time.
+  const tileW=320, h=150, REPEATS=6, w=tileW*REPEATS, cx=w-65, cy=48;
   let stars = '';
   if(p.stars){
     const rand = (seed)=> { const x = Math.sin(seed*999)*10000; return x-Math.floor(x); };
-    stars = Array.from({length:14},(_,i)=>{
+    stars = Array.from({length:14*REPEATS},(_,i)=>{
       const x = Math.round(rand(i+1)*w), y = Math.round(rand(i+50)*70), r = rand(i+80)<0.25?1.6:0.9;
       return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${0.55*op}"/>`;
     }).join('');
@@ -3656,7 +3770,8 @@ function renderWeatherAmbience(){
         <ellipse cx="10" cy="-3" rx="19" ry="14" fill="#fff"/>
         <ellipse cx="26" cy="2" rx="13" ry="9" fill="#fff"/>
       </g>`;
-    clouds = cloudFn(52,26,0.8,0.5) + cloudFn(150,18,0.55,0.38);
+    // One staggered pair of clouds per tile so the repeat reads as a continuous sky, not a stamp.
+    clouds = Array.from({length:REPEATS},(_,i)=> cloudFn(52+i*tileW,26,0.8,0.5) + cloudFn(150+i*tileW,18,0.55,0.38)).join('');
   }
   const celestial = p.moon
     ? `<circle cx="${cx}" cy="${cy}" r="40" fill="${p.moon}" opacity="${op*0.12}"/>
@@ -3670,7 +3785,8 @@ function renderWeatherAmbience(){
     : `<circle cx="${cx}" cy="${cy}" r="44" fill="${p.sunGlow}" opacity="${op*0.35}"/>
        <circle cx="${cx}" cy="${cy}" r="30" fill="${p.sunGlow}" opacity="${op*0.5}"/>
        <circle cx="${cx}" cy="${cy}" r="18" fill="${p.sun}" opacity="${op}"/>`;
-  const scene = (WEATHER_SETS[PREFS.weatherAmbienceSet]||WEATHER_SETS.hills).render(p,w,h,op);
+  const sceneFn = (WEATHER_SETS[PREFS.weatherAmbienceSet]||WEATHER_SETS.hills).render;
+  const scene = Array.from({length:REPEATS},(_,i)=>`<g transform="translate(${i*tileW},0)">${sceneFn(p,tileW,h,op)}</g>`).join('');
   const inner = `
     <defs>
       <linearGradient id="wxSky-${key}" x1="0" y1="0" x2="0" y2="1">
@@ -3683,7 +3799,7 @@ function renderWeatherAmbience(){
     ${clouds}
     ${scene}
   `;
-  return `<svg class="weather-ambience" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" onclick="cycleWeatherAmbienceSet()"><title>Click to change the weather scene</title>${inner}</svg>`;
+  return `<svg class="weather-ambience" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" onclick="cycleWeatherAmbienceSet()"><title>Click to change the weather scene</title>${inner}</svg>`;
 }
 /* Clicking the weather illustration (or its "It's Night" label) on the Home hero cycles
    through the 10 scene sets, live — same click-to-cycle pattern as the lockscreen clock/decor. */
@@ -3819,6 +3935,7 @@ function pageAnalytics(){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn secondary" onclick="printAnalyticsReport()">🖨 Print</button>
       <button class="btn secondary" onclick="exportAnalyticsData()">⭳ Export</button>
+      <button class="btn secondary" onclick="exportAnalyticsCharts()">🖼 Export charts</button>
     </div>
   </div>
   <div class="grid two-col">
@@ -3859,6 +3976,22 @@ function analyticsReportSections(){
   const topT = Object.entries(byTitle).sort((a,b)=>b[1]-a[1]).slice(0,5);
   return { overdueRows, topB, topT };
 }
+function analyticsChartSections(){
+  // Charts only exist as data once rendered (Chart.js canvases), so this is best-effort:
+  // any chart not currently drawn (e.g. still loading) is simply skipped rather than
+  // producing a broken image block.
+  const charts = [
+    {id:'chAnMonthly', heading:'Monthly circulation trend'},
+    {id:'chCondition', heading:'Book condition analysis'},
+    {id:'chLoanStatus', heading:'Loan status breakdown'},
+    {id:'chMemberCat', heading:'Members by category'},
+    {id:'chClassBorrow', heading:'Borrowing by class'},
+    {id:'chPurpose', heading:'Register visit purpose'},
+  ];
+  return charts
+    .filter(c=> chartInstances[c.id])
+    .map(c=> ({ heading:c.heading, image: chartInstances[c.id].toBase64Image() }));
+}
 function printAnalyticsReport(){
   const { overdueRows, topB, topT } = analyticsReportSections();
   printMultiSection('Analytics', 'Top borrowers, top titles &amp; overdue detail', [
@@ -3868,11 +4001,24 @@ function printAnalyticsReport(){
     { heading:'Top 5 borrowed titles', columns:[
       {label:'Title', get:r=>r[0]}, {label:'Times borrowed', get:r=>r[1]},
     ], rows: topT },
+    ...analyticsChartSections(),
     { heading:'Overdue detail', columns:[
       {label:'Member', get:r=>r.name}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
       {label:'Due date', get:r=>fmtDate(r.dueDate)}, {label:'Days overdue', get:r=>r.daysOverdue},
     ], rows: overdueRows },
   ]);
+}
+function exportAnalyticsCharts(){
+  const charts = analyticsChartSections();
+  if(!charts.length){ toast('Charts are still loading — try again in a moment'); return; }
+  charts.forEach((c,i)=>{
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      a.href = c.image;
+      a.download = `analytics_${c.heading.toLowerCase().replace(/[^a-z0-9]+/g,'_')}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }, i*150); // stagger downloads slightly so the browser doesn't drop any
+  });
 }
 function exportAnalyticsData(){
   const { overdueRows } = analyticsReportSections();
@@ -4508,6 +4654,12 @@ function pageCirculationTable(){
         return badge + `<div style="font-size:10.5px;margin-top:3px;color:${r.finePaid?'var(--muted)':'var(--terracotta)'}">${r.finePaid?'Paid':fmtCurrency(fine.amount)}</div>`;
       }},
     ],
+    exportColumns:[
+      {label:'Transaction', get:r=>r.trxId}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
+      {label:'Member ID', get:r=>r.userId}, {label:'Borrower', get:r=>r.name},
+      {label:'Borrowed', get:r=>fmtDate(r.dateBorrowed)}, {label:'Due', get:r=>fmtDate(r.dueDate)},
+      {label:'Returned', get:r=>r.returnDate?fmtDate(r.returnDate):'—'}, {label:'Status', get:r=>r.status},
+    ],
     rowActions:r=>`<button class="btn secondary small" onclick="viewTransaction('${esc(r.trxId)}')">View</button>
       ${!r.returnDate? `<button class="btn secondary small" onclick="renewLoan('${esc(r.trxId)}')">Renew</button>`:''}
       ${DB.setup.fineEnabled && !r.finePaid && fineForTxn(r).amount>0? `<button class="btn secondary small" onclick="markFinePaid('${esc(r.trxId)}')">Mark fine paid</button>`:''}
@@ -4987,9 +5139,10 @@ function openGlobalSearch(){
 function closeGlobalSearch(){ const w = document.getElementById('gsearchBackdrop'); if(w) w.remove(); }
 function globalSearchGoto(kind, id){
   closeGlobalSearch();
-  if(kind==='book'){ route='catalogue'; render(); }
+  closeTopbarSearch();
+  if(kind==='book'){ route='catalogue'; render(); viewBook(id); }
   else if(kind==='member'){ openMemberProfile(id); return; }
-  else if(kind==='txn'){ route='circulation'; render(); }
+  else if(kind==='txn'){ route='circulation'; render(); viewTransaction(id); }
   else if(kind==='reservation'){ route='reservations'; render(); }
 }
 /* Builds the categorised results markup shared by both the full-screen modal (mobile /
@@ -5005,16 +5158,13 @@ function buildGlobalSearchHTML(q){
   }
   const isNumeric = /^\d+$/.test(query);
   const limit = isNumeric ? 10 : 6;
-  const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).slice(0,limit);
-  const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query) || (isNumeric && (u.teacher||'').toLowerCase().includes(query))).slice(0,limit);
-  const txns = isNumeric ? [] : DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).slice(0,6);
+  const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,limit);
+  const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query) || (isNumeric && (u.teacher||'').toLowerCase().includes(query))).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).slice(0,limit);
+  const txns = isNumeric ? [] : DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,6);
   let html = '';
-  if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`
-    <div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><span class="ic">📚</span><div class="main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
-  if(members.length){ html += `<div class="gsearch-group-label">Members</div>` + members.map(u=>`
-    <div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><span class="ic">👤</span><div class="main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
-  if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`
-    <div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><span class="ic">⇄</span><div class="main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
+  if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
+  if(members.length){ html += `<div class="gsearch-group-label">Members</div>` + members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
+  if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
   return html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
 }
 function renderGlobalSearchResults(q){
@@ -5043,7 +5193,20 @@ document.addEventListener('keydown', e=>{
     const inline = document.getElementById('topbarSearchInput');
     if(inline && inline.offsetParent!==null){ inline.focus(); inline.select(); return; }
     if(document.getElementById('gsearchBackdrop')) closeGlobalSearch(); else openGlobalSearch();
+    return;
   }
+  if(e.key !== 'Escape') return;
+  if(document.getElementById('gsearchBackdrop')){ closeGlobalSearch(); return; }
+  // Close the most recently opened popup/modal — never the idle-session security warning,
+  // which must be answered explicitly ("Stay signed in") rather than dismissed by accident.
+  const backdrops = Array.from(document.querySelectorAll('.modal-backdrop, .img-lightbox-backdrop'))
+    .filter(el=> el.id !== 'idleWarnBackdrop');
+  if(!backdrops.length) return;
+  const top = backdrops[backdrops.length-1];
+  const closeBtn = top.querySelector('#mClose, #mCancel, .img-lightbox-close');
+  if(closeBtn){ closeBtn.click(); }
+  else if(typeof animatedCloseModal==='function'){ animatedCloseModal(top, ()=> top.remove()); }
+  else{ top.remove(); }
 });
 
 /* ================= BARCODE / SCANNER ================= */
@@ -5158,6 +5321,12 @@ function pageReminders(){
       {key:'reminded', label:'Reminder', render:r=>r.reminded?'<span class="badge green">SENT</span>':'<span class="badge grey">PENDING</span>'},
       {key:'wa', label:'WhatsApp', render:r=>waButtonHtml(r,'overdue')},
     ],
+    exportColumns:[
+      {label:'Transaction', get:r=>r.trxId}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
+      {label:'Member ID', get:r=>r.userId}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+      {label:'Due', get:r=>fmtDate(r.dueDate)}, {label:'Days overdue', get:r=>r.daysOverdue},
+      {label:'Reminder', get:r=>r.reminded?'SENT':'PENDING'},
+    ],
     rowActions:r=>r.reminded?'':`<button class="btn small" onclick="sendReminder('${r.trxId}')">Log reminder</button>`,
   });
   nearOverdueModule = GenericModule({
@@ -5169,6 +5338,11 @@ function pageReminders(){
       {key:'dueDate', label:'Due', render:r=>fmtDate(r.dueDate)},
       {key:'daysLeft', label:'Days left', render:r=>`<span class="badge gold">${r.daysLeft}</span>`},
       {key:'wa', label:'WhatsApp', render:r=>waButtonHtml(r,'soon')},
+    ],
+    exportColumns:[
+      {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title}, {label:'Member ID', get:r=>r.userId},
+      {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+      {label:'Due', get:r=>fmtDate(r.dueDate)}, {label:'Days left', get:r=>r.daysLeft},
     ],
   });
   reminderHistoryModule = GenericModule({
@@ -5285,6 +5459,12 @@ function pageRegister(){
       {key:'borrow', label:'Borrowed?', render:r=>r.source==='DESK'?`<span class="badge ${r.borrow==='YES'?'gold':'grey'}">${esc(r.borrow)}</span>`:'—'},
       {key:'offense', label:'Offense', render:r=>r.offense?`<span class="badge red">${esc(r.offense)}</span>`:'—'},
       {key:'note', label:'Note'},
+    ],
+    exportColumns:[
+      {label:'Date', get:r=>fmtDate(r.date)}, {label:'Time in', get:r=>fmtTime(r.timeIn)}, {label:'Time out', get:r=>fmtTime(r.timeOut)},
+      {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+      {label:'Purpose', get:r=>r.purpose}, {label:'Borrowed?', get:r=>r.source==='DESK'?r.borrow:'—'},
+      {label:'Offense', get:r=>r.offense||'—'}, {label:'Note', get:r=>r.note},
     ],
     rowActions:r=>`<button class="btn secondary small" onclick="openRegisterEdit('${esc(r.entryId)}')">Edit</button>`,
     extraActions:[
@@ -6032,12 +6212,7 @@ function pageSettings(){
       <div class="field"><label>Accent (buttons / highlights)</label><input type="color" id="cpBrass" value="${esc(customPaletteDraft.brass)}" oninput="liveCustomPalettePreview()"></div>
       <div class="field"><label>Secondary accent (badges / links)</label><input type="color" id="cpTerracotta" value="${esc(customPaletteDraft.terracotta)}" oninput="liveCustomPalettePreview()"></div>
       <div class="field"><label>Highlight (4th accent)</label><input type="color" id="cpHighlight" value="${esc(customPaletteDraft.highlight||'#4C7C5E')}" oninput="liveCustomPalettePreview()"></div>
-      <div class="field"><label>Heading text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setHeadingColor" value="${resolveTextColorHex(PREFS.headingColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('heading')">Reset</button></div></div>
-      <div class="field"><label>Body text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setBodyColor" value="${resolveTextColorHex(PREFS.bodyColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('body')">Reset</button></div></div>
-      <div class="field"><label>Muted / secondary text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setMutedColor" value="${resolveMutedColorHex(PREFS.mutedColor)}" oninput="previewTypography()" style="width:60px;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('muted')">Reset</button></div></div>
-      <div class="field" style="display:flex;align-items:flex-end"><button type="button" class="btn secondary" style="width:100%" onclick="saveTypographyForm()">Save text colours</button></div>
     </div>
-    <p class="field-hint" style="margin-top:-4px">Muted covers hints, captions, subtitles and table labels — everything that isn't a heading or main body text.</p>
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">
       <div class="field" style="flex:1;min-width:200px;margin:0"><label>Preset name</label><input type="text" id="cpName" placeholder="e.g. School Colours" value="${esc(customPaletteDraft.label||'')}"></div>
       <button class="btn secondary" onclick="saveCustomPalette()">💾 Save as preset</button>
@@ -6065,6 +6240,12 @@ function pageSettings(){
         <input type="range" id="setBodyScale" min="80" max="160" step="5" value="${Math.round((PREFS.bodyScale||1)*100)}" oninput="document.getElementById('bodyScaleVal').textContent=this.value+'%'; previewTypography();" style="width:100%">
       </div>
     </div>
+    <div class="field-row" style="margin-top:4px">
+      <div class="field" style="flex:1"><label>Heading text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setHeadingColor" value="${resolveTextColorHex(PREFS.headingColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('heading')">Reset</button></div></div>
+      <div class="field" style="flex:1"><label>Body text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setBodyColor" value="${resolveTextColorHex(PREFS.bodyColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('body')">Reset</button></div></div>
+      <div class="field" style="flex:1"><label>Muted / secondary text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setMutedColor" value="${resolveMutedColorHex(PREFS.mutedColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('muted')">Reset</button></div></div>
+    </div>
+    <p class="field-hint" style="margin-top:-4px">Muted covers hints, captions, subtitles and table labels — everything that isn't a heading or main body text.</p>
     <button class="btn secondary" onclick="saveTypographyForm()">Save typography</button>
     <p class="field-hint" style="margin-top:8px">Text size uses your browser's zoom support — it may not apply in every browser.</p>
   </div>
@@ -7281,6 +7462,28 @@ function openVersionPanel(){
 
 /* ================= render dispatcher ================= */
 let lastRenderedRoute = null;
+// A route re-render (after adding/editing/renewing/returning an item, etc.) rebuilds that
+// page's HTML from scratch, which would otherwise reset any scrolled table/list back to its
+// top. These two helpers remember each list's scroll position across a render() and put it
+// back, so the page stays where you were looking until you actually navigate away.
+function snapshotScrollPositions(root){
+  const map = {};
+  if(!root || !root.querySelectorAll) return map;
+  root.querySelectorAll('.table-wrap').forEach((elx,i)=>{
+    const anchor = elx.closest('[id]');
+    const key = (anchor ? anchor.id : 'tw') + '_' + i;
+    if(elx.scrollTop) map[key] = elx.scrollTop;
+  });
+  return map;
+}
+function restoreScrollPositions(root, map){
+  if(!root || !map || !root.querySelectorAll) return;
+  root.querySelectorAll('.table-wrap').forEach((elx,i)=>{
+    const anchor = elx.closest('[id]');
+    const key = (anchor ? anchor.id : 'tw') + '_' + i;
+    if(map[key]) elx.scrollTop = map[key];
+  });
+}
 function render(){
   if(appearancePreviewDirty && route!=='settings'){
     applyTheme(); applyPalette(PREFS.palette); applyTypography(); appearancePreviewDirty = false;
@@ -7319,6 +7522,7 @@ function render(){
     case 'security': html = pageSecurity(); break;
     default: html = pageHome();
   }
+  const __scrollSnapshot = snapshotScrollPositions(el);
   el.innerHTML = html;
 
   if(route==='catalogue' && catalogueModule){ $('#mod_catalogue').innerHTML = catalogueModule.render(); MODULE_CONTAINERS.catalogue={host:{render:()=>{ $('#mod_catalogue').innerHTML=catalogueModule.render(); catalogueModule.bind(); }}}; catalogueModule.bind(); }
@@ -7338,6 +7542,7 @@ function render(){
   if(route==='dashboard') requestAnimationFrame(drawDashboardCharts);
   if(route==='analytics') requestAnimationFrame(drawAnalyticsCharts);
   applyIconPack();
+  restoreScrollPositions(el, __scrollSnapshot);
 }
 
 /* ================= boot ================= */
