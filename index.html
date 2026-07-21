@@ -139,6 +139,17 @@ html[data-theme="dark"] table.datatable tr:hover td{ background:rgba(255,255,255
 html[data-theme="dark"] .field input,html[data-theme="dark"] .field select,html[data-theme="dark"] .field textarea,
 html[data-theme="dark"] .toolbar input,html[data-theme="dark"] .toolbar select{ background:rgba(255,255,255,.06); color:var(--ink);}
 html[data-theme="dark"] .quickpick .suggestions{ background:var(--card);}
+/* Accessibility: two independent, org-wide toggles set in Personalization. Larger UI uses
+   `zoom` (broadly supported now, including Firefox) so the whole layout scales together rather
+   than just the text reflowing oddly. High contrast strengthens borders/muted text and thickens
+   focus outlines without touching photos or the colour palette itself. */
+body[data-a11y-text="large"]{ zoom:1.15; }
+body[data-a11y-contrast="high"]{ --muted:#000; --line:#000;}
+html[data-theme="dark"] body[data-a11y-contrast="high"]{ --muted:#fff; --line:#fff;}
+body[data-a11y-contrast="high"] .card, body[data-a11y-contrast="high"] .modal{ border-width:2px;}
+body[data-a11y-contrast="high"] .btn{ border:2px solid currentColor;}
+body[data-a11y-contrast="high"] a, body[data-a11y-contrast="high"] .navlist a{ text-decoration:underline;}
+body[data-a11y-contrast="high"] *:focus-visible{ outline:3px solid var(--terracotta) !important; outline-offset:2px;}
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -244,7 +255,37 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-notif-preview.open{ display:block;}
 .auth-notif-preview .notif-row{ cursor:default;}
 .auth-notif-preview .auth-notif-signin-hint{ font-size:11px; color:var(--muted); text-align:center; padding:8px 6px 4px; border-top:1px solid var(--line); margin-top:4px;}
-@media (max-width:640px){ .auth-notif-bell{ top:14px; right:14px; max-width:calc(100vw - 28px);} .auth-top-actions .getting-started-btn{ font-size:9.5px; padding:5px 7px;} }
+/* Same icon-only collapse as the mobile rule below, but keyed to the signup box being in its
+   wide state rather than viewport width — the widened "Create account" box crowds the Tips /
+   Getting started / bell row on desktop too, so collapse them there as well. */
+.auth-wrap:has(.auth-box.wide) .auth-top-actions{ flex-direction:column; align-items:flex-end; gap:8px;}
+.auth-wrap:has(.auth-box.wide) .auth-top-actions .getting-started-btn{
+  width:32px; height:32px; padding:0; border-radius:8px; justify-content:center; position:relative; overflow:visible;
+}
+.auth-wrap:has(.auth-box.wide) .auth-top-actions .getting-started-btn .gsb-label{
+  display:none; position:absolute; top:50%; right:calc(100% + 8px); transform:translateY(-50%);
+  background:var(--card); color:var(--forest); border:1px solid var(--line); border-radius:8px;
+  padding:5px 9px; font-size:11px; white-space:nowrap; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:8;
+}
+.auth-wrap:has(.auth-box.wide) .auth-top-actions .getting-started-btn:hover .gsb-label,
+.auth-wrap:has(.auth-box.wide) .auth-top-actions .getting-started-btn:focus .gsb-label{ display:inline-block;}
+.auth-wrap:has(.auth-box.wide) .auth-notif-bell .auth-top-actions .icon-btn{ width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;}
+@media (max-width:640px){
+  .auth-notif-bell{ top:14px; right:14px; max-width:calc(100vw - 28px);}
+  .auth-top-actions{ flex-direction:column; align-items:center; justify-content:flex-start; gap:8px;}
+  .auth-top-actions .getting-started-btn{
+    width:32px; height:32px; padding:0; border-radius:8px; justify-content:center; position:relative; overflow:visible;
+  }
+  .auth-top-actions .getting-started-btn .gsb-label{
+    display:none; position:absolute; top:50%; right:calc(100% + 8px); transform:translateY(-50%);
+    background:var(--card); color:var(--forest); border:1px solid var(--line); border-radius:8px;
+    padding:5px 9px; font-size:11px; white-space:nowrap; box-shadow:0 6px 16px rgba(0,0,0,.25); z-index:8;
+  }
+  .auth-top-actions .getting-started-btn:hover .gsb-label,
+  .auth-top-actions .getting-started-btn:focus .gsb-label,
+  .auth-top-actions .getting-started-btn.expanded .gsb-label{ display:inline-block;}
+  .auth-notif-bell .auth-top-actions .icon-btn{ width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;}
+}
 .auth-slide{ display:none; animation:fadeSlide .6s ease;}
 .auth-slide.active{ display:block;}
 @keyframes fadeSlide{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
@@ -567,10 +608,22 @@ body[data-transition="blur"] .modal-backdrop.closing .modal{ animation:modalBlur
 body[data-transition="bounce"] .modal{ animation:modalBounceIn .38s cubic-bezier(.34,1.56,.64,1);}
 body[data-transition="bounce"] .modal-backdrop.closing .modal{ animation:modalScaleOut .16s ease forwards;}
 .modal.wide{ max-width:720px;}
+.barcode-label-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+.barcode-label{ border:1px solid var(--line); border-radius:8px; padding:8px; text-align:center; background:#fff; display:flex; flex-direction:column; align-items:center; gap:2px;}
+.barcode-label-title{ font-size:11px; font-weight:600; color:#111; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;}
+.barcode-svg{ width:100%; max-width:160px; height:46px;}
+.barcode-label-sub{ font-size:10px; color:#333; letter-spacing:.5px;}
+@media print{
+  .print-barcode-grid{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+  .print-barcode-grid .barcode-label{ break-inside:avoid; }
+}
 .modal-head{ padding:16px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
 .modal-head h3{ font-size:16px;}
 .modal-head button{ background:none;border:none;font-size:18px;color:var(--muted);}
 .modal-body{ padding:18px 22px;}
+.scan-cam-box{ position:relative; width:100%; aspect-ratio:4/3; max-height:52vh; background:#000; border-radius:10px; overflow:hidden; margin-bottom:10px;}
+.scan-cam-box video{ width:100%; height:100%; object-fit:cover; display:block;}
+.scan-cam-frame{ position:absolute; inset:14%; border:2px solid rgba(255,255,255,.75); border-radius:10px; box-shadow:0 0 0 999px rgba(0,0,0,.25); pointer-events:none;}
 .modal-foot{ padding:14px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;}
 .field{ margin-bottom:12px; display:flex; flex-direction:column; gap:5px;}
 .field label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted-label);}
@@ -656,6 +709,12 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 
 .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px;}
 @media (max-width:900px){ .two-col{grid-template-columns:1fr;} .field-row{grid-template-columns:1fr;} }
+/* The "Create account" box widens (.auth-box.wide) so it can lay its paired fields (username/
+   password, email/phone) out side by side instead of one long scrolling column — but the
+   .field-row rule above collapses to a single column on any viewport under 900px, so on tablets
+   the box was widening without actually shortening the form. Keep those pairs side by side down
+   to phone width whenever the box is in its wide/signup state. */
+@media (min-width:641px) and (max-width:900px){ .auth-box.wide .field-row{ grid-template-columns:1fr 1fr;} }
 
 .home-hero{ background:linear-gradient(135deg,var(--forest) 0%, var(--forest-dark) 100%); color:#F3EEDD; border-radius:14px; padding:26px 34px; margin-bottom:20px; position:relative; overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,.22);}
 @media (min-width:821px){
@@ -872,8 +931,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
     <div class="auth-decor-layer" id="authDecorLayer"><span class="auth-decor" onclick="cycleLockscreenDecorStyle()" title="Click to change the decoration style"></span></div>
     <div class="auth-notif-bell" id="authNotifBell">
       <div class="auth-top-actions">
-        <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡 Tips</button>
-        <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()">🚀 Getting started</button>
+        <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡<span class="gsb-label"> Tips</span></button>
+        <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()" title="Getting started">🚀<span class="gsb-label"> Getting started</span></button>
         <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
           🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
         </button>
@@ -894,6 +953,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
         <div class="auth-footer-row">
           <div class="auth-foot">Automated Library &amp; Circulation Management System</div>
         </div>
+        <a href="#" class="auth-contact-dev-link" onclick="openSelfCheckLoans();return false;">📖 Check your loans</a>
         <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
       </div>
     </div>
@@ -1261,7 +1321,14 @@ async function loadPrefs(){
   if(savedTopbarRgb) document.documentElement.style.setProperty('--topbar-bg-rgb', savedTopbarRgb);
   applyLockscreenElements(PREFS.lockscreenElements);
   applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
+  applyAccessibility();
 }
+function applyAccessibility(){
+  document.body.setAttribute('data-a11y-text', PREFS.a11yLargeText ? 'large' : 'normal');
+  document.body.setAttribute('data-a11y-contrast', PREFS.a11yHighContrast ? 'high' : 'normal');
+}
+function toggleA11yLargeText(on){ PREFS.a11yLargeText = !!on; applyAccessibility(); savePrefs(); }
+function toggleA11yHighContrast(on){ PREFS.a11yHighContrast = !!on; applyAccessibility(); savePrefs(); }
 async function savePrefs(){ await storeSet(PREFS_KEY, JSON.stringify(PREFS)); }
 /* Universal "back to default" button in Personalization. Resets every appearance/typography/
    icons/lockscreen/weather preference to the factory defaults captured in DEFAULT_PREFS.
@@ -1274,6 +1341,7 @@ function resetPersonalization(){
   delete PREFS.sectionBgColor; delete PREFS.modalBgColor; delete PREFS.topbarBgColor; delete PREFS.authBoxColor;
   applyTheme(); applyPalette(PREFS.palette); applyTypography(); applyClockFont(PREFS.clockFont); applyDateFont(PREFS.dateFont);
   applyLockscreenElements(PREFS.lockscreenElements); applyLockscreenDecorStyle(PREFS.lockscreenDecorStyle);
+  applyAccessibility();
   document.body.setAttribute('data-section-style', PREFS.sectionStyle);
   document.body.setAttribute('data-topbar-style', PREFS.topbarStyle);
   document.documentElement.style.removeProperty('--section-bg-rgb'); document.documentElement.style.removeProperty('--section-bg-rgb-dark');
@@ -2111,6 +2179,7 @@ async function loadDB(){
 function migrateNewFeatureData(db){
   if(!Array.isArray(db.reservations)) db.reservations = [];
   if(!Array.isArray(db.notifications)) db.notifications = [];
+  if(!Array.isArray(db.trash)) db.trash = [];
   if(!db.setup) db.setup = {};
   if(db.setup.fineEnabled===undefined) db.setup.fineEnabled = false;
   if(db.setup.fineRatePerDay===undefined) db.setup.fineRatePerDay = 0;
@@ -2212,7 +2281,7 @@ function buildSeedDB(){
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup, reminders: [], reservations: [], notifications: [], versions: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -2834,7 +2903,7 @@ function openImageLightbox(src){
   wrap.onclick = (e)=>{ if(e.target===wrap || e.target.classList.contains('img-lightbox-close')) close(); };
   document.body.appendChild(wrap);
 }
-function openModal({title, fields, values={}, onSave, wide}){
+function openModal({title, fields, values={}, onSave, wide, validate}){
   const root = $('#modalRoot');
   const html = `
   <div class="modal-backdrop" id="mb">
@@ -2862,6 +2931,7 @@ function openModal({title, fields, values={}, onSave, wide}){
     for(const f of flattenFields(fields)){
       if(f.required && !out[f.key]){ toast(`"${f.label}" is required`); return; }
     }
+    if(validate){ const err = validate(out); if(err){ toast(err); return; } }
     onSave(out); close();
   };
   return close;
@@ -2954,7 +3024,7 @@ function bindQuickPicker(id, {items, formatSuggestion, formatPicked, onPick}){
     const it = items.find(x=>x.id===row.dataset.id); if(it) pick(it);
   });
   document.addEventListener('click', e=>{ if(!e.target.closest('#qp_'+id)) sugg.classList.remove('show'); });
-  return { get value(){ return selected; }, clear(){ selected=null; input.value=''; picked.classList.remove('show'); } };
+  return { get value(){ return selected; }, clear(){ selected=null; input.value=''; picked.classList.remove('show'); }, pick(it){ pick(it); } };
 }
 
 /* ================= generic table module ================= */
@@ -2996,11 +3066,11 @@ function GenericModule(cfg){
           <div><h3>${esc(cfg.title)}</h3><div class="hint">${esc(cfg.hint||'')}</div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${cfg.exportColumns? `
-            <button class="btn secondary" data-act="print-${cfg.key}">🖶 Print</button>
-            <button class="btn secondary" data-act="export-${cfg.key}">⭳ Export</button>`:''}
-            ${cfg.onImport && isAdmin() ? `<button class="btn secondary" data-act="import-${cfg.key}">⭱ Import</button>`:''}
-            ${cfg.onAdd && isAdmin() ? `<button class="btn" data-act="add-${cfg.key}">${cfg.addLabel||'+ Add'}</button>`:''}
-            ${(cfg.extraActions||[]).map((a,i)=> (a.alwaysShow||isAdmin()) ? `<button class="btn ${a.danger?'danger':'secondary'}" data-act="extra${i}-${cfg.key}">${esc(a.label)}</button>` : '').join('')}
+            <button class="btn secondary small" data-act="print-${cfg.key}">🖶 Print</button>
+            <button class="btn secondary small" data-act="export-${cfg.key}">⭳ Export</button>`:''}
+            ${cfg.onImport && isAdmin() ? `<button class="btn secondary small" data-act="import-${cfg.key}">⭱ Import</button>`:''}
+            ${cfg.onAdd && isAdmin() ? `<button class="btn small" data-act="add-${cfg.key}">${cfg.addLabel||'+ Add'}</button>`:''}
+            ${(cfg.extraActions||[]).map((a,i)=> (a.alwaysShow||isAdmin()) ? `<button class="btn small ${a.danger?'danger':'secondary'}" data-act="extra${i}-${cfg.key}">${esc(a.label)}</button>` : '').join('')}
             ${cfg.onAdd && !isAdmin() ? `<span class="badge grey">View only</span>`:''}
           </div>
         </div>
@@ -3823,6 +3893,8 @@ function pageHome(){
   const visitsToday = DB.registerLog.filter(x=> (parseAnyDate(x.date)||0) && fmtDate(x.date)===fmtDate(today)).length;
   const hour = new Date().getHours();
   const greeting = hour<12? 'Good morning' : hour<17? 'Good afternoon' : 'Good evening';
+  const dueList = t.map(x=>({...x,status:txnStatus(x)})).filter(x=> x.status==='OVERDUE' || (x.status!=='RETURNED' && x.status!=='MISSING' && fmtDate(x.dueDate)===fmtDate(today)))
+    .sort((a,b)=> (a.status==='OVERDUE'?0:1) - (b.status==='OVERDUE'?0:1));
 
   return `
   <div class="home-hero">
@@ -3837,6 +3909,15 @@ function pageHome(){
     ${kpi('Library visits today', visitsToday, 'desk + class periods')}
     ${kpi('Overdue right now', overdue, overdue? 'needs a reminder':'all clear')}
   </div>
+  ${dueList.length? `
+  <div class="card panel" style="margin-bottom:16px">
+    <div class="panel-head"><h3>Due today &amp; overdue</h3><div class="hint">${dueList.length} loan(s) need attention · click one to return it</div></div>
+    ${dueList.slice(0,6).map(r=>`<div class="activity-row" style="cursor:pointer" onclick="viewTransaction('${esc(r.trxId)}')"><div class="dot" style="background:${r.status==='OVERDUE'?'#A8452F':'#B8863E'}"></div>
+      <div style="flex:1"><strong>${esc(r.name)}</strong> — <em>${esc(r.title)}</em>
+      <div class="meta">${esc(r.acc)} · due ${fmtDate(r.dueDate)}</div></div>
+      <span class="badge ${r.status==='OVERDUE'?'red':'gold'}">${r.status==='OVERDUE'?'OVERDUE':'DUE TODAY'}</span></div>`).join('')}
+    ${dueList.length>6? `<p class="field-hint" style="margin-top:6px">+ ${dueList.length-6} more — see the full list in <a href="javascript:void(0)" onclick="route='reminders';render()">Reminder Log</a>.</p>`:''}
+  </div>` : ''}
   <div class="grid quicklinks">
     ${qlink(navIcon('dashboard','▤'),'Dashboard', 'Full library overview','dashboard')}
     ${qlink(navIcon('catalogue','▥'),'Catalogue', c.length+' titles on the shelf','catalogue')}
@@ -4095,6 +4176,7 @@ function pageCatalogue(){
       {key:'date-old', label:'Date added (oldest first)', compare:(a,b)=>(parseAnyDate(a.dateAdded)||0)-(parseAnyDate(b.dateAdded)||0)},
     ],
     extraActions:[
+      {label:'🏷 Print barcodes', alwaysShow:true, onClick:()=> openBarcodeModal('Catalogue barcodes', DB.catalogue.map(b=>({code:b.acc, title:b.title, sub:b.acc})))},
       {label:'⚠ Clear all titles', onClick:clearAllCatalogue, danger:true},
     ],
     onImport:()=>openImportModal({
@@ -4127,7 +4209,7 @@ function pageCatalogue(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">View</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">View</button> <button class="btn secondary small" onclick="openBarcodeModal('Title barcode', [{code:'${esc(r.acc)}', title:'${esc(r.title).replace(/'/g,"\\'")}', sub:'${esc(r.acc)}'}])" title="Generate / print barcode">🏷</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
   });
   return `<div id="mod_catalogue"></div>`;
 }
@@ -4160,13 +4242,14 @@ function viewBook(acc){
           ${rows.map(([k,v])=>`<tr><td style="font-weight:600;width:40%">${esc(k)}</td><td>${esc(String(v))}</td></tr>`).join('')}
         </table>
       </div>
-      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button><button class="btn secondary" id="mBarcode">🏷 Generate / print barcode</button></div>
     </div>`;
   document.body.appendChild(wrap);
   const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
   wrap.onclick = e=>{ if(e.target===wrap) close(); };
   wrap.querySelector('#mClose').onclick = close;
   wrap.querySelector('#mCancel').onclick = close;
+  wrap.querySelector('#mBarcode').onclick = ()=> openBarcodeModal('Title barcode', [{code:b.acc, title:b.title, sub:b.acc}]);
 }
 function bookFields(b={}){
   return [
@@ -4192,6 +4275,11 @@ function openBookForm(acc){
   openModal({
     title: existing? 'Edit title' : 'Add title to catalogue',
     fields: bookFields(existing||{}), values: existing||{}, wide:true,
+    validate: (vals)=>{
+      const clash = DB.catalogue.find(b=>b.acc.toLowerCase()===String(vals.acc||'').toLowerCase() && b!==existing);
+      if(clash) return `Accession number "${vals.acc}" is already used by "${clash.title}" — pick a different one`;
+      return null;
+    },
     onSave: (vals)=>{
       if(existing){ Object.assign(existing, vals); toast('Title updated'); }
       else { vals.dateAdded = todayISO(); DB.catalogue.push(vals); toast('Title added to catalogue'); }
@@ -4199,10 +4287,44 @@ function openBookForm(acc){
     }
   });
 }
+function purgeOldTrash(){
+  if(!DB || !Array.isArray(DB.trash) || !DB.trash.length) return;
+  const cutoff = Date.now() - 30*24*60*60*1000;
+  const before = DB.trash.length;
+  DB.trash = DB.trash.filter(x=> new Date(x.deletedAt).getTime() > cutoff);
+  if(DB.trash.length !== before) saveDB();
+}
+function restoreFromTrash(id){
+  if(!isAdmin()) return requireAdmin('restore from trash');
+  const item = DB.trash.find(x=>x.id===id); if(!item) return;
+  if(item.type==='book'){
+    if(DB.catalogue.some(b=>b.acc===item.data.acc)){ toast('A title with that accession number already exists — can\'t restore'); return; }
+    DB.catalogue.push(item.data);
+  } else if(item.type==='member'){
+    if(DB.users.some(u=>u.id===item.data.id)){ toast('A member with that ID already exists — can\'t restore'); return; }
+    DB.users.push(item.data);
+  }
+  DB.trash = DB.trash.filter(x=>x.id!==id);
+  saveDB(); render(); toast('Restored: '+item.label);
+}
+function permanentlyDeleteFromTrash(id){
+  if(!isAdmin()) return requireAdmin('permanently delete');
+  confirmDelete('Delete this forever? It cannot be undone.', ()=>{
+    DB.trash = DB.trash.filter(x=>x.id!==id); saveDB(); render(); toast('Deleted permanently');
+  });
+}
+function emptyTrash(){
+  if(!isAdmin()) return requireAdmin('empty the trash');
+  confirmDelete(`Permanently delete all ${DB.trash.length} item(s) in Trash? This cannot be undone.`, ()=>{
+    DB.trash = []; saveDB(); render(); toast('Trash emptied');
+  });
+}
 function deleteBook(acc){
   if(!isAdmin()) return requireAdmin('delete titles');
-  confirmDelete('Remove this title from the catalogue?', ()=>{
-    DB.catalogue = DB.catalogue.filter(b=>b.acc!==acc); saveDB(); render(); toast('Title removed');
+  confirmDelete('Remove this title from the catalogue? (It goes to Trash for 30 days, so this is recoverable.)', ()=>{
+    const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
+    DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:'book', label:b.title+' — '+b.acc, data:b, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
+    DB.catalogue = DB.catalogue.filter(x=>x.acc!==acc); saveDB(); render(); toast('Title moved to Trash — restorable for 30 days');
   });
 }
 
@@ -4252,6 +4374,7 @@ function pageUsers(){
       {key:'strikes-high', label:'Strikes (most first)', compare:(a,b)=>(b.strike||0)-(a.strike||0)},
     ],
     extraActions:[
+      {label:'🏷 Print barcodes', alwaysShow:true, onClick:()=> openBarcodeModal('Member barcodes', DB.users.map(u=>({code:u.id, title:u.name, sub:u.id})))},
       {label:'⚠ Clear all strikes', onClick:clearAllStrikes},
       {label:'⚠ Clear all members', onClick:clearAllMembers, danger:true},
     ],
@@ -4285,7 +4408,7 @@ function pageUsers(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="openMemberProfile('${esc(r.id)}')">Profile</button> <button class="btn secondary small" onclick="viewMember('${esc(r.id)}')">View</button> <button class="btn secondary small" onclick="viewSubjects('${r.id}')">Subjects</button> <button class="btn secondary small" onclick="openUserForm('${r.id}')">Edit</button> <button class="btn danger small" onclick="deleteUser('${r.id}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="openMemberProfile('${esc(r.id)}')">Profile</button> <button class="btn secondary small" onclick="openBarcodeModal('Member barcode', [{code:'${esc(r.id)}', title:'${esc(r.name).replace(/'/g,"\\'")}', sub:'${esc(r.id)}'}])" title="Generate / print barcode">🏷</button> <button class="btn secondary small" onclick="openUserForm('${r.id}')">Edit</button> <button class="btn danger small" onclick="deleteUser('${r.id}')">Delete</button>`,
   });
   return `<div id="mod_users"></div>`;
 }
@@ -4348,6 +4471,11 @@ function openUserForm(id){
   openModal({
     title: existing? 'Edit member' : 'Register new member',
     fields: userFields(existing||{}), values: existing||{},
+    validate: (vals)=>{
+      const clash = DB.users.find(u=>u.id.toLowerCase()===String(vals.id||'').toLowerCase() && u!==existing);
+      if(clash) return `Member ID "${vals.id}" is already used by "${clash.name}" — pick a different one`;
+      return null;
+    },
     onSave:(vals)=>{
       vals.maxAllowed = +vals.maxAllowed || (vals.category==='STAFF' ? 3 : 2);
       if(existing){ Object.assign(existing, vals); toast('Member updated'); }
@@ -4368,8 +4496,10 @@ function openUserForm(id){
 }
 function deleteUser(id){
   if(!isAdmin()) return requireAdmin('delete members');
-  confirmDelete('Remove this member from the register?', ()=>{
-    DB.users = DB.users.filter(u=>u.id!==id); saveDB(); render(); toast('Member removed');
+  confirmDelete('Remove this member from the register? (It goes to Trash for 30 days, so this is recoverable.)', ()=>{
+    const u = DB.users.find(x=>x.id===id); if(!u) return;
+    DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:'member', label:u.name+' — '+u.id, data:u, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
+    DB.users = DB.users.filter(x=>x.id!==id); saveDB(); render(); toast('Member moved to Trash — restorable for 30 days');
   });
 }
 function studentSubjects(u){
@@ -4446,36 +4576,38 @@ function pageMemberProfile(){
       <div class="panel-head"><h3>${esc(u.name)}</h3><span class="badge ${u.status==='ACTIVE'?'green':'grey'}">${esc(u.status)}</span></div>
       <table class="datatable">
         <tr><td style="font-weight:600;width:40%">Member ID</td><td>${esc(u.id)}</td></tr>
+        <tr><td style="font-weight:600">Gender</td><td>${esc(u.gender||'—')}</td></tr>
         <tr><td style="font-weight:600">Category</td><td>${esc(u.category||'—')}</td></tr>
         <tr><td style="font-weight:600">Class / Designation</td><td>${esc(u.cls||'—')}</td></tr>
         <tr><td style="font-weight:600">Phone / contact</td><td>${esc(u.teacher||'—')}</td></tr>
         <tr><td style="font-weight:600">Currently borrowed</td><td>${u.borrowed||0} / ${u.maxAllowed||0}</td></tr>
         <tr><td style="font-weight:600">Total borrowed (all time)</td><td>${u.totalBorrowed||0}</td></tr>
         <tr><td style="font-weight:600">Strikes</td><td>${u.strike||0}</td></tr>
+        <tr><td style="font-weight:600">Discipline</td><td>${esc(u.discipline||'—')}</td></tr>
+        <tr><td style="font-weight:600">Eligibility</td><td>${esc(u.eligibility||'—')}</td></tr>
+        <tr><td style="font-weight:600">Notes</td><td>${esc(u.notes||'—')}</td></tr>
         ${DB.setup.fineEnabled? `<tr><td style="font-weight:600">Outstanding fines</td><td style="color:${outstanding?'var(--terracotta)':'inherit'};font-weight:${outstanding?'700':'400'}">${fmtCurrency(outstanding)}</td></tr>`:''}
       </table>
+      <button class="btn secondary small" style="margin-top:10px" onclick="openBarcodeModal('Member barcode', [{code:'${esc(u.id)}', title:'${esc(u.name).replace(/'/g,"\\'")}', sub:'${esc(u.id)}'}])">🏷 Generate / print barcode</button>
     </div>
     <div class="card panel">
-      <div class="panel-head"><h3>Current loans (${active.length})</h3></div>
+      <div class="panel-head"><h3>Loans</h3><button class="btn secondary small" onclick="viewSubjects('${esc(u.id)}')">📚 Subjects</button></div>
+      <h4 style="margin:0 0 6px">Current (${active.length})</h4>
       ${active.length? `<table class="datatable"><thead><tr><th>Title</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>
         ${active.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dueDate)}</td><td><span class="badge ${txnStatus(t)==='OVERDUE'?'red':'gold'}">${txnStatus(t)}</span></td>
           <td><button class="btn secondary small" onclick="renewLoan('${esc(t.trxId)}')">Renew</button></td></tr>`).join('')}
-      </tbody></table>` : `<div class="empty" style="padding:16px"><div class="big">📗</div>No active loans</div>`}
+      </tbody></table>` : `<div class="empty" style="padding:12px"><div class="big">📗</div>No active loans</div>`}
+      <h4 style="margin:16px 0 6px">History (${history.length})</h4>
+      ${history.length? `<div class="table-wrap" style="max-height:240px;overflow:auto"><table class="datatable"><thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead><tbody>
+        ${history.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dateBorrowed)}</td><td>${fmtDate(t.returnDate)}</td><td>${esc(txnStatus(t))}</td></tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty" style="padding:12px"><div class="big">📚</div>No past loans yet</div>`}
     </div>
   </div>
-  <div class="grid two-col">
-    <div class="card panel">
-      <div class="panel-head"><h3>Loan history (${history.length})</h3></div>
-      ${history.length? `<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="datatable"><thead><tr><th>Title</th><th>Borrowed</th><th>Returned</th><th>Status</th></tr></thead><tbody>
-        ${history.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dateBorrowed)}</td><td>${fmtDate(t.returnDate)}</td><td>${esc(txnStatus(t))}</td></tr>`).join('')}
-      </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">📚</div>No past loans yet</div>`}
-    </div>
-    <div class="card panel">
-      <div class="panel-head"><h3>Recent visits (${visits.length})</h3></div>
-      ${visits.length? `<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="datatable"><thead><tr><th>Date</th><th>Purpose</th></tr></thead><tbody>
-        ${visits.map(v=>`<tr><td>${fmtDate(v.date)}</td><td>${esc(v.purpose||'—')}</td></tr>`).join('')}
-      </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">🚪</div>No register visits on file</div>`}
-    </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Recent visits (${visits.length})</h3></div>
+    ${visits.length? `<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="datatable"><thead><tr><th>Date</th><th>Purpose</th></tr></thead><tbody>
+      ${visits.map(v=>`<tr><td>${fmtDate(v.date)}</td><td>${esc(v.purpose||'—')}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">🚪</div>No register visits on file</div>`}
   </div>
   ${DB.setup.fineEnabled && fines.length ? `
   <div class="card panel">
@@ -5051,6 +5183,54 @@ function authNotifOutsideClickHandler(e){
     document.removeEventListener('click', authNotifOutsideClickHandler);
   }
 }
+/* Self-service loan check, right from the lockscreen — no sign-in needed, but it only ever
+   shows the one member's own loans/reservations by exact ID match; nothing else about the
+   library, and no way to act on a loan (return, renew, etc.) without an actual staff sign-in. */
+function openSelfCheckLoans(){
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  const cameraOk = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>📖 Check your loans</h3><button id="mClose">✕</button></div>
+      <div class="modal-body">
+        <p class="field-hint" style="margin-top:0">Enter your member ID to see what you currently have out and any reservations waiting for you — no sign-in needed.</p>
+        <div class="field"><label>Member ID</label><div style="display:flex;gap:8px">
+          <input type="text" id="selfCheckId" placeholder="e.g. ACL-0142" autocomplete="off" style="flex:1">
+          ${cameraOk? `<button type="button" class="btn secondary" style="flex:none" onclick="openScanModal('selfcheck')" title="Scan your member ID">📷</button>` : ''}
+        </div></div>
+        <div id="selfCheckResult"></div>
+      </div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button><button class="btn" id="selfCheckGo">Look up</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
+  const input = wrap.querySelector('#selfCheckId');
+  const go = ()=> runSelfCheckLoans(input.value, wrap.querySelector('#selfCheckResult'));
+  wrap.querySelector('#selfCheckGo').onclick = go;
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); go(); } });
+  setTimeout(()=> input.focus(), 30);
+}
+function runSelfCheckLoans(rawId, resEl){
+  const id = String(rawId||'').trim();
+  if(!id || !DB){ resEl.innerHTML = ''; return; }
+  const user = DB.users.find(u=>u.id.toLowerCase()===id.toLowerCase());
+  if(!user){ resEl.innerHTML = `<p style="margin:10px 0;color:var(--terracotta)">No member found with ID "${esc(id)}"</p>`; return; }
+  const loans = DB.circulation.map(x=>({...x,status:txnStatus(x)})).filter(x=>x.userId===user.id && x.status!=='RETURNED');
+  const holds = (DB.reservations||[]).filter(r=>r.userId===user.id && r.status!=='FULFILLED' && r.status!=='CANCELLED');
+  resEl.innerHTML = `
+    <p style="margin:10px 0 4px"><strong>${esc(user.name)}</strong> — ${esc(user.cls||user.category||'')}</p>
+    <p class="field-hint" style="margin:0 0 8px">${loans.length} loan(s) out · ${holds.length} reservation(s) waiting</p>
+    ${loans.length? loans.map(l=>`<div class="activity-row"><div class="dot" style="background:${l.status==='OVERDUE'?'#A8452F':'#3E6B52'}"></div>
+      <div style="flex:1"><em>${esc(l.title)}</em><div class="meta">due ${fmtDate(l.dueDate)}</div></div>
+      <span class="badge ${l.status==='OVERDUE'?'red':'green'}">${esc(l.status)}</span></div>`).join('') : `<p class="field-hint">Nothing currently borrowed.</p>`}
+    ${holds.length? `<p style="margin:10px 0 4px;font-weight:600;font-size:12.5px">Reservations</p>` + holds.map(r=>`<div class="activity-row"><div class="dot" style="background:#B8863E"></div>
+      <div style="flex:1"><em>${esc(r.title)}</em></div><span class="badge gold">${esc(r.status)}</span></div>`).join('') : ''}
+  `;
+}
 
 /* ================= RESERVATIONS / HOLDS ================= */
 function userRecipient(user){
@@ -5161,10 +5341,12 @@ function buildGlobalSearchHTML(q){
   const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,limit);
   const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query) || (isNumeric && (u.teacher||'').toLowerCase().includes(query))).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).slice(0,limit);
   const txns = isNumeric ? [] : DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,6);
+  const reservations = isNumeric ? [] : DB.reservations.filter(r=> (r.title||'').toLowerCase().includes(query) || (r.name||'').toLowerCase().includes(query) || (r.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,6);
   let html = '';
   if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
   if(members.length){ html += `<div class="gsearch-group-label">Members</div>` + members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
   if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
+  if(reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + reservations.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reservation','${esc(r.id)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · ${esc(r.status)}</div></div></div>`).join(''); }
   return html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
 }
 function renderGlobalSearchResults(q){
@@ -5195,6 +5377,16 @@ document.addEventListener('keydown', e=>{
     if(document.getElementById('gsearchBackdrop')) closeGlobalSearch(); else openGlobalSearch();
     return;
   }
+  if(e.key==='/' && !e.ctrlKey && !e.metaKey && !e.altKey){
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    const typing = tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT' || (document.activeElement && document.activeElement.isContentEditable);
+    if(typing || !SESSION) return; // never hijack '/' while the person is actually typing something
+    e.preventDefault();
+    const inline = document.getElementById('topbarSearchInput');
+    if(inline && inline.offsetParent!==null){ inline.focus(); inline.select(); }
+    else openGlobalSearch();
+    return;
+  }
   if(e.key !== 'Escape') return;
   if(document.getElementById('gsearchBackdrop')){ closeGlobalSearch(); return; }
   // Close the most recently opened popup/modal — never the idle-session security warning,
@@ -5210,55 +5402,224 @@ document.addEventListener('keydown', e=>{
 });
 
 /* ================= BARCODE / SCANNER ================= */
-/* Works with any USB or Bluetooth barcode scanner in "keyboard wedge" mode — it just types the
-   code followed by Enter, very fast. True camera-based scanning needs the page served over
-   HTTPS (getUserMedia is blocked on plain file:// / http://), so we detect that and fall back
-   to this reliable route with a clear explanation rather than a broken camera prompt. */
-let scanBuffer = '';
-let scanBufferTimer = null;
-function openScanModal(mode){
-  // mode: 'issue' | 'return' | 'lookup'
+/* Opens the device camera and decodes barcodes/QR codes live, using the browser's native
+   BarcodeDetector where available (fast, no download) and falling back to the ZXing library
+   (loaded on demand from a CDN) on browsers that don't support it yet, e.g. Safari/Firefox.
+   A USB/Bluetooth "keyboard wedge" scanner, or just typing the code, still works underneath —
+   both routes feed the same handler — but the camera is what opens automatically now. */
+let scanStream = null;
+let scanRAF = null;
+let scanDetector = null;
+let scanZXingReader = null;
+let scanZXingPromise = null;
+let barcodeLibPromise = null;
+function loadBarcodeLibScript(){
+  if(window.JsBarcode) return Promise.resolve();
+  if(barcodeLibPromise) return barcodeLibPromise;
+  barcodeLibPromise = new Promise((resolve,reject)=>{
+    loadScriptWithFallbacks([
+      'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js',
+      'https://unpkg.com/jsbarcode@3.11.5/dist/JsBarcode.all.min.js',
+    ], (ok)=>{ ok ? resolve() : reject(new Error('Could not load the barcode library')); });
+  });
+  return barcodeLibPromise;
+}
+/* items: [{code, title, sub}]. Renders one <svg> per item, drawn once JsBarcode is loaded. */
+function barcodeLabelsHtml(items){
+  return items.map((it,i)=>`
+    <div class="barcode-label">
+      <div class="barcode-label-title">${esc(it.title||'')}</div>
+      <svg class="barcode-svg" id="bcsvg_${i}"></svg>
+      <div class="barcode-label-sub">${esc(it.sub||it.code)}</div>
+    </div>`).join('');
+}
+async function drawBarcodeSvgs(items, root){
+  try{ await loadBarcodeLibScript(); }catch(e){ toast('Could not load the barcode library — check your connection'); return false; }
+  items.forEach((it,i)=>{
+    const el = (root||document).querySelector('#bcsvg_'+i);
+    if(!el) return;
+    try{ window.JsBarcode(el, String(it.code), {format:'CODE128', displayValue:false, margin:4, height:46, width:1.8}); }
+    catch(e){ el.outerHTML = `<div class="field-hint">Could not render barcode for "${esc(it.code)}"</div>`; }
+  });
+  return true;
+}
+function openBarcodeModal(title, items){
+  if(!items.length) return toast('Nothing to generate a barcode for');
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop'; wrap.id = 'mb';
-  const cameraOk = !!(navigator.mediaDevices && window.isSecureContext);
   wrap.innerHTML = `
-    <div class="modal">
-      <div class="modal-head"><h3>📷 Scan a barcode</h3><button id="mClose">✕</button></div>
+    <div class="modal wide">
+      <div class="modal-head"><h3>🏷 ${esc(title)}</h3><button id="mClose">✕</button></div>
       <div class="modal-body">
-        <p class="field-hint">Point a USB or Bluetooth barcode scanner at an accession number or member ID barcode, and scan — it fills the box below automatically.</p>
-        <div class="field"><label>Scanned code</label><input type="text" id="scanCodeInput" placeholder="Waiting for a scan…" autocomplete="off"></div>
-        <div id="scanResult"></div>
-        ${cameraOk? '' : `<p class="field-hint" style="color:var(--muted)">Camera scanning needs this app hosted over HTTPS — it isn't available when opened as a local file. A USB/Bluetooth scanner (or typing the code) works everywhere.</p>`}
+        <div class="barcode-label-grid" id="bcGridPreview">${barcodeLabelsHtml(items)}</div>
       </div>
-      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button><button class="btn" id="bcPrintBtn">🖶 Print</button></div>
     </div>`;
   document.body.appendChild(wrap);
   const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
   wrap.onclick = e=>{ if(e.target===wrap) close(); };
   wrap.querySelector('#mClose').onclick = close;
   wrap.querySelector('#mCancel').onclick = close;
+  drawBarcodeSvgs(items, wrap);
+  wrap.querySelector('#bcPrintBtn').onclick = ()=> printBarcodes(title, items);
+}
+async function printBarcodes(title, items){
+  if(!items.length) return toast('Nothing to print');
+  $('#printArea').innerHTML = `
+    <div class="print-page">
+      <div class="print-page-body">
+        ${printHeaderHtml(title, `${items.length} barcode(s)`)}
+        <div class="barcode-label-grid print-barcode-grid">${barcodeLabelsHtml(items)}</div>
+      </div>
+      ${printFooterHtml(1,1)}
+    </div>`;
+  const ok = await drawBarcodeSvgs(items, $('#printArea'));
+  if(!ok) return;
+  document.body.classList.add('printing');
+  setTimeout(()=>{ window.print(); }, 120);
+}
+function loadZXingScript(){
+  if(window.ZXing) return Promise.resolve();
+  if(scanZXingPromise) return scanZXingPromise;
+  scanZXingPromise = new Promise((resolve,reject)=>{
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('Could not load the scanner library'));
+    document.head.appendChild(s);
+  });
+  return scanZXingPromise;
+}
+function stopCameraScan(){
+  if(scanRAF){ cancelAnimationFrame(scanRAF); scanRAF=null; }
+  if(scanZXingReader){ try{ scanZXingReader.reset(); }catch(e){} scanZXingReader=null; }
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  scanDetector = null;
+}
+async function startCameraScan(wrap, onDetect){
+  const video = wrap.querySelector('#scanVideo');
+  const statusEl = wrap.querySelector('#scanCamStatus');
+  const box = wrap.querySelector('#scanCamBox');
+  try{
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  }catch(err){
+    box.style.display='none';
+    const name = err && err.name;
+    let reason = err && err.message || 'permission denied';
+    if(name==='NotAllowedError' || name==='PermissionDeniedError') reason = 'camera permission was denied — check your browser/site settings and allow camera access, then try again';
+    else if(name==='NotFoundError' || name==='DevicesNotFoundError') reason = 'no camera was found on this device';
+    else if(name==='NotReadableError' || name==='TrackStartError') reason = 'the camera is already in use by another app';
+    else if(name==='SecurityError' || !window.isSecureContext) reason = "this page isn't loaded over HTTPS (or localhost), so the browser blocks camera access here";
+    statusEl.textContent = 'Camera unavailable (' + reason + ') — use a scanner, or type the code below.';
+    return;
+  }
+  if(!scanStream) return; // modal may have been closed mid-await
+  video.srcObject = scanStream;
+  await video.play().catch(()=>{});
+  let usingNative = 'BarcodeDetector' in window;
+  if(usingNative){
+    try{ scanDetector = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','code_93','ean_13','ean_8','upc_a','upc_e','itf','codabar']}); }
+    catch(e){ try{ scanDetector = new window.BarcodeDetector(); }catch(e2){ usingNative=false; } }
+  }
+  if(usingNative){
+    statusEl.textContent = 'Point the camera at a barcode or QR code…';
+    const tick = async ()=>{
+      if(!scanStream) return;
+      try{
+        const codes = await scanDetector.detect(video);
+        if(codes && codes.length){ onDetect(codes[0].rawValue); }
+      }catch(e){}
+      if(scanStream) scanRAF = requestAnimationFrame(tick);
+    };
+    scanRAF = requestAnimationFrame(tick);
+  } else {
+    statusEl.textContent = 'Loading scanner…';
+    try{
+      await loadZXingScript();
+      if(!scanStream) return; // closed while loading
+      scanZXingReader = new window.ZXing.BrowserMultiFormatReader();
+      statusEl.textContent = 'Point the camera at a barcode or QR code…';
+      scanZXingReader.decodeFromVideoElement(video, (result)=>{ if(result) onDetect(result.getText()); });
+    }catch(e){
+      statusEl.textContent = 'Could not load the camera scanner — use a scanner, or type the code below.';
+    }
+  }
+}
+function openScanModal(mode){
+  // mode: 'issue' | 'return' | 'lookup'
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  const cameraOk = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>📷 Scan a barcode</h3><button id="mClose">✕</button></div>
+      <div class="modal-body">
+        <div id="scanCamBox" class="scan-cam-box" style="${cameraOk?'':'display:none'}">
+          <video id="scanVideo" playsinline muted></video>
+          <div class="scan-cam-frame"></div>
+        </div>
+        <p class="field-hint" id="scanCamStatus">${cameraOk? 'Starting the camera — allow camera access if your browser asks…' : "This browser doesn't support camera access (no getUserMedia API). A USB/Bluetooth scanner, or typing the code below, still works."}</p>
+        <div class="field"><label>Or type / scan with a USB device</label><input type="text" id="scanCodeInput" placeholder="Waiting for a scan…" autocomplete="off"></div>
+        <div id="scanResult"></div>
+      </div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=>{ stopCameraScan(); animatedCloseModal(wrap, ()=> wrap.remove()); };
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
   const input = wrap.querySelector('#scanCodeInput');
-  const handle = ()=>{
-    const code = input.value.trim();
+  const resEl = wrap.querySelector('#scanResult');
+  let paused = false;
+  const handle = (rawCode)=>{
+    if(paused) return;
+    const code = String(rawCode||'').trim();
     if(!code) return;
     const book = DB.catalogue.find(b=>b.acc.toLowerCase()===code.toLowerCase());
     const user = DB.users.find(u=>u.id.toLowerCase()===code.toLowerCase());
-    const resEl = wrap.querySelector('#scanResult');
+    if(!book && !user){
+      resEl.innerHTML = `<p style="margin:8px 0;color:var(--terracotta)">No book or member matches "${esc(code)}"</p>`;
+      input.value=''; input.focus();
+      return;
+    }
+    paused = true; // brief pause so the same code isn't re-read a dozen times per second by the camera loop
     if(book){
       resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(book.title)}</strong> — ${esc(book.acc)} <span class="badge ${book.available==='AVAILABLE'?'green':'gold'}">${esc(book.available)}</span></p>`;
+      if(mode==='issue' && window.__issueBookPicker) window.__issueBookPicker.pick({id:book.acc, label:book.title});
       if(mode==='return' && book.available==='ISSUED'){
         const trx = DB.circulation.find(t=>t.acc===book.acc && !t.returnDate);
-        if(trx){ const r = doReturnOne(trx,'GOOD'); saveDB(); render(); toast(`Returned: ${book.title}`); close(); return; }
+        if(trx){ doReturnOne(trx,'GOOD'); saveDB(); render(); toast(`Returned: ${book.title}`); close(); return; }
       }
     } else if(user){
       resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(user.name)}</strong> — ${esc(user.id)} <span class="badge grey">${esc(user.cls||user.category||'')}</span></p>`;
-    } else {
-      resEl.innerHTML = `<p style="margin:8px 0;color:var(--terracotta)">No book or member matches "${esc(code)}"</p>`;
+      if(mode==='issue' && issuePicker) issuePicker.pick({id:user.id, label:user.name+' — '+(user.cls||user.category||'')});
+      if(mode==='batch' && typeof batchPicker!=='undefined' && batchPicker) batchPicker.pick({id:user.id, label:user.name+' — '+(user.cls||'')});
+      if(mode==='selfcheck'){
+        close();
+        const idInput = document.getElementById('selfCheckId');
+        const resultBox = document.getElementById('selfCheckResult');
+        if(idInput && resultBox){ idInput.value = user.id; runSelfCheckLoans(user.id, resultBox); }
+        return;
+      }
+      if(mode==='return'){
+        const loans = DB.circulation.map(x=>({...x,status:txnStatus(x)})).filter(x=>x.userId===user.id && x.status!=='RETURNED');
+        if(loans.length===1 && returnPicker) returnPicker.pick({id:loans[0].trxId, label:`${loans[0].acc} — ${loans[0].title} (${loans[0].name})`});
+        else if(loans.length>1){ resEl.innerHTML += `<p class="field-hint">${loans.length} loans out for this member — pick which one in the Return list.</p>`; }
+      }
     }
-    input.value=''; input.focus();
+    // Issue mode: once both member and book are picked, we're done — close and let them hit "Issue title".
+    if(mode==='issue' && issuePicker && issuePicker.value && window.__issueBookPicker && window.__issueBookPicker.value){
+      setTimeout(close, 700);
+      return;
+    }
+    input.value='';
+    setTimeout(()=>{ paused=false; input.focus(); }, (mode==='lookup'||mode==='batch')?400:900);
   };
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handle(); } });
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); handle(input.value); } });
   setTimeout(()=> input.focus(), 30);
+  if(cameraOk) startCameraScan(wrap, handle);
 }
 
 function clearAllCirculation(){
@@ -5551,7 +5912,7 @@ function renderBatchStagingHtml(){
   <div class="stage-toolbar">
     <div class="field" style="flex:1;min-width:220px">
       <label>Add one student</label>
-      ${quickPickerHtml('batchAdd','Type a member ID…')}
+      <div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0">${quickPickerHtml('batchAdd','Type a member ID…')}</div><button type="button" class="btn secondary" style="flex:none" onclick="openScanModal('batch')" title="Scan a member ID">📷</button></div>
     </div>
     <div class="field">
       <label>Add a whole class</label>
@@ -6205,6 +6566,13 @@ function pageSettings(){
       </div>`).join('')}</div>
     <button class="btn secondary" style="margin-top:10px" onclick="saveClockPrefs()">Save appearance</button>
 
+    <div class="panel-head" style="margin-top:20px"><h3 style="font-size:14px">Accessibility</h3><div class="hint">Applies for everyone using this library's ALCMS</div></div>
+    <div class="field-row">
+      <label style="display:flex;align-items:center;gap:8px;height:38px"><input type="checkbox" id="a11yLargeText" ${PREFS.a11yLargeText?'checked':''} onchange="toggleA11yLargeText(this.checked)"> Larger UI size</label>
+      <label style="display:flex;align-items:center;gap:8px;height:38px"><input type="checkbox" id="a11yHighContrast" ${PREFS.a11yHighContrast?'checked':''} onchange="toggleA11yHighContrast(this.checked)"> High-contrast borders &amp; focus outlines</label>
+    </div>
+    <p class="field-hint" style="margin-top:-4px">These take effect immediately — no need to click Save.</p>
+
     <div class="panel-head" style="margin-top:20px"><h3 style="font-size:14px">Build a custom palette</h3></div>
     <p class="field-hint">Pick each colour below — the app updates live as you choose — then name and save it as a new preset.</p>
     <div class="color-picker-row">
@@ -6240,7 +6608,7 @@ function pageSettings(){
         <input type="range" id="setBodyScale" min="80" max="160" step="5" value="${Math.round((PREFS.bodyScale||1)*100)}" oninput="document.getElementById('bodyScaleVal').textContent=this.value+'%'; previewTypography();" style="width:100%">
       </div>
     </div>
-    <div class="field-row" style="margin-top:4px">
+    <div class="field-row field-row-3" style="margin-top:4px">
       <div class="field" style="flex:1"><label>Heading text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setHeadingColor" value="${resolveTextColorHex(PREFS.headingColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('heading')">Reset</button></div></div>
       <div class="field" style="flex:1"><label>Body text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setBodyColor" value="${resolveTextColorHex(PREFS.bodyColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('body')">Reset</button></div></div>
       <div class="field" style="flex:1"><label>Muted / secondary text colour</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="setMutedColor" value="${resolveMutedColorHex(PREFS.mutedColor)}" oninput="previewTypography()" style="width:100%;height:38px;padding:2px"><button type="button" class="btn secondary small" onclick="resetTextColor('muted')">Reset</button></div></div>
@@ -6487,6 +6855,20 @@ function pageBackup(){
         <td style="display:flex;gap:6px"><button class="btn secondary small" onclick="restoreVersionById('${esc(v.id)}')">Restore</button><button class="btn danger small" onclick="deleteVersionById('${esc(v.id)}')">Delete</button></td></tr>`).join('') : '<tr><td colspan=4><div class="empty">No checkpoints yet</div></td></tr>'}</tbody>
       </table>
     </div>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Trash</h3><div class="hint">${(DB.trash||[]).length} item(s) · auto-cleared after 30 days</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Deleted titles and members land here first instead of vanishing immediately — restore one if it was a mistake, or empty the trash for good.</p>
+    <div class="table-wrap" style="margin-top:10px">
+      <table class="datatable"><thead><tr><th>Type</th><th>Item</th><th>Deleted</th><th>By</th><th></th></tr></thead>
+      <tbody>${(DB.trash||[]).length? [...DB.trash].sort((a,b)=>new Date(b.deletedAt)-new Date(a.deletedAt)).map(x=>`<tr>
+        <td><span class="badge grey">${x.type==='book'?'Title':'Member'}</span></td><td>${esc(x.label)}</td>
+        <td>${new Date(x.deletedAt).toLocaleString('en-GB')}</td><td>${esc(x.deletedBy||'—')}</td>
+        <td style="display:flex;gap:6px"><button class="btn secondary small" onclick="restoreFromTrash('${esc(x.id)}')">Restore</button><button class="btn danger small" onclick="permanentlyDeleteFromTrash('${esc(x.id)}')">Delete forever</button></td>
+      </tr>`).join('') : '<tr><td colspan=5><div class="empty">Trash is empty</div></td></tr>'}</tbody>
+      </table>
+    </div>
+    ${(DB.trash||[]).length? `<button class="btn danger" style="margin-top:10px" onclick="emptyTrash()">🗑 Empty trash permanently</button>` : ''}
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>GitHub sync</h3><div class="hint">Cross-device backup that isn't tied to this browser</div></div>
@@ -7526,6 +7908,8 @@ function render(){
   el.innerHTML = html;
 
   if(route==='catalogue' && catalogueModule){ $('#mod_catalogue').innerHTML = catalogueModule.render(); MODULE_CONTAINERS.catalogue={host:{render:()=>{ $('#mod_catalogue').innerHTML=catalogueModule.render(); catalogueModule.bind(); }}}; catalogueModule.bind(); }
+  if(route==='circulation' && circulationModule){ circulationModule.bind(); }
+  if(route==='reservations' && reservationsModule){ reservationsModule.bind(); }
   if(route==='users' && usersModule){ $('#mod_users').innerHTML = usersModule.render(); MODULE_CONTAINERS.users={host:{render:()=>{ $('#mod_users').innerHTML=usersModule.render(); usersModule.bind(); }}}; usersModule.bind(); }
   if(route==='reminders' && remindersModule){ $('#mod_reminders').innerHTML = remindersModule.render(); MODULE_CONTAINERS.reminders={host:{render:()=>{ $('#mod_reminders').innerHTML=remindersModule.render(); remindersModule.bind(); }}}; remindersModule.bind(); }
   if(route==='reminders' && nearOverdueModule){ $('#mod_nearoverdue').innerHTML = nearOverdueModule.render(); MODULE_CONTAINERS.nearoverdue={host:{render:()=>{ $('#mod_nearoverdue').innerHTML=nearOverdueModule.render(); nearOverdueModule.bind(); }}}; nearOverdueModule.bind(); }
@@ -7579,7 +7963,7 @@ async function enterApp(){
     await loadAdminKey();
     await loadAutoBackupCfg();
     await loadGithubStamps();
-    try{ DB = await loadDB(); }catch(e){ console.error('Could not pre-load data for the auth screen', e); }
+    try{ DB = await loadDB(); purgeOldTrash(); }catch(e){ console.error('Could not pre-load data for the auth screen', e); }
     // Security: a page refresh should lock the app and require signing in again — it must not
     // silently restore the previous session. Any session token left over from before this reload
     // is discarded rather than honoured.
