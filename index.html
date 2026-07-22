@@ -2640,14 +2640,14 @@ html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-li
    without scrolling on most screens. */
 .auth-box.floating{
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(760px,92vw); max-width:760px; max-height:90vh; overflow:auto; z-index:950;
-  padding:26px 32px;
+  width:min(700px,90vw); max-width:700px; max-height:90vh; overflow:auto; z-index:950;
+  padding:26px 28px;
 }
 .auth-box.floating h2{ font-size:19px; margin-bottom:4px;}
 .auth-box.floating .sub{ margin-bottom:14px;}
 .auth-box.floating .field{ margin-bottom:10px;}
-.auth-box.floating .field-row{ grid-template-columns:1fr 1fr; gap:8px 14px;}
-@media (max-width:900px){ .auth-box.floating{ width:min(680px,92vw);} }
+.auth-box.floating .field-row{ grid-template-columns:1fr 1fr; gap:8px 12px;}
+@media (max-width:900px){ .auth-box.floating{ width:min(640px,92vw);} }
 @media (max-width:480px){
   .auth-box.floating{ position:static; transform:none; width:100%; max-height:none; padding:22px 18px;}
   .auth-box.floating .field-row{ grid-template-columns:1fr;}
@@ -4733,6 +4733,17 @@ function migrateNewFeatureData(db){
   if(db.setup.maxRenewals===undefined) db.setup.maxRenewals = 2;
   if(db.setup.renewalDays===undefined) db.setup.renewalDays = 7;
   if(db.setup.codeType===undefined) db.setup.codeType = 'barcode';
+  if(!Array.isArray(db.setup.overdueConsequences)) db.setup.overdueConsequences = [
+    {count:3, consequence:'Verbal warning issued'},
+    {count:5, consequence:'Written warning + parent/guardian contacted'},
+    {count:8, consequence:'Borrowing privileges suspended for 2 weeks'},
+  ];
+  if(!Array.isArray(db.setup.itemConsequences)) db.setup.itemConsequences = [
+    {condition:'DAMAGED', consequence:'Cost of repair charged; written warning issued'},
+    {condition:'BAD', consequence:'Full replacement cost charged; written warning issued'},
+    {condition:'MISSING', consequence:'Full replacement cost charged; borrowing suspended until resolved'},
+  ];
+  if(!Array.isArray(db.consequenceLog)) db.consequenceLog = [];
   (db.circulation||[]).forEach(t=>{ if(t.renewCount===undefined) t.renewCount = 0; if(t.finePaid===undefined) t.finePaid = false; });
 }
 async function saveDB(){
@@ -4824,12 +4835,22 @@ function buildSeedDB(){
   if(setup.maxRenewals===undefined) setup.maxRenewals = 2;
   if(setup.renewalDays===undefined) setup.renewalDays = 7;
   if(setup.codeType===undefined) setup.codeType = 'barcode';
+  if(!Array.isArray(setup.overdueConsequences)) setup.overdueConsequences = [
+    {count:3, consequence:'Verbal warning issued'},
+    {count:5, consequence:'Written warning + parent/guardian contacted'},
+    {count:8, consequence:'Borrowing privileges suspended for 2 weeks'},
+  ];
+  if(!Array.isArray(setup.itemConsequences)) setup.itemConsequences = [
+    {condition:'DAMAGED', consequence:'Cost of repair charged; written warning issued'},
+    {condition:'BAD', consequence:'Full replacement cost charged; written warning issued'},
+    {condition:'MISSING', consequence:'Full replacement cost charged; borrowing suspended until resolved'},
+  ];
   circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; });
 
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], consequenceLog: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -7143,7 +7164,7 @@ function viewMember(id){
     ['Gender', u.gender||'—'],
     ['Category', u.category||'—'],
     ['Class / Designation', u.cls||'—'],
-    ['Phone / contact', u.teacher||'—'],
+    [memberContactRow(u).label, memberContactRow(u).value],
     ['Currently borrowed', `${u.borrowed||0} / ${u.maxAllowed||0}`],
     ['Total borrowed (all time)', u.totalBorrowed||0],
     ['Strikes', u.strike||0],
@@ -7311,9 +7332,9 @@ function pageMemberProfile(){
 
   const tabs = [
     {key:'loans', label:`Loans (${active.length})`},
-    {key:'subjects', label:'Subjects'},
-    {key:'visits', label:`Visits (${visits.length})`},
   ];
+  if(u.category!=='STAFF') tabs.push({key:'subjects', label:'Subjects'});
+  tabs.push({key:'visits', label:`Visits (${visits.length})`});
   if(DB.setup.fineEnabled && fines.length) tabs.push({key:'fines', label:`Fines (${fines.length})`});
   if(holds.length) tabs.push({key:'reservations', label:`Reservations (${holds.length})`});
   const activeTab = tabs.some(t=>t.key===memberProfileTab) ? memberProfileTab : 'loans';
@@ -7375,7 +7396,7 @@ function pageMemberProfile(){
       <tr><td style="font-weight:600">Gender</td><td>${esc(u.gender||'—')}</td></tr>
       <tr><td style="font-weight:600">Category</td><td>${esc(u.category||'—')}</td></tr>
       <tr><td style="font-weight:600">Class / Designation</td><td>${esc(u.cls||'—')}</td></tr>
-      <tr><td style="font-weight:600">Phone / contact</td><td>${esc(u.teacher||'—')}</td></tr>
+      <tr><td style="font-weight:600">${esc(memberContactRow(u).label)}</td><td>${esc(memberContactRow(u).value)}</td></tr>
       <tr><td style="font-weight:600">Currently borrowed</td><td>${u.borrowed||0} / ${u.maxAllowed||0}</td></tr>
       <tr><td style="font-weight:600">Total borrowed (all time)</td><td>${u.totalBorrowed||0}</td></tr>
       <tr><td style="font-weight:600">Strikes</td><td>${u.strike||0}</td></tr>
@@ -7760,6 +7781,36 @@ function issueStagedBooks(){
   issueStaging = [];
   saveDB(); render(); toast(`${issued} item(s) issued to ${user.name}`);
 }
+/* Evaluates the school's configured discipline policy (Setup → Discipline & consequences)
+   after a return, and — if a rule is triggered — updates the member's discipline status,
+   optionally suspends borrowing eligibility, and logs a discipline entry to the Register (so
+   it shows up in Register / "Discipline entries" reports the same way a manually-recorded
+   offense would). */
+function applyReturnConsequences(user, trx, condition, wasOverdue){
+  if(!user) return [];
+  const events = [];
+  if(wasOverdue){
+    // Fire only the rule the member just crossed (their strike count now exactly matches it),
+    // so returning further overdue items doesn't repeat the same consequence every time.
+    const hit = (DB.setup.overdueConsequences||[]).find(r=>r.count===user.strike);
+    if(hit) events.push({offense:'OVERDUE ITEMS', detail:`Reached ${user.strike} overdue strike(s)`, rule:hit});
+  }
+  const itemRule = (DB.setup.itemConsequences||[]).find(r=>r.condition===condition);
+  if(itemRule) events.push({offense: condition==='MISSING'?'MISSING ITEM':'DAMAGED/MUTILATED ITEM', detail:`"${trx.title}" returned in ${condition} condition`, rule:itemRule});
+  events.forEach(ev=>{
+    user.discipline = ev.rule.consequence || user.discipline;
+    if(ev.rule.suspend){ user.eligibility = 'NO'; if(user.status==='ACTIVE') user.status = 'SUSPENDED'; }
+    if(!Array.isArray(DB.consequenceLog)) DB.consequenceLog = [];
+    DB.consequenceLog.unshift({ id: uid('CSQ'), date: todayISO(), userId:user.id, userName:user.name, offense: ev.offense, detail: ev.detail, consequence: ev.rule.consequence });
+    DB.registerLog.unshift({
+      entryId: uid('CSQ'), source:'DESK', date: todayISO(), timeIn:'', timeOut:'', period:'',
+      id:user.id, name:user.name, category:user.category, cls:user.cls, purpose:'CIRCULATION',
+      conduct:'NONE', action:'NONE', borrow:'NO', verifiedBy: (typeof SESSION!=='undefined' && SESSION.fullName)||'',
+      note: ev.detail, offense: ev.offense, offenseOther:'', consequence: ev.rule.consequence, consequenceOther:''
+    });
+  });
+  return events;
+}
 function doReturnOne(trx, condition, opts={}){
   const book = DB.catalogue.find(b=>b.acc===trx.acc);
   const user = DB.users.find(u=>u.id===trx.userId);
@@ -7769,9 +7820,10 @@ function doReturnOne(trx, condition, opts={}){
   trx.finalStatus = isMissing ? 'MISSING' : 'RETURNED';
   if(book){ book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition; }
   if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
+  const consequences = applyReturnConsequences(user, trx, condition, wasOverdue);
   if(!opts.quiet && !isMissing) sendTransactionReceiptIfEnabled(trx, 'RETURNED');
   if(!isMissing && book) fulfillReservationsForReturn(trx.acc, book);
-  return {wasOverdue, isMissing, book};
+  return {wasOverdue, isMissing, book, consequences};
 }
 function returnBook(){
   if(!isAdmin()) return requireAdmin('return titles');
@@ -7780,9 +7832,13 @@ function returnBook(){
   if(!pick){ toast('Pick a loan from the suggestions'); return; }
   const trx = DB.circulation.find(x=>x.trxId===pick.id);
   if(!trx) return;
-  const {wasOverdue, isMissing, book} = doReturnOne(trx, condition);
+  const {wasOverdue, isMissing, book, consequences} = doReturnOne(trx, condition);
   saveDB(); render();
-  toast(isMissing ? `${book?book.title:'Title'} recorded as MISSING — catalogue updated` : `Return recorded${wasOverdue?' — loan was overdue, strike added':''}`);
+  if(consequences && consequences.length){
+    toast(`⚠ Consequence triggered: ${consequences.map(c=>c.rule.consequence).join(' · ')}`);
+  } else {
+    toast(isMissing ? `${book?book.title:'Title'} recorded as MISSING — catalogue updated` : `Return recorded${wasOverdue?' — loan was overdue, strike added':''}`);
+  }
 }
 /* ---- batch return: stage several active loans and return them together ---- */
 let returnStaging = []; // {trxId, acc, title}
@@ -7812,13 +7868,14 @@ function returnStagedBooks(){
   if(!isAdmin()) return requireAdmin('return titles');
   if(!returnStaging.length) return;
   const condition = $('#returnCondition') ? $('#returnCondition').value : 'GOOD';
-  let count = 0;
+  let count = 0, csqCount = 0;
   returnStaging.forEach(s=>{
     const trx = DB.circulation.find(x=>x.trxId===s.trxId);
-    if(trx && !trx.returnDate){ doReturnOne(trx, condition, {quiet:true}); count++; }
+    if(trx && !trx.returnDate){ const r = doReturnOne(trx, condition, {quiet:true}); count++; csqCount += (r.consequences||[]).length; }
   });
   returnStaging = [];
-  saveDB(); render(); toast(`${count} item(s) returned`);
+  saveDB(); render();
+  toast(`${count} item(s) returned${csqCount? ` — ⚠ ${csqCount} consequence(s) triggered, see Register`:''}`);
 }
 /* ================= FINES ================= */
 function fineForTxn(t){
@@ -8038,6 +8095,16 @@ function runSelfCheckLoans(rawId, resEl){
   `;
 }
 
+/* For a STAFF member, "contact" shown on their profile is their own phone number. Students
+   don't have a phone on file, so for them this shows their class teacher's name instead
+   (looked up via Setup → Classes → class teacher assignment). */
+function memberContactRow(u){
+  if(!u) return {label:'Phone number', value:'—'};
+  if(u.category==='STAFF') return {label:'Phone number', value: u.teacher||'—'};
+  const ct = DB.setup.classTeachers && DB.setup.classTeachers[u.cls];
+  const teacher = ct && ct.staffId ? DB.users.find(x=>x.id===ct.staffId) : null;
+  return {label:'Class teacher', value: teacher ? teacher.name : '—'};
+}
 /* ================= RESERVATIONS / HOLDS ================= */
 function userRecipient(user){
   if(!user) return null;
@@ -8444,25 +8511,47 @@ function openAllBookCardsModal(){ openCardModal('Catalogue cards', bookCardItems
    spine/pocket labels where a full card is overkill. */
 function bookCodeItems(books){ return books.map(b=>({ code:b.acc, title:b.title, sub:b.acc })); }
 function openAllBookCodesModal(){ openBarcodeModal('Catalogue codes', bookCodeItems(DB.catalogue)); }
-/* Prints the member's full data/profile (details + entire loan history) as a text report,
+/* Prints the member's full data/profile as a text report — every tab shown on their on-screen
+   profile (loans, subjects, visits, fines, reservations), not just the basic detail fields,
    separate from the compact ID card above. */
 function printMemberFullProfile(id){
   const u = DB.users.find(x=>x.id===id); if(!u) return;
   const allTxns = DB.circulation.filter(t=>t.userId===u.id).sort((a,b)=>(parseAnyDate(b.dateBorrowed)||0)-(parseAnyDate(a.dateBorrowed)||0));
+  const visits = DB.registerLog.filter(r=>r.id===u.id).sort((a,b)=>(parseAnyDate(b.date)||0)-(parseAnyDate(a.date)||0));
+  const fines = DB.setup.fineEnabled ? allTxns.map(t=>({t, fine:fineForTxn(t)})).filter(x=>x.fine.amount>0) : [];
+  const holds = DB.reservations.filter(r=>r.userId===u.id);
+  const contact = memberContactRow(u);
   const rows = [
     ['Member ID', u.id],['Full name', u.name],['Gender', u.gender||'—'],['Category', u.category||'—'],
-    ['Class / Designation', u.cls||'—'],['Phone / contact', u.teacher||'—'],
+    ['Class / Designation', u.cls||'—'],[contact.label, contact.value],
     ['Currently borrowed', `${u.borrowed||0} / ${u.maxAllowed||0}`],['Total borrowed (all time)', u.totalBorrowed||0],
     ['Strikes', u.strike||0],['Discipline', u.discipline||'—'],['Eligibility', u.eligibility||'—'],
     ['Status', u.status||'—'],['Notes', u.notes||'—'],
   ];
-  printMultiSection(`Member Profile — ${u.name}`, u.id, [
+  if(DB.setup.fineEnabled) rows.push(['Outstanding fines', fmtCurrency(fines.filter(x=>!x.t.finePaid).reduce((s,x)=>s+x.fine.amount,0))]);
+  const sections = [
     { heading:'Member details', columns:[{label:'Field',get:r=>r[0]},{label:'Value',get:r=>String(r[1])}], rows },
     { heading:'Loan history', columns:[
       {label:'Title',get:r=>r.title},{label:'Borrowed',get:r=>fmtDate(r.dateBorrowed)},{label:'Due',get:r=>fmtDate(r.dueDate)},
       {label:'Returned',get:r=>r.returnDate?fmtDate(r.returnDate):'—'},{label:'Status',get:r=>txnStatus(r)},
     ], rows: allTxns },
-  ]);
+  ];
+  if(u.category!=='STAFF'){
+    const subjRows = studentSubjects(u).map((s,i)=>({n:i+1, subject:s}));
+    sections.push({ heading:'Subjects offered', columns:[{label:'#',get:r=>r.n},{label:'Subject',get:r=>r.subject}], rows: subjRows });
+  }
+  sections.push({ heading:'Register visit history', columns:[{label:'Date',get:r=>fmtDate(r.date)},{label:'Purpose',get:r=>r.purpose||'—'}], rows: visits });
+  if(DB.setup.fineEnabled && fines.length){
+    sections.push({ heading:'Fines', columns:[
+      {label:'Title',get:r=>r.t.title},{label:'Days overdue',get:r=>r.fine.days},{label:'Amount',get:r=>fmtCurrency(r.fine.amount)},{label:'Status',get:r=>r.t.finePaid?'Paid':'Outstanding'},
+    ], rows: fines });
+  }
+  if(holds.length){
+    sections.push({ heading:'Reservations', columns:[
+      {label:'Title',get:r=>r.title},{label:'Requested',get:r=>fmtDate(r.dateRequested)},{label:'Status',get:r=>r.status},
+    ], rows: holds });
+  }
+  printMultiSection(`Member Profile — ${u.name}`, u.id, sections);
 }
 function loadZXingScript(){
   if(window.ZXing) return Promise.resolve();
@@ -9465,6 +9554,37 @@ function pageSetup(){
       <div>${DB.setup.conditions.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div>
       <p class="field-hint" style="margin-top:10px">Dewey main classes</p>
       <div>${DB.setup.mainClasses.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div>
+    </div>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Discipline &amp; consequences</h3><div class="hint">Applied automatically when a loan is returned — logged to the Register as a discipline entry, same as a manually-recorded offense</div></div>
+    <p class="field-hint">Overdue strikes — a member accrues one strike per overdue return; set what happens once they reach a given count</p>
+    <div id="overdueConsequenceList">
+      ${(DB.setup.overdueConsequences||[]).map((r,i)=>`
+        <div class="field-row" style="align-items:flex-end;flex-wrap:wrap">
+          <div class="field" style="max-width:160px;margin:0"><label>After this many strikes</label><input type="number" min="1" step="1" class="ocCount" data-i="${i}" value="${r.count}"></div>
+          <div class="field" style="flex:1;min-width:200px;margin:0"><label>Consequence</label><input type="text" class="ocText" data-i="${i}" value="${esc(r.consequence)}" placeholder="e.g. Written warning issued"></div>
+          <div class="field" style="margin:0"><label><input type="checkbox" class="ocSuspend" data-i="${i}" ${r.suspend?'checked':''}> Suspend borrowing</label></div>
+          <button class="btn danger small" onclick="removeOverdueConsequence(${i})">✕</button>
+        </div>`).join('') || `<div class="field-hint">No thresholds configured yet.</div>`}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn secondary small" onclick="addOverdueConsequence()">+ Add threshold</button>
+      <button class="btn secondary" onclick="saveOverdueConsequences()">Save overdue thresholds</button>
+    </div>
+    <p class="field-hint" style="margin-top:18px">Item condition on return — e.g. mutilated (damaged) or missing items</p>
+    <div id="itemConsequenceList">
+      ${(DB.setup.itemConsequences||[]).map((r,i)=>`
+        <div class="field-row" style="align-items:flex-end;flex-wrap:wrap">
+          <div class="field" style="max-width:160px;margin:0"><label>Condition</label><select class="icCondition" data-i="${i}">${DB.setup.conditions.map(c=>`<option ${r.condition===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+          <div class="field" style="flex:1;min-width:200px;margin:0"><label>Consequence</label><input type="text" class="icText" data-i="${i}" value="${esc(r.consequence)}" placeholder="e.g. Replacement cost charged"></div>
+          <div class="field" style="margin:0"><label><input type="checkbox" class="icSuspend" data-i="${i}" ${r.suspend?'checked':''}> Suspend borrowing</label></div>
+          <button class="btn danger small" onclick="removeItemConsequence(${i})">✕</button>
+        </div>`).join('') || `<div class="field-hint">No condition rules configured yet.</div>`}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn secondary small" onclick="addItemConsequence()">+ Add condition rule</button>
+      <button class="btn secondary" onclick="saveItemConsequences()">Save item condition rules</button>
     </div>
   </div>
   <div class="card panel">
@@ -11309,6 +11429,36 @@ function saveFineSettings(){
   DB.setup.maxRenewals = +document.getElementById('setMaxRenewals')?.value ?? 2;
   DB.setup.renewalDays = +document.getElementById('setRenewalDays')?.value || 7;
   saveDB(); render(); toast('Fines & renewals settings saved');
+}
+/* ---- Discipline & consequences (Setup) ---- */
+function addOverdueConsequence(){
+  if(!Array.isArray(DB.setup.overdueConsequences)) DB.setup.overdueConsequences = [];
+  DB.setup.overdueConsequences.push({count:1, consequence:'', suspend:false});
+  saveDB(); render();
+}
+function removeOverdueConsequence(i){
+  DB.setup.overdueConsequences.splice(i,1); saveDB(); render(); toast('Threshold removed');
+}
+function saveOverdueConsequences(){
+  $$('.ocCount').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.overdueConsequences[i]; if(r) r.count = Math.max(1, +el.value||1); });
+  $$('.ocText').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.overdueConsequences[i]; if(r) r.consequence = el.value.trim(); });
+  $$('.ocSuspend').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.overdueConsequences[i]; if(r) r.suspend = el.checked; });
+  DB.setup.overdueConsequences.sort((a,b)=>a.count-b.count);
+  saveDB(); render(); toast('Overdue thresholds saved');
+}
+function addItemConsequence(){
+  if(!Array.isArray(DB.setup.itemConsequences)) DB.setup.itemConsequences = [];
+  DB.setup.itemConsequences.push({condition: (DB.setup.conditions||['DAMAGED'])[0], consequence:'', suspend:false});
+  saveDB(); render();
+}
+function removeItemConsequence(i){
+  DB.setup.itemConsequences.splice(i,1); saveDB(); render(); toast('Rule removed');
+}
+function saveItemConsequences(){
+  $$('.icCondition').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.itemConsequences[i]; if(r) r.condition = el.value; });
+  $$('.icText').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.itemConsequences[i]; if(r) r.consequence = el.value.trim(); });
+  $$('.icSuspend').forEach(el=>{ const i=+el.dataset.i, r=DB.setup.itemConsequences[i]; if(r) r.suspend = el.checked; });
+  saveDB(); render(); toast('Item condition rules saved');
 }
 let pendingCodeType = null;
 function setCodeTypeOption(type){
