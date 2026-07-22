@@ -2676,10 +2676,9 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
 @media (max-width:820px){
   .auth-wrap{ flex-direction:column;}
   .auth-info{
-    padding:14px 18px 12px; flex:none;
+    padding:18px 18px 16px; flex:none;
     display:grid; grid-template-columns:1fr auto; column-gap:12px; row-gap:4px;
     grid-template-areas:"brand clock" "carousel carousel" "bottom bottom";
-    grid-template-rows:auto minmax(0,1fr) auto;
     align-items:start;
   }
   .auth-decor{ width:320px; height:320px; right:-110px; bottom:-110px;}
@@ -2691,23 +2690,32 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
   .auth-brand .stamp-badge{ width:34px; height:34px; font-size:15px; flex:none;}
   .auth-brand h1{ font-size:13.5px; line-height:1.25; white-space:normal; overflow-wrap:break-word; word-break:break-word;}
   .auth-clock{ grid-area:clock; margin-bottom:0; text-align:right; justify-self:end;}
-  .auth-clock .time{ font-size:20px;}
-  .auth-clock .date{ font-size:9.5px;}
-  .analogue-clock-svg{ width:100px; height:100px;}
-  .auth-carousel-wrap{ grid-area:carousel; min-height:0; overflow:hidden; margin-top:2px; display:flex; align-items:center;}
-  .auth-carousel{ min-height:0; width:100%;}
-  .auth-slide p{ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; font-size:12px; max-width:none; margin-top:6px;}
-  .auth-slide .big{ font-size:20px;}
+  .auth-clock .time{ font-size:22px;}
+  .auth-clock .date{ font-size:10px;}
+  .analogue-clock-svg{ width:120px; height:120px;}
+  .auth-carousel-wrap{ grid-area:carousel; min-height:auto; margin-top:0;}
+  .auth-carousel{ margin-top:2px;}
+  .auth-slide p{ display:block; font-size:12px; max-width:none; margin-top:8px;}
+  .auth-slide .big{ font-size:22px;}
   .auth-slide .lbl{ font-size:10px;}
   .auth-bottom-cluster{ grid-area:bottom; margin-top:2px;}
   .auth-dots{ margin-top:0; justify-content:flex-start;}
-  .auth-contact-dev-link{ text-align:left; margin-top:0; font-size:10.5px;}
-  .auth-footer-row{ margin-top:3px; justify-content:space-between; row-gap:4px;}
-  .auth-foot{ font-size:10.5px;}
+  .auth-contact-dev-link{ text-align:left; margin-top:1px;}
+  .auth-footer-row{ margin-top:5px; justify-content:space-between; row-gap:6px;}
   .auth-carousel-actions{ gap:6px;}
   .getting-started-btn{ font-size:10px; padding:5px 9px;}
   .auth-form-side{ padding:24px 20px 46px;}
   .auth-box{ padding:22px 18px; border-radius:14px;}
+  /* Tips / Getting started / notification bell: dropped out of their floating top-right overlay
+     and into the normal page flow (moved there by syncAuthMobileLayout()), sitting horizontally
+     and left-aligned right under "Contact the developer". */
+  .auth-notif-bell.mobile-flow{ position:static; top:auto; right:auto; left:auto; max-width:none; margin-top:10px; z-index:2;}
+  .auth-notif-bell.mobile-flow .auth-top-actions{ flex-direction:row; justify-content:flex-start; align-items:center; flex-wrap:wrap; gap:8px;}
+  .auth-notif-bell.mobile-flow .auth-notif-preview{ left:0; right:auto;}
+  /* Loan-search bar: also pulled into this same flow (from the sign-in screen), centered. */
+  .lock-loan-search.mobile-flow{ margin:12px auto 0; max-width:320px; width:100%;}
+  /* Sign in / Create account tabs: keep them side-by-side but center the pair as a group. */
+  .auth-mobile-tabs.mobile-centered{ max-width:280px; margin:14px auto 6px;}
 }
 @media (max-width:400px){
   /* Very narrow phones: name/clock no longer fit comfortably on one row, so let the
@@ -2725,11 +2733,11 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
 @media (max-width:820px){
   #authScreen{ overflow:hidden;}
   .auth-wrap{ height:100dvh; max-height:100dvh;}
-  .auth-info{ height:100dvh; max-height:100dvh; overflow-y:auto; box-sizing:border-box;}
+  .auth-info{ height:100dvh; max-height:100dvh; overflow-y:auto; box-sizing:border-box; justify-content:center;}
   .auth-form-side{ height:100dvh; max-height:100dvh; overflow-y:auto; box-sizing:border-box; display:none; padding:16px 20px 22px;}
   #authScreen.mobile-step-form .auth-info{ display:none;}
   #authScreen.mobile-step-form .auth-form-side{ display:flex;}
-  .auth-mobile-tabs{ display:flex; gap:8px; margin-top:8px;}
+  .auth-mobile-tabs{ display:flex; gap:8px; margin-top:12px;}
   .auth-mobile-tab{ flex:1; padding:11px; border-radius:9px; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.08); color:#fff; font-weight:700; font-size:13px; cursor:pointer;}
   .auth-mobile-tab.primary{ background:var(--brass); border-color:var(--brass); color:#1B1B1B;}
   .auth-mobile-back{ display:flex; align-items:center; gap:4px; background:none; border:none; color:var(--muted); font-size:12.5px; margin-bottom:6px; cursor:pointer; padding:2px 0;}
@@ -4261,6 +4269,44 @@ const SECURITY_QUESTIONS = [
   "What is your favourite book?",
 ];
 let authSigninBoxHeight = null;
+/* Mobile carousel page: pull the Tips/Getting started/notification-bell row and the loan-search
+   bar down out of their desktop spots (floating overlay / sign-in screen) and into the flow of
+   the carousel screen itself, right under "Contact the developer" and above the Sign in /
+   Create account tabs. Restores everything to its normal desktop position above 820px. */
+function syncAuthMobileLayout(){
+  const bottomCluster = document.querySelector('.auth-bottom-cluster');
+  const notifBell = document.getElementById('authNotifBell');
+  const loanSearch = document.querySelector('.lock-loan-search');
+  const mobileTabs = document.querySelector('.auth-mobile-tabs');
+  const authWrap = document.querySelector('.auth-wrap');
+  const authInfo = document.querySelector('.auth-info');
+  const formCol = document.querySelector('.auth-form-col');
+  if(!bottomCluster || !notifBell || !loanSearch || !mobileTabs || !authWrap) return;
+  const isMobile = window.matchMedia('(max-width:820px)').matches;
+  if(isMobile){
+    if(notifBell.parentElement !== bottomCluster){
+      bottomCluster.insertBefore(notifBell, mobileTabs);
+      notifBell.classList.add('mobile-flow');
+    }
+    if(loanSearch.parentElement !== bottomCluster){
+      bottomCluster.insertBefore(loanSearch, mobileTabs);
+      loanSearch.classList.add('mobile-flow');
+    }
+    mobileTabs.classList.add('mobile-centered');
+  } else {
+    if(notifBell.parentElement !== authWrap && authInfo){
+      authWrap.insertBefore(notifBell, authInfo);
+      notifBell.classList.remove('mobile-flow');
+    }
+    if(formCol && loanSearch.parentElement !== formCol){
+      const authBox = formCol.querySelector('.auth-box');
+      if(authBox) formCol.insertBefore(loanSearch, authBox); else formCol.appendChild(loanSearch);
+      loanSearch.classList.remove('mobile-flow');
+    }
+    mobileTabs.classList.remove('mobile-centered');
+  }
+}
+window.addEventListener('resize', syncAuthMobileLayout);
 /* Mobile lockscreen: the carousel/brand panel is the first screen; tapping either bottom tab
    switches to the form screen (same viewport, no navigation/reload) with that tab pre-selected. */
 function mobileAuthGo(tab){
@@ -4548,6 +4594,7 @@ function showAuthScreen(){
   applyAuthBackground();
   startAuthCarousel();
   renderAuthNotifBell();
+  syncAuthMobileLayout();
 }
 function applyAuthBranding(){
   const name = (DB && DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS';
