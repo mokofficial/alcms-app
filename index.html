@@ -2640,14 +2640,13 @@ html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-li
    without scrolling on most screens. */
 .auth-box.floating{
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(700px,90vw); max-width:700px; max-height:90vh; overflow:auto; z-index:950;
-  padding:26px 28px;
+  width:min(380px,92vw); max-height:90vh; overflow-y:auto; z-index:950;
+  padding:26px 32px;
 }
 .auth-box.floating h2{ font-size:19px; margin-bottom:4px;}
 .auth-box.floating .sub{ margin-bottom:14px;}
 .auth-box.floating .field{ margin-bottom:10px;}
-.auth-box.floating .field-row{ grid-template-columns:1fr 1fr; gap:8px 12px;}
-@media (max-width:900px){ .auth-box.floating{ width:min(640px,92vw);} }
+.auth-box.floating .field-row{ grid-template-columns:1fr;}
 @media (max-width:480px){
   .auth-box.floating{ position:static; transform:none; width:100%; max-height:none; padding:22px 18px;}
   .auth-box.floating .field-row{ grid-template-columns:1fr;}
@@ -2712,6 +2711,31 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
      clock drop under the brand row and the carousel keep its own full-width row below. */
   .auth-info{ grid-template-columns:1fr; grid-template-areas:"brand" "clock" "carousel" "bottom";}
   .auth-clock{ text-align:left; justify-self:start;}
+}
+/* ---- Mobile lockscreen: two full-height "screens" instead of one long stacked scroll ----
+   Screen 1 (default) is the carousel/brand panel with Sign in / Create account tabs pinned to
+   its bottom. Tapping either switches to screen 2 (the actual form), which fills the same
+   viewport height. Neither screen needs the person to scroll to see everything relevant to it;
+   overflow:auto is kept only as a safety net for unusually small viewports or larger system
+   font sizes, not as the intended way to reach content. */
+.auth-mobile-tabs, .auth-mobile-back{ display:none;}
+@media (max-width:820px){
+  #authScreen{ overflow:hidden;}
+  .auth-wrap{ height:100dvh; max-height:100dvh;}
+  .auth-info{ height:100dvh; max-height:100dvh; overflow-y:auto; box-sizing:border-box; justify-content:center;}
+  .auth-form-side{ height:100dvh; max-height:100dvh; overflow-y:auto; box-sizing:border-box; display:none; padding:16px 20px 22px;}
+  #authScreen.mobile-step-form .auth-info{ display:none;}
+  #authScreen.mobile-step-form .auth-form-side{ display:flex;}
+  .auth-mobile-tabs{ display:flex; gap:8px; margin-top:12px;}
+  .auth-mobile-tab{ flex:1; padding:11px; border-radius:9px; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.08); color:#fff; font-weight:700; font-size:13px; cursor:pointer;}
+  .auth-mobile-tab.primary{ background:var(--brass); border-color:var(--brass); color:#1B1B1B;}
+  .auth-mobile-back{ display:flex; align-items:center; gap:4px; background:none; border:none; color:var(--muted); font-size:12.5px; margin-bottom:6px; cursor:pointer; padding:2px 0;}
+  .auth-form-col{ max-width:340px;}
+  .auth-box{ padding:16px 16px;}
+  .auth-box h2{ font-size:18px; margin-bottom:3px;}
+  .auth-box .sub{ font-size:11.5px; margin-bottom:12px;}
+  .auth-box .field{ margin-bottom:9px;}
+  .lock-loan-search{ margin-bottom:8px;}
 }
 
 /* ===== Layout ===== */
@@ -3373,10 +3397,15 @@ html, body{ overflow-x:hidden;}
           <div class="auth-foot">Automated Library &amp; Circulation Management System</div>
         </div>
         <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
+        <div class="auth-mobile-tabs">
+          <button type="button" class="auth-mobile-tab" onclick="mobileAuthGo('signin')">Sign in</button>
+          <button type="button" class="auth-mobile-tab primary" onclick="mobileAuthGo('signup')">Create account</button>
+        </div>
       </div>
     </div>
     <div class="auth-form-side">
       <div class="auth-form-col">
+        <button type="button" class="auth-mobile-back" onclick="mobileAuthBack()">← Back</button>
         <div class="lock-loan-search">
           <span class="lls-ic">📖</span>
           <input type="text" id="lockLoanSearchInput" placeholder="Check your loans — member ID or name" autocomplete="off" oninput="renderLockLoanSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault();lockLoanSearchSubmit();}">
@@ -3859,13 +3888,14 @@ function cycleTheme(){
   const order = ['system','light','dark'];
   const next = order[(order.indexOf(PREFS.theme)+1) % order.length];
   PREFS.theme = next; applyTheme(); applyPalette(PREFS.palette); savePrefs();
+  render(); // charts are drawn to <canvas> and don't repaint on their own when CSS vars change
   toast('Theme: '+next.charAt(0).toUpperCase()+next.slice(1));
 }
 // Re-check every few minutes so a "Match system" theme actually flips to dark the moment night
 // falls, rather than only updating on the next page load or OS-level preference change.
-setInterval(()=>{ if(PREFS.theme==='system' || !PREFS.theme){ applyTheme(); applyPalette(PREFS.palette); } }, 5*60*1000);
+setInterval(()=>{ if(PREFS.theme==='system' || !PREFS.theme){ applyTheme(); applyPalette(PREFS.palette); render(); } }, 5*60*1000);
 if(window.matchMedia){
-  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(PREFS.palette); } }); }catch(e){}
+  try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(PREFS.theme==='system'){ applyTheme(); applyPalette(PREFS.palette); render(); } }); }catch(e){}
 }
 function formatClockTime(d){
   if(PREFS.clockFormat==='12h') return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
@@ -4040,6 +4070,84 @@ function storageStatusInfo(){
 
 /* ================= auth / accounts ================= */
 let SESSION = null; // {username, fullName, role}
+/* ================= EXTERNAL INTEGRATIONS (deep links, webhook, hardware scanner) =================
+   Three independent pieces so a physical scan or an external workflow can drive this app:
+   1. Deep linking — a URL like index.html?station=DESK1&token=abc123&code=ACL-012 is parsed on
+      load; `code` is routed the same way a live scan would be, `station`/`token` are remembered
+      for the rest of the session (e.g. to tag outgoing webhook events with which physical
+      station triggered them).
+   2. Webhook connector — if Setup → Integrations has a URL configured, every scan / issue /
+      return / check-in event is POSTed there (fire-and-forget; a missing or unreachable
+      endpoint never blocks the actual library action).
+   3. Hardware scanner — a global keyboard listener recognizes the fast keystrokes + trailing
+      Enter that USB/Bluetooth "keyboard wedge" barcode scanners send, so a scan works from
+      anywhere in the app, not only while the in-app Scan modal happens to be open. */
+let DEEPLINK = {station:'', token:''};
+function parseDeepLinkParams(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    if(![...params.keys()].length) return null;
+    return {
+      station: params.get('station') || params.get('station_id') || '',
+      token: params.get('token') || params.get('workflow_token') || '',
+      code: params.get('code') || params.get('scan') || '',
+    };
+  }catch(e){ return null; }
+}
+function applyDeepLink(){
+  const dl = parseDeepLinkParams();
+  if(!dl) return;
+  DEEPLINK.station = dl.station || DEEPLINK.station;
+  DEEPLINK.token = dl.token || DEEPLINK.token;
+  // Strip the query string so a refresh or share of the URL doesn't replay the same scan payload.
+  try{ window.history.replaceState({}, document.title, window.location.pathname + window.location.hash); }catch(e){}
+  if(dl.code) setTimeout(()=> routeExternalScanPayload(dl.code, {source:'deeplink'}), 900);
+}
+/* Fire-and-forget POST to the configured Scan2Flow-style endpoint. Uses fetch when the tab is
+   active; falls back to sendBeacon (survives the page being closed/navigated away mid-request)
+   when the document is hidden — e.g. a scan that immediately triggers a redirect elsewhere. */
+function sendScanWebhook(eventType, payload){
+  const url = DB && DB.setup && DB.setup.scanWebhookUrl;
+  if(!url) return;
+  const body = JSON.stringify({ event:eventType, station: DB.setup.stationId || DEEPLINK.station || '', token: DEEPLINK.token || '', ...payload });
+  try{
+    if(document.visibilityState==='hidden' && navigator.sendBeacon){
+      navigator.sendBeacon(url, new Blob([body], {type:'application/json'}));
+    } else {
+      fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body, keepalive:true}).catch(()=>{});
+    }
+  }catch(e){ console.warn('Scan webhook delivery failed', e); }
+}
+/* Central place any scanned payload lands — a hardware scan anywhere in the app, a deep-linked
+   URL, or the in-app Scan modal — so all three behave consistently: notify the webhook, then
+   open whatever that code actually is. */
+function routeExternalScanPayload(code, meta={}){
+  sendScanWebhook('scan', {code, source: meta.source||'unknown', at:new Date().toISOString()});
+  const loggedIn = $('#app') && $('#app').classList.contains('show');
+  if(!loggedIn) return; // nothing safe to open pre-login beyond notifying the webhook above
+  const book = DB.catalogue.find(b=>b.acc.toLowerCase()===String(code).toLowerCase());
+  const user = DB.users.find(u=>u.id.toLowerCase()===String(code).toLowerCase());
+  if(book){ viewBook(book.acc); }
+  else if(user){ openMemberProfile(user.id); }
+  else toast(`Scanned "${code}" — no matching book or member found`);
+}
+(function initHardwareScanner(){
+  let buffer = '', lastTime = 0;
+  document.addEventListener('keydown', (e)=>{
+    const active = document.activeElement;
+    const inTextField = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.isContentEditable);
+    if(inTextField) return; // a focused field (including the Scan modal's own input) handles its own typing/scanning
+    const now = Date.now();
+    if(now - lastTime > 200) buffer = ''; // gap too long to be a hardware scanner — treat as unrelated typing
+    lastTime = now;
+    if(e.key==='Enter'){
+      if(buffer.length>=3) routeExternalScanPayload(buffer, {source:'hardware'});
+      buffer = '';
+    } else if(e.key.length===1){
+      buffer += e.key;
+    }
+  });
+})();
 const ACCOUNTS_KEY = 'alcms_accounts_v1';
 const SESSION_KEY = 'alcms_session_v1';
 
@@ -4150,6 +4258,17 @@ const SECURITY_QUESTIONS = [
   "What is your favourite book?",
 ];
 let authSigninBoxHeight = null;
+/* Mobile lockscreen: the carousel/brand panel is the first screen; tapping either bottom tab
+   switches to the form screen (same viewport, no navigation/reload) with that tab pre-selected. */
+function mobileAuthGo(tab){
+  const scr = $('#authScreen');
+  if(scr) scr.classList.add('mobile-step-form');
+  setAuthTab(tab);
+}
+function mobileAuthBack(){
+  const scr = $('#authScreen');
+  if(scr) scr.classList.remove('mobile-step-form');
+}
 function setAuthTab(tab){
   authTab = tab;
   $('#tabSignin').classList.toggle('active', tab==='signin');
@@ -4421,6 +4540,7 @@ async function lockSession(){
 function showAuthScreen(){
   authTab='signin'; setAuthTab('signin');
   $('#authScreen').classList.add('show');
+  $('#authScreen').classList.remove('mobile-step-form'); // always land back on the carousel screen, not mid-form
   applyAuthBranding();
   applyAuthBackground();
   startAuthCarousel();
@@ -4750,6 +4870,8 @@ function migrateNewFeatureData(db){
     {condition:'MISSING', consequence:'Full replacement cost charged; borrowing suspended until resolved'},
   ];
   if(!Array.isArray(db.consequenceLog)) db.consequenceLog = [];
+  if(db.setup.scanWebhookUrl===undefined) db.setup.scanWebhookUrl = '';
+  if(db.setup.stationId===undefined) db.setup.stationId = '';
   (db.circulation||[]).forEach(t=>{ if(t.renewCount===undefined) t.renewCount = 0; if(t.finePaid===undefined) t.finePaid = false; });
 }
 async function saveDB(){
@@ -4851,6 +4973,8 @@ function buildSeedDB(){
     {condition:'BAD', consequence:'Full replacement cost charged; written warning issued'},
     {condition:'MISSING', consequence:'Full replacement cost charged; borrowing suspended until resolved'},
   ];
+  if(setup.scanWebhookUrl===undefined) setup.scanWebhookUrl = '';
+  if(setup.stationId===undefined) setup.stationId = '';
   circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; });
 
   return {
@@ -7836,6 +7960,24 @@ function deleteTransaction(trxId){
     saveDB(); render(); toast('Transaction deleted');
   });
 }
+/* Shared eligibility gate for circulation & register check-in. SUSPENDED/INACTIVE status, or
+   eligibility explicitly set to NO, all block new loans. Register check-in is blocked only for
+   an INACTIVE member (a suspended member may still legitimately be in the library, just unable
+   to borrow) — "deactivated" is the same state as INACTIVE in this data model. */
+function memberBorrowBlockReason(user){
+  if(!user) return 'Member not found';
+  const status = String(user.status||'').toUpperCase();
+  if(status==='SUSPENDED') return `${user.name} is SUSPENDED and cannot borrow items`;
+  if(status==='INACTIVE') return `${user.name} is INACTIVE and cannot borrow items`;
+  if(String(user.eligibility||'YES').toUpperCase()==='NO') return `${user.name} is marked ineligible to borrow`;
+  return null;
+}
+function memberCheckinBlockReason(user){
+  if(!user) return 'Member not found';
+  const status = String(user.status||'').toUpperCase();
+  if(status==='INACTIVE') return `${user.name} is INACTIVE and cannot be checked in`;
+  return null;
+}
 function doIssueOne(user, book, opts={}){
   const now = new Date();
   const trx = {
@@ -7846,6 +7988,7 @@ function doIssueOne(user, book, opts={}){
   DB.circulation.unshift(trx);
   book.available = 'ISSUED';
   user.borrowed += 1; user.totalBorrowed += 1;
+  sendScanWebhook('issue', {acc:book.acc, title:book.title, memberId:user.id, memberName:user.name, dueDate:trx.dueDate});
   if(!opts.quiet) sendTransactionReceiptIfEnabled(trx, 'BORROWED');
   return trx;
 }
@@ -7860,6 +8003,8 @@ function issueBook(){
   if(!userPick || !bookPick){ toast('Pick a member and a title from the suggestions'); return; }
   const user = DB.users.find(u=>u.id===userPick.id), book = DB.catalogue.find(b=>b.acc===bookPick.id);
   if(!user || !book) return;
+  const blockReason = memberBorrowBlockReason(user);
+  if(blockReason){ toast('⛔ '+blockReason); return; }
   if(user.borrowed >= user.maxAllowed){ toast(`${user.name} has reached their borrowing limit`); return; }
   if(!warnIfStrikes(user)) return;
   const trx = doIssueOne(user, book);
@@ -7875,6 +8020,8 @@ function addIssueToStaging(){
   if(!bookPick){ toast('Pick a title to add'); return; }
   const user = DB.users.find(u=>u.id===userPick.id);
   if(!user) return;
+  const blockReason = memberBorrowBlockReason(user);
+  if(blockReason){ toast('⛔ '+blockReason); return; }
   if(issueStaging.some(s=>s.acc===bookPick.id)){ toast('That title is already staged'); return; }
   const cap = user.maxAllowed - user.borrowed;
   if(issueStaging.length >= cap){ toast(`${user.name} is capped at ${user.maxAllowed} item(s) — can't stage any more`); return; }
@@ -7902,6 +8049,8 @@ function issueStagedBooks(){
   if(!userPick || !issueStaging.length) return;
   const user = DB.users.find(u=>u.id===userPick.id);
   if(!user) return;
+  const blockReason = memberBorrowBlockReason(user);
+  if(blockReason){ toast('⛔ '+blockReason); issueStaging = []; renderIssueStaging(); return; }
   let issued = 0;
   issueStaging.forEach(s=>{
     const book = DB.catalogue.find(b=>b.acc===s.acc);
@@ -7950,6 +8099,7 @@ function doReturnOne(trx, condition, opts={}){
   if(book){ book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition; }
   if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
   const consequences = applyReturnConsequences(user, trx, condition, wasOverdue);
+  sendScanWebhook('return', {acc:trx.acc, title:trx.title, memberId:trx.userId, condition, wasOverdue});
   if(!opts.quiet && !isMissing) sendTransactionReceiptIfEnabled(trx, 'RETURNED');
   if(!isMissing && book) fulfillReservationsForReturn(trx.acc, book);
   return {wasOverdue, isMissing, book, consequences};
@@ -8527,6 +8677,20 @@ async function drawCodeGraphicsInto(items, root, idPrefix){
   }
   return true;
 }
+/* Member cards expire at the end of the academic session — by the time a new session starts,
+   students have moved up a class and the card's class/category line is no longer accurate.
+   Sessions are stored like "2025/2026"; the card expires 31 Jul of the second (ending) year. */
+function memberCardExpiry(){
+  const m = String(DB.setup.currentSession||'').match(/(\d{4})\D+(\d{4})/);
+  const endYear = m ? m[2] : String(new Date().getFullYear());
+  return `31 Jul ${endYear}`;
+}
+function cardPhotoIcon(it){
+  if(it.kind==='book') return '📖';
+  if(it.gender==='FEMALE') return '👩';
+  if(it.gender==='MALE') return '👨';
+  return '👤';
+}
 /* it: {kind:'member'|'book', code, line1, line2, line3} */
 function idCardHtml(it, i){
   const subLines = (it.lines||[]).filter(Boolean);
@@ -8537,7 +8701,7 @@ function idCardHtml(it, i){
       <div class="id-card-type">${it.kind==='book'?'Catalogue Card':'Member Card'}</div>
     </div>
     <div class="id-card-body">
-      <div class="id-card-photo">${it.kind==='book'?'📖':'👤'}</div>
+      <div class="id-card-photo">${cardPhotoIcon(it)}</div>
       <div class="id-card-info">
         <div class="id-card-name">${esc(it.title||'')}</div>
         ${subLines.map(l=>`<div class="id-card-sub">${esc(l)}</div>`).join('')}
@@ -8556,7 +8720,8 @@ function titleCase(s){
 function memberCardItems(users){
   return users.map(u=>{
     const catCls = [titleCase(u.category), titleCase(u.cls)].filter(Boolean).join(' - ');
-    return { kind:'member', code:u.id, title:u.name, lines:[u.id, catCls].filter(Boolean) };
+    const idLine = u.gender ? `${u.id} (${titleCase(u.gender)})` : u.id;
+    return { kind:'member', code:u.id, title:u.name, gender:u.gender, lines:[idLine, catCls, `Expires: ${memberCardExpiry()}`].filter(Boolean) };
   });
 }
 function bookCardItems(books){
@@ -8787,6 +8952,7 @@ function openScanModal(mode){
   const verifiedRow = wrap.querySelector('#scanVerifiedRow');
   const counterVal = wrap.querySelector('#scanCounterVal');
   let scanCount = 0;
+  const scannedCodes = new Set(); // so re-scanning the same item/member doesn't inflate the counter
   let paused = false;
   const closeSuggest = ()=>{ suggestEl.innerHTML=''; suggestEl.classList.remove('open'); };
   const renderSuggest = ()=>{
@@ -8805,6 +8971,10 @@ function openScanModal(mode){
     });
   };
   input.addEventListener('input', renderSuggest);
+  /* One line, always shown, stating exactly what the scan verified — including reasons a scan
+     can't proceed (already checked out, already checked in today, not eligible to borrow) — so
+     the person scanning isn't left guessing why nothing happened. */
+  const statusLineHtml = (ok, text)=> `<p class="scan-status-line ${ok?'ok':'warn'}" style="margin:4px 0 0;font-size:12.5px;color:${ok?'var(--forest)':'var(--terracotta)'}">${ok?'✓':'⚠'} ${esc(text)}</p>`;
   const handle = (rawCode)=>{
     if(paused) return;
     const code = String(rawCode||'').trim();
@@ -8818,21 +8988,40 @@ function openScanModal(mode){
       return;
     }
     paused = true; // brief pause so the same code isn't re-read a dozen times per second by the camera loop
-    scanCount++;
-    counterVal.textContent = String(scanCount);
+    const dedupeKey = (book?book.acc:user.id).toUpperCase();
+    const alreadyScanned = scannedCodes.has(dedupeKey);
+    if(!alreadyScanned){ scannedCodes.add(dedupeKey); scanCount++; counterVal.textContent = String(scanCount); }
+    sendScanWebhook('scan', {code:dedupeKey, kind: book?'book':'member', mode, at:new Date().toISOString()});
     verifiedRow.style.display = 'flex';
     verifiedRow.classList.remove('pulse'); void verifiedRow.offsetWidth; verifiedRow.classList.add('pulse');
+    let status = '';
+    if(alreadyScanned) status = statusLineHtml(true, 'Already scanned this session — not counted again');
     if(book){
-      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(book.title)}</strong> — ${esc(book.acc)} <span class="badge ${book.available==='AVAILABLE'?'green':'gold'}">${esc(book.available)}</span></p>`;
-      if(mode==='issue' && window.__issueBookPicker) window.__issueBookPicker.pick({id:book.acc, label:book.title});
+      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(book.title)}</strong> — ${esc(book.acc)} <span class="badge ${book.available==='AVAILABLE'?'green':'gold'}">${esc(book.available)}</span></p>` + status;
+      if(mode==='issue'){
+        if(book.available!=='AVAILABLE'){
+          resEl.innerHTML += statusLineHtml(false, `Already ${book.available.toLowerCase()} — cannot be issued`);
+        } else if(window.__issueBookPicker) window.__issueBookPicker.pick({id:book.acc, label:book.title});
+      }
       if(mode==='return' && book.available==='ISSUED'){
         const trx = DB.circulation.find(t=>t.acc===book.acc && !t.returnDate);
         if(trx){ doReturnOne(trx,'GOOD'); saveDB(); render(); toast(`Returned: ${book.title}`); close(); return; }
       }
     } else if(user){
-      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(user.name)}</strong> — ${esc(user.id)} <span class="badge grey">${esc(user.cls||user.category||'')}</span></p>`;
-      if(mode==='issue' && issuePicker) issuePicker.pick({id:user.id, label:user.name+' — '+(user.cls||user.category||'')});
-      if(mode==='batch' && typeof batchPicker!=='undefined' && batchPicker) batchPicker.pick({id:user.id, label:user.name+' — '+(user.cls||'')});
+      resEl.innerHTML = `<p style="margin:8px 0"><strong>${esc(user.name)}</strong> — ${esc(user.id)} <span class="badge grey">${esc(user.cls||user.category||'')}</span></p>` + status;
+      if(mode==='issue' || mode==='batch'){
+        const blockReason = mode==='issue' ? memberBorrowBlockReason(user) : memberCheckinBlockReason(user);
+        const alreadyIn = mode==='batch' && currentlyInLibrary().some(r=>r.id===user.id);
+        if(blockReason){
+          resEl.innerHTML += statusLineHtml(false, blockReason);
+        } else if(alreadyIn){
+          resEl.innerHTML += statusLineHtml(false, `${user.name} is already checked in today`);
+        } else if(mode==='issue' && issuePicker){
+          issuePicker.pick({id:user.id, label:user.name+' — '+(user.cls||user.category||'')});
+        } else if(mode==='batch' && typeof batchPicker!=='undefined' && batchPicker){
+          batchPicker.pick({id:user.id, label:user.name+' — '+(user.cls||'')});
+        }
+      }
       if(mode==='selfcheck'){
         close();
         const idInput = document.getElementById('selfCheckId');
@@ -9213,17 +9402,27 @@ function submitBatch(){
   const note = (document.getElementById('batchNote').value || '').trim();
   const selected = batchStaging.filter(s=>batchChecked[s.id]);
   if(!selected.length){ toast('Select at least one student to submit'); return; }
-  selected.forEach(s=>{
+  const blockedIds = new Set(), blockedNames = [];
+  const eligible = selected.filter(s=>{
+    const u = DB.users.find(x=>x.id===s.id);
+    const reason = memberCheckinBlockReason(u);
+    if(reason){ blockedIds.add(s.id); blockedNames.push(s.name); return false; }
+    return true;
+  });
+  eligible.forEach(s=>{
     DB.registerLog.unshift({
       entryId: uid('REG'), source:'DESK', date:todayISO(), timeIn, timeOut:'', period:'',
       id:s.id, name:s.name, category:s.category, cls:s.cls, purpose,
       conduct:'NONE', action:'NONE', borrow:'NO', verifiedBy:SESSION.fullName, note: note || 'Batch check-in',
       offense:'', offenseOther:'', consequence:'', consequenceOther:''
     });
+    sendScanWebhook('checkin', {memberId:s.id, memberName:s.name, purpose});
   });
-  batchStaging = batchStaging.filter(s=>!batchChecked[s.id]);
+  batchStaging = batchStaging.filter(s=>!batchChecked[s.id] || blockedIds.has(s.id));
   batchChecked = {};
-  saveDB(); render(); toast(`${selected.length} student(s) checked in`);
+  saveDB(); render();
+  if(blockedNames.length) toast(`⛔ ${blockedNames.length} member(s) skipped (inactive): ${blockedNames.join(', ')}. ${eligible.length} checked in.`);
+  else toast(`${eligible.length} student(s) checked in`);
 }
 
 /* ---- batch check-out (from Register page) ---- */
@@ -9683,6 +9882,16 @@ function pageSetup(){
       <div>${DB.setup.conditions.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div>
       <p class="field-hint" style="margin-top:10px">Dewey main classes</p>
       <div>${DB.setup.mainClasses.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div>
+    </div>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Integrations</h3><div class="hint">Connect scans and circulation events to an external system (e.g. a Scan2Flow-style workflow endpoint). Optional — leave the URL blank to keep everything purely local.</div></div>
+    <div class="field"><label>Webhook URL</label><input type="url" id="setScanWebhookUrl" value="${esc(DB.setup.scanWebhookUrl||'')}" placeholder="https://your-scan2flow-endpoint.example.com/hook"></div>
+    <div class="field"><label>Station ID</label><input type="text" id="setStationId" value="${esc(DB.setup.stationId||'')}" placeholder="e.g. DESK1"></div>
+    <p class="field-hint">Every scan, issue, return, and check-in is POSTed here as JSON (event, station, token, and the relevant details) if a URL is set. A station/token can also be supplied via the URL when the app is opened, e.g. <code>?station=DESK1&amp;token=abc123</code> — useful for a kiosk or a link launched from another system.</p>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="saveIntegrationSettings()">Save integration settings</button>
+      <button class="btn secondary small" onclick="sendScanWebhook('test',{note:'Test event from ALCMS Setup'}); toast(DB.setup.scanWebhookUrl? 'Test event sent' : 'Set a webhook URL first')">Send test event</button>
     </div>
   </div>
   <div class="card panel">
@@ -11559,6 +11768,12 @@ function saveFineSettings(){
   DB.setup.renewalDays = +document.getElementById('setRenewalDays')?.value || 7;
   saveDB(); render(); toast('Fines & renewals settings saved');
 }
+/* ---- Integrations (Setup) ---- */
+function saveIntegrationSettings(){
+  DB.setup.scanWebhookUrl = (document.getElementById('setScanWebhookUrl')?.value||'').trim();
+  DB.setup.stationId = (document.getElementById('setStationId')?.value||'').trim();
+  saveDB(); render(); toast('Integration settings saved');
+}
 /* ---- Discipline & consequences (Setup) ---- */
 function addOverdueConsequence(){
   if(!Array.isArray(DB.setup.overdueConsequences)) DB.setup.overdueConsequences = [];
@@ -11892,6 +12107,7 @@ async function enterApp(){
     await loadAutoBackupCfg();
     await loadGithubStamps();
     try{ DB = await loadDB(); purgeOldTrash(); }catch(e){ console.error('Could not pre-load data for the auth screen', e); }
+    applyDeepLink();
     // Security: a page refresh should lock the app and require signing in again — it must not
     // silently restore the previous session. Any session token left over from before this reload
     // is discarded rather than honoured.
