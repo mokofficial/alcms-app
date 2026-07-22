@@ -2640,14 +2640,14 @@ html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-li
    without scrolling on most screens. */
 .auth-box.floating{
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(680px,92vw); max-width:680px; max-height:90vh; overflow:auto; z-index:950;
+  width:min(760px,92vw); max-width:760px; max-height:90vh; overflow:auto; z-index:950;
   padding:26px 32px;
 }
 .auth-box.floating h2{ font-size:19px; margin-bottom:4px;}
 .auth-box.floating .sub{ margin-bottom:14px;}
 .auth-box.floating .field{ margin-bottom:10px;}
 .auth-box.floating .field-row{ grid-template-columns:1fr 1fr; gap:8px 14px;}
-@media (max-width:900px){ .auth-box.floating{ width:min(560px,92vw);} }
+@media (max-width:900px){ .auth-box.floating{ width:min(680px,92vw);} }
 @media (max-width:480px){
   .auth-box.floating{ position:static; transform:none; width:100%; max-height:none; padding:22px 18px;}
   .auth-box.floating .field-row{ grid-template-columns:1fr;}
@@ -2838,8 +2838,14 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 
 .panel{ padding:18px 20px; margin-bottom:18px;}
 .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
-.home-alert-dismiss{ align-self:flex-start; width:26px; height:26px; padding:0; flex:none; background:transparent; border:1px solid var(--line); color:var(--muted);}
-.home-alert-dismiss:hover{ color:var(--terracotta); border-color:var(--terracotta);}
+.home-alert-dismiss{
+  align-self:center; flex:none; display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:999px; background:var(--parchment-dim); border:1px solid var(--line);
+  color:var(--muted); font-size:12px; font-weight:600; white-space:nowrap; cursor:pointer;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+.home-alert-dismiss:hover{ background:rgba(168,69,47,.1); color:var(--terracotta); border-color:var(--terracotta);}
+.home-alert-dismiss .ic{ font-size:12px;}
 .dropdown-wrap{ position:relative; display:inline-block;}
 .dropdown-menu{
   position:absolute; top:calc(100% + 4px); right:0; min-width:180px; background:var(--card); border:1px solid var(--line);
@@ -3916,7 +3922,7 @@ function tickClocks(){
     auth.className = 'auth-clock clockstyle-'+style;
     const cfg = AUTH_CLOCK_STYLES[style];
     if(style.startsWith('analogue')){
-      const shortDate = `${String(now.getDate()).padStart(2,'0')}${now.toLocaleDateString('en-GB',{month:'short'}).toUpperCase()}${now.getFullYear()}`;
+      const shortDate = `${String(now.getDate()).padStart(2,'0')} ${now.toLocaleDateString('en-GB',{month:'short'})} ${now.getFullYear()}`;
       auth.innerHTML = renderAnalogueClockSvg(now, cfg, shortDate);
       return;
     }
@@ -4125,14 +4131,22 @@ const SECURITY_QUESTIONS = [
   "What city were you born in?",
   "What is your favourite book?",
 ];
+let authSigninBoxHeight = null;
 function setAuthTab(tab){
   authTab = tab;
   $('#tabSignin').classList.toggle('active', tab==='signin');
   $('#tabSignup').classList.toggle('active', tab==='signup');
   $('#authError').classList.remove('show');
   const box = document.querySelector('.auth-box');
-  if(box){ box.classList.toggle('wide', tab==='signup'); box.classList.toggle('floating', tab==='signup'); }
+  if(box){
+    box.classList.toggle('wide', tab==='signup');
+    box.classList.toggle('floating', tab==='signup');
+    box.style.height = (tab==='signup' && authSigninBoxHeight) ? authSigninBoxHeight+'px' : '';
+  }
   renderAuthForm();
+  if(box && tab==='signin'){
+    requestAnimationFrame(()=>{ authSigninBoxHeight = box.offsetHeight; });
+  }
 }
 function renderAuthForm(){
   const area = $('#authFormArea');
@@ -4289,7 +4303,8 @@ function biometricSignInButtonHtml(){
   if(!webauthnSupported()) return '';
   const anyRegistered = ACCOUNTS.some(a=>(a.biometricCredentials||[]).length);
   if(!anyRegistered) return '';
-  return `<button type="button" class="btn secondary auth-submit" style="margin-top:8px" onclick="signInWithBiometric()">👆 Sign in with fingerprint / Face ID</button>`;
+  const fpIcon = `<svg class="fingerprint-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="vertical-align:-3px;margin-right:6px"><path d="M12 3.5c-3.2 0-5.9 1.7-7.3 4.3"/><path d="M4.2 11c.2-1 .5-2 1-2.8"/><path d="M12 3.5c3.9 0 7.2 2.6 8.1 6.2"/><path d="M6.5 20.2c-1.1-1.6-1.9-3.5-2.1-5.5"/><path d="M8.6 21.8C7 19.9 6 17.4 6 14.7 6 11.6 8.7 9 12 9s6 2.6 6 5.7c0 .7-.05 1.4-.15 2"/><path d="M9.4 22.6C8 20.7 7.1 18.2 7.1 14.7c0-2.7 2.2-4.9 4.9-4.9s4.9 2.2 4.9 4.9"/><path d="M12 14.7c0 3.2 1 5.9 2.6 7.9"/><path d="M12 14.7c0 2.2.6 4.2 1.6 5.9"/></svg>`;
+  return `<button type="button" class="btn secondary auth-submit" style="margin-top:8px" onclick="signInWithBiometric()">${fpIcon}Sign in with fingerprint / Face ID</button>`;
 }
 async function registerBiometric(){
   if(!webauthnSupported()){ toast('Fingerprint/Face ID sign-in needs a secure browser context (https, or localhost) and a device with a fingerprint or face sensor.'); return; }
@@ -6523,7 +6538,7 @@ function pageHome(){
   ${(dueList.length && homeAlertsDismissed.dueList!==today)? `
   <div class="card panel" style="margin-bottom:16px">
     <div class="panel-head"><div><h3>Due today &amp; overdue</h3><div class="hint">${dueList.length} loan(s) need attention · click one to return it</div></div>
-      <button class="icon-btn home-alert-dismiss" title="Dismiss" onclick="event.stopPropagation();dismissHomeAlert('dueList')">✕</button></div>
+      <button class="home-alert-dismiss" title="Dismiss for the rest of today" onclick="event.stopPropagation();dismissHomeAlert('dueList')"><span class="ic">✓</span>Dismiss for today</button></div>
     ${dueList.slice(0,6).map(r=>`<div class="activity-row" style="cursor:pointer" onclick="viewTransaction('${esc(r.trxId)}')"><div class="dot" style="background:${r.status==='OVERDUE'?'#A8452F':'#B8863E'}"></div>
       <div style="flex:1"><strong>${esc(r.name)}</strong> — <em>${esc(r.title)}</em>
       <div class="meta">${esc(r.acc)} · due ${fmtDate(r.dueDate)}</div></div>
@@ -10139,7 +10154,17 @@ const GUIDE_TIPS = [
   'Fingerprint/Face ID sign-in needs the page to be opened over https:// (or http://localhost) and a device with a fingerprint reader or face sensor — it\'s hidden or shows a note if either is missing. It\'s always an extra option on top of your username and password, never a replacement.',
 ];
 /* ================= comprehensive PDF user guide ================= */
-function stripHtmlTags(s){ return String(s||'').replace(/<[^>]+>/g,''); }
+function stripHtmlTags(s){
+  let t = String(s||'').replace(/<[^>]+>/g,'');
+  // Decode the handful of HTML entities used in guide source strings — otherwise "&amp;" etc.
+  // prints literally in the PDF instead of the character it stands for.
+  t = t.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  // jsPDF's standard fonts (WinAnsi-encoded Helvetica) have no glyphs for emoji/pictographs — an
+  // unsupported codepoint prints as a garbled box AND is measured with the wrong width, which is
+  // what let text spill past the page margin. Strip them out of the PDF copy entirely.
+  t = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\uFE0F]/gu, '').replace(/\s{2,}/g,' ').trim();
+  return t;
+}
 function downloadUserGuidePDF(){
   if(typeof window.jspdf==='undefined'){
     toast('⚠ PDF library failed to load — check your connection and reload the page.');
