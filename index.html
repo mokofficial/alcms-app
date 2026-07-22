@@ -3193,6 +3193,12 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .print-kpi{ font-size:11.5px;}
 .print-kpi strong{ font-size:16px; display:block;}
 .print-chart-img{ width:100%; max-height:220px; object-fit:contain; margin-bottom:8px;}
+.print-chart-pair{ display:flex; gap:14px; align-items:flex-start; margin-bottom:8px;}
+.print-chart-pair-img{ flex:1 1 55%; min-width:0;}
+.print-chart-pair-img .print-chart-img{ margin-bottom:0;}
+.print-chart-pair-table{ flex:1 1 45%; min-width:0;}
+.print-chart-pair-table table{ font-size:9.5px;}
+.print-chart-pair-table th, .print-chart-pair-table td{ padding:3px 5px;}
 .print-footer{ margin-top:auto; padding-top:8px; border-top:1px solid #ccc; display:flex; justify-content:space-between; gap:12px; font-size:9.5px; color:#555; page-break-inside:avoid;}
 @media print{
   html, body.printing{ background:#fff !important; }
@@ -5838,11 +5844,7 @@ function printHeaderHtml(title, subtitle){
    each piece once and its true offsetHeight is read back. That lets pages pack right up to the
    real content budget instead of leaving a guessed-at safety gap, while a small fixed
    PRINT_SAFETY_PX cushion still absorbs cross-browser print-rendering rounding. */
-const PRINT_PAGE_MM = 261;           // @page A4 (297mm) minus 18mm top/bottom margins
-const PRINT_CONTENT_WIDTH_MM = 178;  // @page A4 (210mm) minus 16mm left/right margins
 const PRINT_SAFETY_PX = 24;          // small cushion for cross-browser print rounding only
-const PRINT_PAGE_HEIGHT_PX = Math.round(PRINT_PAGE_MM * 96/25.4) - PRINT_SAFETY_PX;
-const PRINT_CONTENT_WIDTH_PX = Math.round(PRINT_CONTENT_WIDTH_MM * 96/25.4);
 const PRINT_ROW_HEIGHT_PX = 26;      // fallback only, used if measurement is ever unavailable
 const PRINT_THEAD_HEIGHT_PX = 28;    // fallback only
 const PRINT_SEC_HEADING_HEIGHT_PX = 34; // fallback only
@@ -5850,6 +5852,35 @@ const PRINT_KPI_ROW_HEIGHT_PX = 54;  // fallback only
 const PRINT_IMAGE_HEIGHT_PX = 220;   // fallback only — matches .print-chart-img max-height
 const PRINT_HEADER_HEIGHT_PX = 170;  // fallback only
 const PRINT_FOOTER_HEIGHT_PX = 50;   // fallback only
+/* A4 in both orientations, minus the same 18mm/16mm margins either way. Orientation is picked
+   per-report (see printAutoOrientation) so wide tables or side-by-side chart+data sections get
+   the room they need instead of being forced into a cramped portrait column. */
+const PRINT_DIMENSIONS = {
+  portrait:  { pageMM:261, widthMM:178, pageCss:'A4' },
+  landscape: { pageMM:174, widthMM:265, pageCss:'A4 landscape' },
+};
+const PRINT_CTX = { orientation:'portrait', pageHeightPx:0, contentWidthPx:0 };
+function printSetOrientation(orientation){
+  const d = PRINT_DIMENSIONS[orientation] || PRINT_DIMENSIONS.portrait;
+  PRINT_CTX.orientation = orientation;
+  PRINT_CTX.pageHeightPx = Math.round(d.pageMM * 96/25.4) - PRINT_SAFETY_PX;
+  PRINT_CTX.contentWidthPx = Math.round(d.widthMM * 96/25.4);
+  let style = document.getElementById('printOrientationStyle');
+  if(!style){ style = document.createElement('style'); style.id = 'printOrientationStyle'; document.head.appendChild(style); }
+  style.textContent = `@page{ size:${d.pageCss}; margin:18mm 16mm; } .print-page{ min-height:${d.pageMM}mm; }`;
+}
+/* Decides portrait vs landscape from the actual shape of what's being printed: wide tables
+   (many columns) and side-by-side chart+data-table sections both need the extra horizontal
+   room landscape gives; a handful of narrow columns fits fine in portrait. */
+function printAutoOrientation(sections){
+  let maxCols = 0, hasPair = false;
+  sections.forEach(sec=>{
+    if(sec.columns) maxCols = Math.max(maxCols, sec.columns.length);
+    if(sec.image && sec.columns) hasPair = true;
+  });
+  return (hasPair || maxCols>=6) ? 'landscape' : 'portrait';
+}
+printSetOrientation('portrait');
 /* Renders `html` at the real print content width and returns its true rendered height in px.
    Falls back to `fallback` if the probe can't be measured (e.g. hidden tab / zero layout). */
 function printMeasure(html, fallback){
@@ -5860,7 +5891,7 @@ function printMeasure(html, fallback){
     probe.style.cssText = 'position:absolute; visibility:hidden; pointer-events:none; left:-9999px; top:0; z-index:-1;';
     document.body.appendChild(probe);
   }
-  probe.style.width = PRINT_CONTENT_WIDTH_PX+'px';
+  probe.style.width = PRINT_CTX.contentWidthPx+'px';
   probe.innerHTML = html;
   const h = probe.offsetHeight;
   probe.innerHTML = '';
@@ -5870,7 +5901,7 @@ function printFooterHtml(pageNum, totalPages){
   const fullName = (SESSION && SESSION.fullName) || '—';
   const role = (SESSION && SESSION.role) || '—';
   return `<div class="print-footer">
-    <span>Account name: ${esc(fullName)} &nbsp;·&nbsp; Role: ${esc(role)}</span>
+    <span>${esc(fullName)} - ${esc(role)}</span>
     <span>Generated ${esc(new Date().toLocaleString('en-GB'))}</span>
     <span>Page ${pageNum} of ${totalPages}</span>
   </div>`;
@@ -5901,8 +5932,8 @@ function printRowsToPages(theadHtml, rowsHtml, columnCount, headerHtmlForMeasure
   const rowH = printMeasure(`<table class="print-table"><tbody>${rows[0]}</tbody></table>`, PRINT_ROW_HEIGHT_PX);
   const footerH = printMeasureFooter();
   const headerH = headerHtmlForMeasure!=null ? printMeasureHeader(headerHtmlForMeasure) : PRINT_HEADER_HEIGHT_PX;
-  const firstAvail = PRINT_PAGE_HEIGHT_PX - headerH - theadH - footerH;
-  const restAvail = PRINT_PAGE_HEIGHT_PX - theadH - footerH;
+  const firstAvail = PRINT_CTX.pageHeightPx - headerH - theadH - footerH;
+  const restAvail = PRINT_CTX.pageHeightPx - theadH - footerH;
   const firstCount = Math.max(1, Math.floor(firstAvail/rowH));
   const restCount = Math.max(1, Math.floor(restAvail/rowH));
   const chunks = [];
@@ -5916,6 +5947,7 @@ function printRowsToPages(theadHtml, rowsHtml, columnCount, headerHtmlForMeasure
   return chunks.map(chunk=>`<table class="print-table"><thead>${theadHtml}</thead><tbody>${chunk.join('')}</tbody></table>`);
 }
 function printReport(title, subtitle, columns, rows){
+  printSetOrientation(printAutoOrientation([{columns}]));
   const theadHtml = `<tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`;
   const rowsHtml = rows.map(r=>`<tr>${columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`);
   const headerHtml = printHeaderHtml(title, subtitle);
@@ -5937,6 +5969,7 @@ function printMultiSection(title, subtitle, sections){
   // into row-pages the same way printReport does, so long tables can still span pages while
   // still never breaking a row in half. Every unit's height is the real measured height of its
   // HTML (see printMeasure), not a guess, so pages fill up to the real content budget.
+  printSetOrientation(printAutoOrientation(sections));
   const headerHtml = printHeaderHtml(title, subtitle);
   const headerH = printMeasureHeader(headerHtml);
   const footerH = printMeasureFooter();
@@ -5947,6 +5980,20 @@ function printMultiSection(title, subtitle, sections){
       headingHtml += `<div class="print-kpis">${sec.kpis.map(k=>`<div class="print-kpi"><strong>${esc(k.value)}</strong>${esc(k.label)}</div>`).join('')}</div>`;
     }
     const headingHeight = printMeasure(headingHtml, sec.kpis ? PRINT_SEC_HEADING_HEIGHT_PX+PRINT_KPI_ROW_HEIGHT_PX : PRINT_SEC_HEADING_HEIGHT_PX);
+    // A chart with its underlying data: image and a compact table side by side, as one
+    // non-splittable unit (same pairing shown on the live Analytics page).
+    if(sec.image && sec.columns){
+      const imgHtml = `<img class="print-chart-img" src="${sec.image}" alt="${esc(sec.heading)}">`;
+      const theadHtml = `<tr>${sec.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`;
+      const rowsHtml = sec.rows.length
+        ? sec.rows.map(r=>`<tr>${sec.columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`)
+        : [`<tr><td colspan="${sec.columns.length}">No data yet</td></tr>`];
+      const tableHtml = `<table class="print-table print-chart-pair-tbl"><thead>${theadHtml}</thead><tbody>${rowsHtml.join('')}</tbody></table>`;
+      const pairHtml = `<div class="print-chart-pair"><div class="print-chart-pair-img">${imgHtml}</div><div class="print-chart-pair-table">${tableHtml}</div></div>`;
+      const pairHeight = printMeasure(pairHtml, PRINT_IMAGE_HEIGHT_PX);
+      units.push({html: headingHtml + pairHtml, height: headingHeight + pairHeight});
+      return;
+    }
     if(sec.image){
       const imgHtml = `<img class="print-chart-img" src="${sec.image}" alt="${esc(sec.heading)}">`;
       units.push({html: headingHtml + imgHtml, height: headingHeight + PRINT_IMAGE_HEIGHT_PX});
@@ -5960,7 +6007,7 @@ function printMultiSection(title, subtitle, sections){
       const theadH = printMeasure(`<table class="print-table"><thead>${theadHtml}</thead></table>`, PRINT_THEAD_HEIGHT_PX);
       const rowH = printMeasure(`<table class="print-table"><tbody>${rowsHtml[0]}</tbody></table>`, PRINT_ROW_HEIGHT_PX);
       const continuedH = printMeasure(`<div class="print-sec-continued">${esc(sec.heading)} (continued)</div>`, 20);
-      const restAvail = PRINT_PAGE_HEIGHT_PX - theadH - footerH - headingHeight;
+      const restAvail = PRINT_CTX.pageHeightPx - theadH - footerH - headingHeight;
       const restCount = Math.max(1, Math.floor(restAvail/rowH));
       let i = 0, first = true;
       while(i < rowsHtml.length){
@@ -5980,7 +6027,7 @@ function printMultiSection(title, subtitle, sections){
   const pagesContent = [];
   let current = [], used = headerH;
   units.forEach(u=>{
-    if(current.length && used + u.height > PRINT_PAGE_HEIGHT_PX){
+    if(current.length && used + u.height > PRINT_CTX.pageHeightPx){
       pagesContent.push(current.join('')); current = []; used = 0;
     }
     current.push(u.html); used += u.height;
@@ -6167,6 +6214,40 @@ function csvEscape(v){
   const s = v===null||v===undefined? '' : String(v);
   return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
 }
+/* Builds the same title block info (org name, report title, period, generated by/role/date)
+   as the printed report's header, as real worksheet rows — plus a trailing "generated by" row
+   emulating the print footer — since a spreadsheet has no fixed page footer of its own. Returns
+   the starting row index where the actual column headers begin. */
+function xlsxHeaderRows(title){
+  const rows = [];
+  if(DB.setup.institutionName) rows.push([DB.setup.institutionName]);
+  rows.push(['ALCMS — '+title]);
+  const period = academicPeriodLabel();
+  if(period) rows.push([period]);
+  const fullName = (SESSION && SESSION.fullName) || '—', role = (SESSION && SESSION.role) || '—';
+  rows.push([`Generated by ${fullName} - ${role} on ${new Date().toLocaleString('en-GB')}`]);
+  rows.push([]); // spacer row before the table
+  return rows;
+}
+function xlsxApplyHeaderStyling(ws, headerRowCount, colCount){
+  // Best-effort visual emphasis for the title rows and column header row — bold + a background
+  // tint on the ones that render — degrades gracefully to a plain (still readable) sheet if the
+  // loaded build of the library doesn't persist cell styles.
+  const titleStyle = {font:{bold:true, sz:13}};
+  const colHeaderStyle = {font:{bold:true}, fill:{fgColor:{rgb:'E9E4D5'}}};
+  for(let r=0;r<headerRowCount-1;r++){
+    const cellRef = XLSX.utils.encode_cell({r, c:0});
+    if(ws[cellRef]) ws[cellRef].s = titleStyle;
+  }
+  for(let c=0;c<colCount;c++){
+    const cellRef = XLSX.utils.encode_cell({r:headerRowCount, c});
+    if(ws[cellRef]) ws[cellRef].s = colHeaderStyle;
+  }
+  ws['!merges'] = (ws['!merges']||[]);
+  for(let r=0;r<headerRowCount-1;r++) ws['!merges'].push({s:{r,c:0}, e:{r,c:Math.max(0,colCount-1)}});
+  ws['!freeze'] = {xSplit:0, ySplit:headerRowCount+1};
+  ws['!cols'] = Array.from({length:colCount}, ()=>({wch:18}));
+}
 function exportCSV(filename, columns, rows){
   const lines = [columns.map(c=>csvEscape(c.label)).join(',')];
   rows.forEach(r=> lines.push(columns.map(c=>csvEscape(c.get(r))).join(',')));
@@ -6179,10 +6260,31 @@ function exportExcel(filename, sheetName, columns, rows){
     toast('⚠ Excel export library failed to load — check your connection and reload the page.');
     return;
   }
-  const data = rows.map(r=>{ const o={}; columns.forEach(c=> o[c.label]=c.get(r)); return o; });
-  const ws = XLSX.utils.json_to_sheet(data, {header:columns.map(c=>c.label)});
+  const headerRows = xlsxHeaderRows(sheetName);
+  const ws = XLSX.utils.aoa_to_sheet(headerRows);
+  XLSX.utils.sheet_add_json(ws, rows.map(r=>{ const o={}; columns.forEach(c=> o[c.label]=c.get(r)); return o; }), {header:columns.map(c=>c.label), origin:headerRows.length});
+  xlsxApplyHeaderStyling(ws, headerRows.length, columns.length);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0,31));
-  XLSX.writeFile(wb, filename+'.xlsx');
+  XLSX.writeFile(wb, filename+'.xlsx', {cellStyles:true});
+}
+/* Picks PDF page orientation the same way print does: wide tables get more room. */
+function pdfOrientationFor(maxCols){ return maxCols>=6 ? 'landscape' : 'portrait'; }
+/* Draws "Name - Role" / "Generated ..." / "Page X of Y" at the bottom of every page already
+   in the document — mirrors the printed report's footer, always pinned to the page base. */
+function pdfDrawFooters(doc, marginLeft, marginRight){
+  const totalPages = doc.internal.getNumberOfPages();
+  const fullName = (SESSION && SESSION.fullName) || '—';
+  const role = (SESSION && SESSION.role) || '—';
+  for(let i=1;i<=totalPages;i++){
+    doc.setPage(i);
+    const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+    const y = h - 7;
+    doc.setFontSize(7.5); doc.setFont(undefined,'normal'); doc.setTextColor(85);
+    doc.text(`${fullName} - ${role}`, marginLeft, y);
+    doc.text(`Generated ${new Date().toLocaleString('en-GB')}`, w/2, y, {align:'center'});
+    doc.text(`Page ${i} of ${totalPages}`, w-marginRight, y, {align:'right'});
+    doc.setTextColor(0);
+  }
 }
 function exportPDF(filename, title, columns, rows){
   if(typeof window.jspdf==='undefined'){
@@ -6190,8 +6292,9 @@ function exportPDF(filename, title, columns, rows){
     return;
   }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape'});
+  const doc = new jsPDF({orientation: pdfOrientationFor(columns.length)});
   const MARGIN = 10;
+  const pageW = doc.internal.pageSize.getWidth();
   let textX = MARGIN;
   let y = 15;
   const logo = DB.setup.institutionLogo;
@@ -6203,7 +6306,7 @@ function exportPDF(filename, title, columns, rows){
     }catch(e){ console.warn('Could not embed logo in PDF export', e); }
   }
   if(DB.setup.institutionName){
-    const fit = fitPdfTextSingleLine(doc, DB.setup.institutionName, 297-MARGIN-textX, 15, 10);
+    const fit = fitPdfTextSingleLine(doc, DB.setup.institutionName, pageW-MARGIN-textX, 15, 10);
     doc.setFont(undefined,'bold');
     doc.text(fit.text, textX, y);
     y += 6;
@@ -6220,8 +6323,9 @@ function exportPDF(filename, title, columns, rows){
   doc.text('Generated '+new Date().toLocaleString('en-GB'), textX, y);
   doc.autoTable({
     startY:34, head:[columns.map(c=>c.label)], body:rows.map(r=>columns.map(c=>String(c.get(r)??''))),
-    styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:cssVarRGB('--forest','#1F3A2E')}, margin:{left:MARGIN,right:MARGIN},
+    styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:cssVarRGB('--forest','#1F3A2E')}, margin:{left:MARGIN,right:MARGIN,bottom:14},
   });
+  pdfDrawFooters(doc, MARGIN, MARGIN);
   doc.save(filename+'.pdf');
 }
 function filenameWithPeriod(base){
@@ -6272,21 +6376,23 @@ function exportCSVMulti(filename, sections){
   });
   downloadBlob(filename+'.csv', new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'}));
 }
-function exportExcelMulti(filename, sections){
+function exportExcelMulti(filename, sections, title){
   if(typeof XLSX==='undefined'){
     toast('⚠ Excel export library failed to load — check your connection and reload the page.');
     return;
   }
   const wb = XLSX.utils.book_new();
   sections.forEach((sec,i)=>{
-    const data = (sec.rows||[]).map(r=>{ const o={}; sec.columns.forEach(c=> o[c.label]=c.get(r)); return o; });
-    const ws = XLSX.utils.json_to_sheet(data, {header:sec.columns.map(c=>c.label)});
+    const headerRows = xlsxHeaderRows(title ? `${title} — ${sec.heading}` : sec.heading);
+    const ws = XLSX.utils.aoa_to_sheet(headerRows);
+    XLSX.utils.sheet_add_json(ws, (sec.rows||[]).map(r=>{ const o={}; sec.columns.forEach(c=> o[c.label]=c.get(r)); return o; }), {header:sec.columns.map(c=>c.label), origin:headerRows.length});
+    xlsxApplyHeaderStyling(ws, headerRows.length, sec.columns.length);
     let name = String(sec.heading||'Sheet'+(i+1)).replace(/[\\\/\?\*\[\]:]/g,'').slice(0,31) || ('Sheet'+(i+1));
     let n = 2;
     while(wb.SheetNames.includes(name)){ name = name.slice(0,28)+'_'+n; n++; }
     XLSX.utils.book_append_sheet(wb, ws, name);
   });
-  XLSX.writeFile(wb, filename+'.xlsx');
+  XLSX.writeFile(wb, filename+'.xlsx', {cellStyles:true});
 }
 function exportPDFMulti(filename, title, sections){
   if(typeof window.jspdf==='undefined'){
@@ -6294,8 +6400,10 @@ function exportPDFMulti(filename, title, sections){
     return;
   }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape'});
+  const maxCols = sections.reduce((m,s)=>Math.max(m, (s.columns||[]).length), 0);
+  const doc = new jsPDF({orientation: pdfOrientationFor(maxCols)});
   const MARGIN = 10;
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
   let textX = MARGIN, y = 15;
   const logo = DB.setup.institutionLogo;
   if(logo){
@@ -6305,7 +6413,7 @@ function exportPDFMulti(filename, title, sections){
       textX = MARGIN + 20;
     }catch(e){ console.warn('Could not embed logo in PDF export', e); }
   }
-  if(DB.setup.institutionName){ const fit = fitPdfTextSingleLine(doc, DB.setup.institutionName, 297-MARGIN-textX, 15, 10); doc.setFont(undefined,'bold'); doc.text(fit.text, textX, y); y += 6; }
+  if(DB.setup.institutionName){ const fit = fitPdfTextSingleLine(doc, DB.setup.institutionName, pageW-MARGIN-textX, 15, 10); doc.setFont(undefined,'bold'); doc.text(fit.text, textX, y); y += 6; }
   doc.setFontSize(11); doc.setFont(undefined,'normal'); doc.text('ALCMS — '+title, textX, y); y += 6;
   const period = academicPeriodLabel();
   if(period){ doc.setFontSize(9.5); doc.setFont(undefined,'bold'); doc.text(period, textX, y); y += 5.5; doc.setFont(undefined,'normal'); }
@@ -6314,15 +6422,22 @@ function exportPDFMulti(filename, title, sections){
   sections.forEach((sec,i)=>{
     if(i>0){
       nextY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : nextY) + 10;
-      if(nextY > 180){ doc.addPage(); nextY = 15; }
+      if(nextY > pageH-25){ doc.addPage(); nextY = 15; }
     }
     doc.setFontSize(10); doc.setFont(undefined,'bold');
     doc.text(String(sec.heading||''), MARGIN, nextY);
+    let startY = nextY+3;
+    if(sec.image){
+      // Embed the chart image above its table so print and export both show chart + data together.
+      try{ doc.addImage(sec.image, 'PNG', MARGIN, startY, 80, 45); }catch(e){ console.warn('Could not embed chart image in PDF export', e); }
+      startY += 48;
+    }
     doc.autoTable({
-      startY:nextY+3, head:[sec.columns.map(c=>c.label)], body:(sec.rows||[]).map(r=>sec.columns.map(c=>String(c.get(r)??''))),
-      styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:cssVarRGB('--forest','#1F3A2E')}, margin:{left:MARGIN,right:MARGIN},
+      startY, head:[(sec.columns||[]).map(c=>c.label)], body:(sec.rows||[]).map(r=>(sec.columns||[]).map(c=>String(c.get(r)??''))),
+      styles:{fontSize:7, cellPadding:2}, headStyles:{fillColor:cssVarRGB('--forest','#1F3A2E')}, margin:{left:MARGIN,right:MARGIN,bottom:14},
     });
   });
+  pdfDrawFooters(doc, MARGIN, MARGIN);
   doc.save(filename+'.pdf');
 }
 /* Same format-picker UX as openExportModal, but for a full multi-section report (several
@@ -6348,7 +6463,7 @@ function openMultiSectionExportModal(title, filenameBase, sections){
   $('#mb').addEventListener('click', e=>{ if(e.target.id==='mb') close(); });
   const namedFile = filenameWithPeriod(filenameBase);
   $('#fmtCsv').onclick = ()=>{ exportCSVMulti(namedFile, sections); close(); toast('CSV downloaded'); };
-  $('#fmtXlsx').onclick = ()=>{ exportExcelMulti(namedFile, sections); close(); toast('Excel file downloaded'); };
+  $('#fmtXlsx').onclick = ()=>{ exportExcelMulti(namedFile, sections, title); close(); toast('Excel file downloaded'); };
   $('#fmtPdf').onclick = ()=>{ exportPDFMulti(namedFile, title, sections); close(); toast('PDF downloaded'); };
 }
 function openImportModal(cfg){
@@ -6776,7 +6891,8 @@ function analyticsReportSections(){
 function analyticsChartSections(){
   // Charts only exist as data once rendered (Chart.js canvases), so this is best-effort:
   // any chart not currently drawn (e.g. still loading) is simply skipped rather than
-  // producing a broken image block.
+  // producing a broken image block. Each chart is paired with its underlying data table
+  // (same aggregates used on-screen / for export) so print shows both side by side.
   const charts = [
     {id:'chAnMonthly', heading:'Monthly circulation trend'},
     {id:'chCondition', heading:'Book condition analysis'},
@@ -6785,9 +6901,13 @@ function analyticsChartSections(){
     {id:'chClassBorrow', heading:'Borrowing by class'},
     {id:'chPurpose', heading:'Register visit purpose'},
   ];
+  const dataSections = analyticsChartDataSections();
   return charts
     .filter(c=> chartInstances[c.id])
-    .map(c=> ({ heading:c.heading, image: chartInstances[c.id].toBase64Image() }));
+    .map(c=>{
+      const data = dataSections.find(s=>s.heading===c.heading);
+      return { heading:c.heading, image: chartInstances[c.id].toBase64Image(), columns: data && data.columns, rows: data && data.rows };
+    });
 }
 function printAnalyticsReport(){
   const { overdueRows, topB, topT } = analyticsReportSections();
@@ -6830,6 +6950,15 @@ function analyticsChartDataSections(){
 }
 function exportAnalyticsAll(){
   const { overdueRows, topB, topT } = analyticsReportSections();
+  // Chart images embed into the PDF (and are simply ignored by the CSV/Excel writers, which
+  // only read .columns/.rows) so exporting still gets the full chart+data pairing where the
+  // output format supports it.
+  const chartData = analyticsChartDataSections().map(sec=>{
+    const inst = Object.entries({chAnMonthly:'Monthly circulation trend', chCondition:'Book condition analysis', chLoanStatus:'Loan status breakdown', chMemberCat:'Members by category', chClassBorrow:'Borrowing by class', chPurpose:'Register visit purpose'})
+      .find(([id,heading])=>heading===sec.heading);
+    const chart = inst && chartInstances[inst[0]];
+    return chart ? {...sec, image: chart.toBase64Image()} : sec;
+  });
   const sections = [
     { heading:'Top 5 borrowers', columns:[
       {label:'Name', get:r=>r[0]}, {label:'Class / Designation', get:r=>r[1].cls}, {label:'Books borrowed', get:r=>r[1].count},
@@ -6837,7 +6966,7 @@ function exportAnalyticsAll(){
     { heading:'Top 5 borrowed titles', columns:[
       {label:'Title', get:r=>r[0]}, {label:'Times borrowed', get:r=>r[1]},
     ], rows: topT },
-    ...analyticsChartDataSections(),
+    ...chartData,
     { heading:'Overdue detail', columns:[
       {label:'Member', get:r=>r.name}, {label:'Acc. No', get:r=>r.acc}, {label:'Title', get:r=>r.title},
       {label:'Due date', get:r=>fmtDate(r.dueDate)}, {label:'Days overdue', get:r=>r.daysOverdue},
