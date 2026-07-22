@@ -2858,12 +2858,21 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 .dropdown-menu .divider{ height:1px; background:var(--line); margin:4px 0;}
 .panel-head h3{ font-size:15.5px;}
 .panel-head .hint{ font-size:11.5px; color:var(--muted);}
-.charts-row{ grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+.charts-row{ grid-template-columns:repeat(auto-fit,minmax(460px,1fr));}
 .chart-box{ padding:16px 18px 14px; height:340px; display:flex; flex-direction:column;}
 .chart-box h4{ flex:none;}
 .chart-caption{ flex:none; font-size:11px; color:var(--muted); margin:2px 0 10px; line-height:1.4;}
 .chart-box .chart-canvas-wrap{ position:relative; flex:1; min-height:0;}
 .chart-box canvas{ position:absolute; inset:0; width:100% !important; height:100% !important;}
+/* Analytics charts pair each canvas with its underlying data as a compact table, side by side. */
+.chart-box.has-table{ height:auto; min-height:340px;}
+.chart-box-body{ flex:1; min-height:0; display:flex; gap:14px; align-items:stretch;}
+.chart-box-body .chart-canvas-wrap{ flex:1 1 55%; min-width:0;}
+.chart-data-table{ flex:1 1 45%; min-width:0; overflow:auto; border-left:1px solid var(--line); padding-left:14px;}
+.chart-data-table table{ width:100%; border-collapse:collapse; font-size:11px;}
+.chart-data-table th, .chart-data-table td{ padding:3px 6px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:1px;}
+.chart-data-table th{ color:var(--muted-label); font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; position:sticky; top:0; background:var(--card);}
+.chart-data-table td:last-child, .chart-data-table th:last-child{ text-align:right;}
 
 .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
 .toolbar input[type=text],.toolbar select{
@@ -3303,6 +3312,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   .id-card-grid, .print-id-card-grid{ grid-template-columns:1fr;}
   .stage-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   .grid.charts-row .chart-box{ min-width:0;}
+  .chart-box-body{ flex-direction:column;}
+  .chart-box.has-table .chart-canvas-wrap{ height:220px; flex:none;}
+  .chart-data-table{ border-left:none; border-top:1px solid var(--line); padding-left:0; padding-top:10px; max-height:160px;}
 }
 @media (max-width:480px){
   .content{ padding:12px 10px 46px;}
@@ -4303,8 +4315,8 @@ function biometricSignInButtonHtml(){
   if(!webauthnSupported()) return '';
   const anyRegistered = ACCOUNTS.some(a=>(a.biometricCredentials||[]).length);
   if(!anyRegistered) return '';
-  const fpIcon = `<svg class="fingerprint-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="vertical-align:-3px;margin-right:6px"><path d="M12 3.5c-3.2 0-5.9 1.7-7.3 4.3"/><path d="M4.2 11c.2-1 .5-2 1-2.8"/><path d="M12 3.5c3.9 0 7.2 2.6 8.1 6.2"/><path d="M6.5 20.2c-1.1-1.6-1.9-3.5-2.1-5.5"/><path d="M8.6 21.8C7 19.9 6 17.4 6 14.7 6 11.6 8.7 9 12 9s6 2.6 6 5.7c0 .7-.05 1.4-.15 2"/><path d="M9.4 22.6C8 20.7 7.1 18.2 7.1 14.7c0-2.7 2.2-4.9 4.9-4.9s4.9 2.2 4.9 4.9"/><path d="M12 14.7c0 3.2 1 5.9 2.6 7.9"/><path d="M12 14.7c0 2.2.6 4.2 1.6 5.9"/></svg>`;
-  return `<button type="button" class="btn secondary auth-submit" style="margin-top:8px" onclick="signInWithBiometric()">${fpIcon}Sign in with fingerprint / Face ID</button>`;
+  const fpIcon = `<svg class="fingerprint-ic" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="vertical-align:-8px"><path d="M12 3.5c-3.2 0-5.9 1.7-7.3 4.3"/><path d="M4.2 11c.2-1 .5-2 1-2.8"/><path d="M12 3.5c3.9 0 7.2 2.6 8.1 6.2"/><path d="M6.5 20.2c-1.1-1.6-1.9-3.5-2.1-5.5"/><path d="M8.6 21.8C7 19.9 6 17.4 6 14.7 6 11.6 8.7 9 12 9s6 2.6 6 5.7c0 .7-.05 1.4-.15 2"/><path d="M9.4 22.6C8 20.7 7.1 18.2 7.1 14.7c0-2.7 2.2-4.9 4.9-4.9s4.9 2.2 4.9 4.9"/><path d="M12 14.7c0 3.2 1 5.9 2.6 7.9"/><path d="M12 14.7c0 2.2.6 4.2 1.6 5.9"/></svg>`;
+  return `<button type="button" class="btn secondary auth-submit" style="margin-top:8px;display:flex;align-items:center;justify-content:center;padding:10px" onclick="signInWithBiometric()" title="Sign in with fingerprint / Face ID" aria-label="Sign in with fingerprint / Face ID">${fpIcon}</button>`;
 }
 async function registerBiometric(){
   if(!webauthnSupported()){ toast('Fingerprint/Face ID sign-in needs a secure browser context (https, or localhost) and a device with a fingerprint or face sensor.'); return; }
@@ -5799,17 +5811,40 @@ function printHeaderHtml(title, subtitle){
    "Page X of Y" numbering (and avoiding a stray trailing blank page) means paginating the
    report ourselves: chunk the content into fixed-height page containers sized to the @page
    content box, each with page-break-after except the last, with its own footer pinned to the
-   bottom via flexbox. Row/heading heights below are conservative estimates on purpose — it's
-   safer to slightly under-fill a page than to risk overflowing one and getting a genuine extra
-   page the footer numbering wouldn't know about. */
-const PRINT_PAGE_HEIGHT_PX = 900;   // usable content budget per page (conservative; real box is ~986px)
-const PRINT_HEADER_HEIGHT_PX = 170; // header block reserve, first page only
-const PRINT_FOOTER_HEIGHT_PX = 50;  // footer reserve, every page
-const PRINT_ROW_HEIGHT_PX = 26;
-const PRINT_THEAD_HEIGHT_PX = 28;
-const PRINT_SEC_HEADING_HEIGHT_PX = 34;
-const PRINT_KPI_ROW_HEIGHT_PX = 54;
-const PRINT_IMAGE_HEIGHT_PX = 230;
+   bottom via flexbox.
+   Rather than guess how tall each heading/row/image/footer will render, we measure it for
+   real: a hidden probe element (same width and CSS classes as the actual print page) renders
+   each piece once and its true offsetHeight is read back. That lets pages pack right up to the
+   real content budget instead of leaving a guessed-at safety gap, while a small fixed
+   PRINT_SAFETY_PX cushion still absorbs cross-browser print-rendering rounding. */
+const PRINT_PAGE_MM = 261;           // @page A4 (297mm) minus 18mm top/bottom margins
+const PRINT_CONTENT_WIDTH_MM = 178;  // @page A4 (210mm) minus 16mm left/right margins
+const PRINT_SAFETY_PX = 24;          // small cushion for cross-browser print rounding only
+const PRINT_PAGE_HEIGHT_PX = Math.round(PRINT_PAGE_MM * 96/25.4) - PRINT_SAFETY_PX;
+const PRINT_CONTENT_WIDTH_PX = Math.round(PRINT_CONTENT_WIDTH_MM * 96/25.4);
+const PRINT_ROW_HEIGHT_PX = 26;      // fallback only, used if measurement is ever unavailable
+const PRINT_THEAD_HEIGHT_PX = 28;    // fallback only
+const PRINT_SEC_HEADING_HEIGHT_PX = 34; // fallback only
+const PRINT_KPI_ROW_HEIGHT_PX = 54;  // fallback only
+const PRINT_IMAGE_HEIGHT_PX = 220;   // fallback only — matches .print-chart-img max-height
+const PRINT_HEADER_HEIGHT_PX = 170;  // fallback only
+const PRINT_FOOTER_HEIGHT_PX = 50;   // fallback only
+/* Renders `html` at the real print content width and returns its true rendered height in px.
+   Falls back to `fallback` if the probe can't be measured (e.g. hidden tab / zero layout). */
+function printMeasure(html, fallback){
+  let probe = document.getElementById('printMeasureProbe');
+  if(!probe){
+    probe = document.createElement('div');
+    probe.id = 'printMeasureProbe';
+    probe.style.cssText = 'position:absolute; visibility:hidden; pointer-events:none; left:-9999px; top:0; z-index:-1;';
+    document.body.appendChild(probe);
+  }
+  probe.style.width = PRINT_CONTENT_WIDTH_PX+'px';
+  probe.innerHTML = html;
+  const h = probe.offsetHeight;
+  probe.innerHTML = '';
+  return h>0 ? h : fallback;
+}
 function printFooterHtml(pageNum, totalPages){
   const fullName = (SESSION && SESSION.fullName) || '—';
   const role = (SESSION && SESSION.role) || '—';
@@ -5831,12 +5866,24 @@ function printRenderPages(headerHtml, pagesContent){
       ${printFooterHtml(idx+1, total)}
     </div>`).join('');
 }
-function printRowsToPages(theadHtml, rowsHtml, columnCount){
+/* Real measured height of a report's header block (varies with org name / logo / period label,
+   so it's measured per-call rather than assumed constant). */
+function printMeasureHeader(headerHtml){
+  return printMeasure(headerHtml, PRINT_HEADER_HEIGHT_PX);
+}
+function printMeasureFooter(){
+  return printMeasure(printFooterHtml(1,1), PRINT_FOOTER_HEIGHT_PX);
+}
+function printRowsToPages(theadHtml, rowsHtml, columnCount, headerHtmlForMeasure){
   const rows = rowsHtml.length ? rowsHtml : [`<tr><td colspan="${columnCount}">No records match this selection</td></tr>`];
-  const firstAvail = PRINT_PAGE_HEIGHT_PX - PRINT_HEADER_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX;
-  const restAvail = PRINT_PAGE_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX;
-  const firstCount = Math.max(1, Math.floor(firstAvail/PRINT_ROW_HEIGHT_PX));
-  const restCount = Math.max(1, Math.floor(restAvail/PRINT_ROW_HEIGHT_PX));
+  const theadH = printMeasure(`<table class="print-table"><thead>${theadHtml}</thead></table>`, PRINT_THEAD_HEIGHT_PX);
+  const rowH = printMeasure(`<table class="print-table"><tbody>${rows[0]}</tbody></table>`, PRINT_ROW_HEIGHT_PX);
+  const footerH = printMeasureFooter();
+  const headerH = headerHtmlForMeasure!=null ? printMeasureHeader(headerHtmlForMeasure) : PRINT_HEADER_HEIGHT_PX;
+  const firstAvail = PRINT_PAGE_HEIGHT_PX - headerH - theadH - footerH;
+  const restAvail = PRINT_PAGE_HEIGHT_PX - theadH - footerH;
+  const firstCount = Math.max(1, Math.floor(firstAvail/rowH));
+  const restCount = Math.max(1, Math.floor(restAvail/rowH));
   const chunks = [];
   let i = 0, first = true;
   while(i < rows.length){
@@ -5850,8 +5897,9 @@ function printRowsToPages(theadHtml, rowsHtml, columnCount){
 function printReport(title, subtitle, columns, rows){
   const theadHtml = `<tr>${columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`;
   const rowsHtml = rows.map(r=>`<tr>${columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`);
-  const pagesContent = printRowsToPages(theadHtml, rowsHtml, columns.length);
-  $('#printArea').innerHTML = printRenderPages(printHeaderHtml(title, subtitle), pagesContent);
+  const headerHtml = printHeaderHtml(title, subtitle);
+  const pagesContent = printRowsToPages(theadHtml, rowsHtml, columns.length, headerHtml);
+  $('#printArea').innerHTML = printRenderPages(headerHtml, pagesContent);
   document.body.classList.add('printing');
   setTimeout(()=>{ window.print(); }, 80);
 }
@@ -5866,17 +5914,21 @@ function printMultiSection(title, subtitle, sections){
   // Each section becomes one or more non-splittable "units" (a unit is never torn across a
   // page break): a heading+KPI block is always one unit; a section with a table is chunked
   // into row-pages the same way printReport does, so long tables can still span pages while
-  // still never breaking a row in half.
+  // still never breaking a row in half. Every unit's height is the real measured height of its
+  // HTML (see printMeasure), not a guess, so pages fill up to the real content budget.
+  const headerHtml = printHeaderHtml(title, subtitle);
+  const headerH = printMeasureHeader(headerHtml);
+  const footerH = printMeasureFooter();
   const units = [];
   sections.forEach(sec=>{
     let headingHtml = `<h3 class="print-sec-heading">${esc(sec.heading)}</h3>`;
-    let headingHeight = PRINT_SEC_HEADING_HEIGHT_PX;
     if(sec.kpis){
       headingHtml += `<div class="print-kpis">${sec.kpis.map(k=>`<div class="print-kpi"><strong>${esc(k.value)}</strong>${esc(k.label)}</div>`).join('')}</div>`;
-      headingHeight += PRINT_KPI_ROW_HEIGHT_PX;
     }
+    const headingHeight = printMeasure(headingHtml, sec.kpis ? PRINT_SEC_HEADING_HEIGHT_PX+PRINT_KPI_ROW_HEIGHT_PX : PRINT_SEC_HEADING_HEIGHT_PX);
     if(sec.image){
-      units.push({html: headingHtml + `<img class="print-chart-img" src="${sec.image}" alt="${esc(sec.heading)}">`, height: headingHeight + PRINT_IMAGE_HEIGHT_PX});
+      const imgHtml = `<img class="print-chart-img" src="${sec.image}" alt="${esc(sec.heading)}">`;
+      units.push({html: headingHtml + imgHtml, height: headingHeight + PRINT_IMAGE_HEIGHT_PX});
       return;
     }
     if(sec.columns){
@@ -5884,16 +5936,19 @@ function printMultiSection(title, subtitle, sections){
       const rowsHtml = sec.rows.length
         ? sec.rows.map(r=>`<tr>${sec.columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`)
         : [`<tr><td colspan="${sec.columns.length}">No records for this period</td></tr>`];
-      const restAvail = PRINT_PAGE_HEIGHT_PX - PRINT_THEAD_HEIGHT_PX - PRINT_FOOTER_HEIGHT_PX - headingHeight;
-      const restCount = Math.max(1, Math.floor(restAvail/PRINT_ROW_HEIGHT_PX));
+      const theadH = printMeasure(`<table class="print-table"><thead>${theadHtml}</thead></table>`, PRINT_THEAD_HEIGHT_PX);
+      const rowH = printMeasure(`<table class="print-table"><tbody>${rowsHtml[0]}</tbody></table>`, PRINT_ROW_HEIGHT_PX);
+      const continuedH = printMeasure(`<div class="print-sec-continued">${esc(sec.heading)} (continued)</div>`, 20);
+      const restAvail = PRINT_PAGE_HEIGHT_PX - theadH - footerH - headingHeight;
+      const restCount = Math.max(1, Math.floor(restAvail/rowH));
       let i = 0, first = true;
       while(i < rowsHtml.length){
         const chunk = rowsHtml.slice(i, i+restCount);
         const tableHtml = `<table class="print-table"><thead>${theadHtml}</thead><tbody>${chunk.join('')}</tbody></table>`;
         if(first){
-          units.push({html: headingHtml + tableHtml, height: headingHeight + PRINT_THEAD_HEIGHT_PX + chunk.length*PRINT_ROW_HEIGHT_PX});
+          units.push({html: headingHtml + tableHtml, height: headingHeight + theadH + chunk.length*rowH});
         } else {
-          units.push({html: `<div class="print-sec-continued">${esc(sec.heading)} (continued)</div>` + tableHtml, height: 20 + PRINT_THEAD_HEIGHT_PX + chunk.length*PRINT_ROW_HEIGHT_PX});
+          units.push({html: `<div class="print-sec-continued">${esc(sec.heading)} (continued)</div>` + tableHtml, height: continuedH + theadH + chunk.length*rowH});
         }
         i += restCount; first = false;
       }
@@ -5902,7 +5957,7 @@ function printMultiSection(title, subtitle, sections){
     }
   });
   const pagesContent = [];
-  let current = [], used = PRINT_HEADER_HEIGHT_PX;
+  let current = [], used = headerH;
   units.forEach(u=>{
     if(current.length && used + u.height > PRINT_PAGE_HEIGHT_PX){
       pagesContent.push(current.join('')); current = []; used = 0;
@@ -5910,7 +5965,7 @@ function printMultiSection(title, subtitle, sections){
     current.push(u.html); used += u.height;
   });
   if(current.length || !pagesContent.length) pagesContent.push(current.join(''));
-  $('#printArea').innerHTML = printRenderPages(printHeaderHtml(title, subtitle), pagesContent);
+  $('#printArea').innerHTML = printRenderPages(headerHtml, pagesContent);
   document.body.classList.add('printing');
   setTimeout(()=>{ window.print(); }, 80);
 }
@@ -6662,18 +6717,28 @@ function pageAnalytics(){
     </div>
   </div>
   <div class="grid charts-row">
-    <div class="card chart-box"><h4>Monthly circulation trend</h4><p class="chart-caption">How many titles were issued each month — spot busy and quiet periods at a glance.</p><div class="chart-canvas-wrap"><canvas id="chAnMonthly"></canvas></div></div>
-    <div class="card chart-box"><h4>Book condition analysis</h4><p class="chart-caption">A breakdown of the collection by physical condition (Good, Fair, Damaged, Missing…) — flags what may need replacing.</p><div class="chart-canvas-wrap"><canvas id="chCondition"></canvas></div></div>
-    <div class="card chart-box"><h4>Loan status breakdown</h4><p class="chart-caption">The share of all loans that are currently borrowed, overdue, returned, or reported missing.</p><div class="chart-canvas-wrap"><canvas id="chLoanStatus"></canvas></div></div>
-    <div class="card chart-box"><h4>Members by category</h4><p class="chart-caption">How your registered members split between students and staff.</p><div class="chart-canvas-wrap"><canvas id="chMemberCat"></canvas></div></div>
-    <div class="card chart-box"><h4>Borrowing by class</h4><p class="chart-caption">Which classes borrow the most — useful for targeting reading encouragement where it's needed.</p><div class="chart-canvas-wrap"><canvas id="chClassBorrow"></canvas></div></div>
-    <div class="card chart-box"><h4>Register visit purpose</h4><p class="chart-caption">Why members are signing in at the desk — borrowing, research, reading, internet access, and more.</p><div class="chart-canvas-wrap"><canvas id="chPurpose"></canvas></div></div>
+    ${analyticsChartBoxHtml('chAnMonthly','Monthly circulation trend','How many titles were issued each month — spot busy and quiet periods at a glance.')}
+    ${analyticsChartBoxHtml('chCondition','Book condition analysis','A breakdown of the collection by physical condition (Good, Fair, Damaged, Missing…) — flags what may need replacing.')}
+    ${analyticsChartBoxHtml('chLoanStatus','Loan status breakdown','The share of all loans that are currently borrowed, overdue, returned, or reported missing.')}
+    ${analyticsChartBoxHtml('chMemberCat','Members by category','How your registered members split between students and staff.')}
+    ${analyticsChartBoxHtml('chClassBorrow','Borrowing by class','Which classes borrow the most — useful for targeting reading encouragement where it\'s needed.')}
+    ${analyticsChartBoxHtml('chPurpose','Register visit purpose','Why members are signing in at the desk — borrowing, research, reading, internet access, and more.')}
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Overdue detail</h3><div class="hint">${overdueRows.length} loan(s) past due date</div></div>
     <div class="table-wrap"><table class="datatable"><thead><tr><th>Member ID</th><th>Name</th><th>Class</th><th>Acc. No</th><th>Title</th><th>Due date</th><th>Days overdue</th></tr></thead>
     <tbody>${overdueRows.map(r=>`<tr><td>${esc(r.userId)}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td><td>${esc(r.acc)}</td><td>${esc(r.title)}</td><td>${fmtDate(r.dueDate)}</td><td><span class="badge red">${r.daysOverdue}</span></td></tr>`).join('')||'<tr><td colspan=7><div class="empty"><div class="big">✓</div>Nothing overdue</div></td></tr>'}</tbody></table></div>
   </div>`;
+}
+/* Renders one chart card: heading + caption on top, the live canvas on the left and a compact
+   table of the exact data behind it on the right (same aggregates used for CSV/Excel export). */
+function analyticsChartBoxHtml(canvasId, heading, caption){
+  const sec = analyticsChartDataSections().find(s=>s.heading===heading);
+  const tableHtml = sec ? `
+    <div class="chart-data-table"><table><thead><tr>${sec.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${sec.rows.length ? sec.rows.map(r=>`<tr>${sec.columns.map(c=>`<td>${esc(c.get(r))}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${sec.columns.length}">No data yet</td></tr>`}</tbody></table></div>` : '';
+  return `<div class="card chart-box has-table"><h4>${esc(heading)}</h4><p class="chart-caption">${caption}</p>
+    <div class="chart-box-body"><div class="chart-canvas-wrap"><canvas id="${canvasId}"></canvas></div>${tableHtml}</div></div>`;
 }
 /* Print / export for the Analytics page — the top borrowers, top titles, and full overdue
    detail table, which together are the actual data (not just charts) shown on this page. */
@@ -6828,6 +6893,7 @@ function pageCatalogue(){
     ],
     extraActions:[
       {label:'🪪 Catalogue cards', alwaysShow:true, onClick:()=> openAllBookCardsModal()},
+      {label:'🏷 Print codes only', alwaysShow:true, onClick:()=> openAllBookCodesModal()},
       {label:'⚠ Clear all titles', onClick:clearAllCatalogue, danger:true},
     ],
     onImport:()=>openImportModal({
@@ -8373,6 +8439,11 @@ function openBookCardModal(acc){
   openCardModal('Catalogue card — '+b.title, bookCardItems([b]));
 }
 function openAllBookCardsModal(){ openCardModal('Catalogue cards', bookCardItems(DB.catalogue)); }
+/* Codes-only labels for the catalogue — just the barcode/QR with the accession number and
+   title underneath, no full ID-card layout (photo, author, publisher, etc). Handy for
+   spine/pocket labels where a full card is overkill. */
+function bookCodeItems(books){ return books.map(b=>({ code:b.acc, title:b.title, sub:b.acc })); }
+function openAllBookCodesModal(){ openBarcodeModal('Catalogue codes', bookCodeItems(DB.catalogue)); }
 /* Prints the member's full data/profile (details + entire loan history) as a text report,
    separate from the compact ID card above. */
 function printMemberFullProfile(id){
