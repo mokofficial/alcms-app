@@ -4934,12 +4934,23 @@ async function loadDB(){
   }catch(e){ console.warn('No saved data yet, using seed data.', e); }
   return buildSeedDB();
 }
+/* Default starter categories for Assets & Equipment — editable any time from
+   Assets & Equipment → "Manage categories". */
+const DEFAULT_EQUIPMENT_CATEGORIES = ['Furniture','Computers & IT','Audio-Visual','Shelving & Storage','Stationery & Supplies','Cleaning Equipment','Security & Safety','Other'];
 /* Fills in arrays/settings added after the original save format, so older saved libraries
    don't crash when opening reservations, fines, notifications, etc. for the first time. */
 function migrateNewFeatureData(db){
   if(!Array.isArray(db.reservations)) db.reservations = [];
   if(!Array.isArray(db.notifications)) db.notifications = [];
   if(!Array.isArray(db.trash)) db.trash = [];
+  if(!Array.isArray(db.equipment)) db.equipment = [];
+  db.equipment.forEach(it=>{
+    if(it.assignedTo===undefined) it.assignedTo = '';
+    if(!Array.isArray(it.history)) it.history = [{date:it.dateAdded||todayISO(), condition:it.condition, location:it.location, assignedTo:it.assignedTo, note:'Added to inventory'}];
+    if(!it.tag) it.tag = it.id;
+  });
+  if(!db.setup) db.setup = {};
+  if(!Array.isArray(db.setup.equipmentCategories) || !db.setup.equipmentCategories.length) db.setup.equipmentCategories = DEFAULT_EQUIPMENT_CATEGORIES.slice();
   if(!db.setup) db.setup = {};
   if(db.setup.fineEnabled===undefined) db.setup.fineEnabled = false;
   if(db.setup.fineRatePerDay===undefined) db.setup.fineRatePerDay = 0;
@@ -5073,6 +5084,7 @@ function buildSeedDB(){
   ];
   if(setup.scanWebhookUrl===undefined) setup.scanWebhookUrl = '';
   if(setup.stationId===undefined) setup.stationId = '';
+  if(!Array.isArray(setup.equipmentCategories) || !setup.equipmentCategories.length) setup.equipmentCategories = DEFAULT_EQUIPMENT_CATEGORIES.slice();
   if(!setup.notifTypes) setup.notifTypes = {};
   ['schedule','overdue','dueSoon','feedback','summary','reservation'].forEach(k=>{
     if(setup.notifTypes[k]===undefined) setup.notifTypes[k] = true;
@@ -5082,7 +5094,7 @@ function buildSeedDB(){
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], consequenceLog: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], consequenceLog: [], equipment: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -5278,6 +5290,7 @@ const NAV = [
   {group:'Library', items:[
     {id:'catalogue', label:'Catalogue', ico:'▥'},
     {id:'users', label:'Members', ico:'👥'},
+    {id:'equipment', label:'Assets & Equipment', ico:'🧰'},
   ]},
   {group:'Operations', items:[
     {id:'circulation', label:'Circulation', ico:'⇄'},
@@ -5560,6 +5573,7 @@ const PAGE_META = {
   analytics:['Analytics','Top borrowers, top titles and overdue detail'],
   catalogue:['Catalogue','Every accessioned title in the collection'],
   users:['Members','Students and staff registered to borrow'],
+  equipment:['Assets & Equipment','Furniture, electronics and other non-book assets — tracked by category, condition, location and assignment'],
   circulation:['Circulation','Issue and return titles'],
   reservations:['Reservations','Holds placed on titles that are currently out'],
   memberProfile:['Member profile','Loans, history, fines and visits for this member'],
@@ -10254,6 +10268,269 @@ function setFeedbackStatus(entryId, status){
   toast('Status updated to '+status);
 }
 
+/* ================= PAGE: ASSETS & EQUIPMENT ================= */
+let equipmentModule;
+let equipmentModuleState = {q:'', filters:{}, sort:''};
+function equipmentCondBadgeClass(c){
+  return c==='GOOD' ? 'green' : c==='FAIR' ? 'gold' : c==='DAMAGED' ? 'red' : c==='OUT OF SERVICE' ? 'grey' : 'grey';
+}
+function pageEquipment(){
+  const categories = (DB.setup.equipmentCategories && DB.setup.equipmentCategories.length) ? DB.setup.equipmentCategories : DEFAULT_EQUIPMENT_CATEGORIES;
+  equipmentModule = GenericModule({
+    state:equipmentModuleState, key:'equipment', title:'Assets & Equipment',
+    hint:'Furniture, electronics and other non-book assets — tick rows to share/export/print just those',
+    data:()=>DB.equipment,
+    searchKeys:['name','tag','category','location','assignedTo','supplier','notes'],
+    filters:[
+      {key:'category', label:'Category', options:categories},
+      {key:'condition', label:'Condition', options:['GOOD','FAIR','DAMAGED','OUT OF SERVICE']},
+    ],
+    sortOptions:[
+      {key:'name-asc', label:'Name (A–Z)', compare:(a,b)=>String(a.name).localeCompare(String(b.name))},
+      {key:'category-asc', label:'Category (A–Z)', compare:(a,b)=>String(a.category).localeCompare(String(b.category))},
+      {key:'qty-desc', label:'Quantity (high–low)', compare:(a,b)=>(b.quantity||0)-(a.quantity||0)},
+      {key:'added-desc', label:'Newest added', compare:(a,b)=>(parseAnyDate(b.dateAdded)||0)-(parseAnyDate(a.dateAdded)||0)},
+    ],
+    selectable:true, rowKey:r=>r.id,
+    columns:[
+      {key:'category', label:'Category', render:r=>`<span class="badge grey">${esc(r.category||'—')}</span>`},
+      {key:'name', label:'Item'},
+      {key:'tag', label:'Asset Tag', render:r=>esc(r.tag||'—')},
+      {key:'quantity', label:'Qty', render:r=>`${+r.quantity||0} ${esc(r.unit||'')}`},
+      {key:'condition', label:'Condition', render:r=>`<span class="badge ${equipmentCondBadgeClass(r.condition)}">${esc(r.condition||'—')}</span>`},
+      {key:'location', label:'Location'},
+      {key:'assignedTo', label:'Assigned to', render:r=>esc(r.assignedTo||'—')},
+      {key:'dateAdded', label:'Added', render:r=>fmtDate(r.dateAdded)},
+    ],
+    exportColumns:[
+      {label:'Category', get:r=>r.category||''},
+      {label:'Item', get:r=>r.name||''},
+      {label:'Asset Tag', get:r=>r.tag||''},
+      {label:'Quantity', get:r=>r.quantity||0},
+      {label:'Unit', get:r=>r.unit||''},
+      {label:'Condition', get:r=>r.condition||''},
+      {label:'Location', get:r=>r.location||''},
+      {label:'Assigned to', get:r=>r.assignedTo||''},
+      {label:'Supplier', get:r=>r.supplier||''},
+      {label:'Cost', get:r=>r.cost||''},
+      {label:'Date added', get:r=>fmtDate(r.dateAdded)},
+      {label:'Notes', get:r=>r.notes||''},
+    ],
+    addLabel:'+ Add asset', onAdd:()=>openEquipmentForm(),
+    extraActions:[
+      {label:'📱 Share via WhatsApp', onClick:shareEquipmentViaWhatsApp, alwaysShow:true},
+      {label:'✉ Share via Email', onClick:shareEquipmentViaEmail, alwaysShow:true},
+      {label:'🏷 Print asset tags', onClick:printAllEquipmentTags, alwaysShow:true},
+      ...(isAdmin() ? [
+        {label:'🏷 Manage categories', onClick:openEquipmentCategoriesModal},
+        {label:'🗑 Delete selected', onClick:deleteSelectedEquipment, danger:true},
+      ] : []),
+    ],
+    rowActions:r=>`
+      <button class="btn secondary small" onclick="openEquipmentForm('${esc(r.id)}')">Edit</button>
+      <button class="btn secondary small" onclick="openEquipmentLogUpdateForm('${esc(r.id)}')">Log update</button>
+      <button class="btn secondary small" onclick="openEquipmentHistoryModal('${esc(r.id)}')">History</button>
+      <button class="btn secondary small" onclick="openEquipmentTagModal('${esc(r.id)}')">🏷 Tag</button>
+      <button class="btn danger small" onclick="deleteEquipmentItem('${esc(r.id)}')">Delete</button>`,
+  });
+  return `<div id="mod_equipment"></div>`;
+}
+function openEquipmentForm(id){
+  if(!isAdmin()) return requireAdmin('manage equipment');
+  const existing = id ? DB.equipment.find(x=>x.id===id) : null;
+  const categories = (DB.setup.equipmentCategories && DB.setup.equipmentCategories.length) ? DB.setup.equipmentCategories : DEFAULT_EQUIPMENT_CATEGORIES;
+  openModal({
+    title: existing ? 'Edit asset' : 'Add asset',
+    wide:true,
+    fields:[
+      {row:[
+        {key:'category', label:'Category', type:'select', options:categories, required:true, default:existing?existing.category:''},
+        {key:'name', label:'Item name', required:true, default:existing?existing.name:''},
+      ]},
+      {row:[
+        {key:'tag', label:'Asset tag / Serial no. (optional — auto-generated if left blank)', default:existing?existing.tag:''},
+        {key:'location', label:'Location / Shelf', default:existing?existing.location:''},
+      ]},
+      {row:[
+        {key:'quantity', label:'Quantity', type:'number', required:true, default:existing?existing.quantity:1},
+        {key:'unit', label:'Unit', default:existing?existing.unit:'unit(s)'},
+      ]},
+      {row:[
+        {key:'condition', label:'Condition', type:'select', options:['GOOD','FAIR','DAMAGED','OUT OF SERVICE'], required:true, default:existing?existing.condition:'GOOD'},
+        {key:'assignedTo', label:'Assigned to (person/department, optional)', default:existing?existing.assignedTo:''},
+      ]},
+      {row:[
+        {key:'dateAdded', label:'Date added', type:'date', default:existing?existing.dateAdded:todayISO()},
+        {key:'supplier', label:'Supplier (optional)', default:existing?existing.supplier:''},
+      ]},
+      {key:'cost', label:'Cost (optional)', type:'number', default:existing?existing.cost:''},
+      {key:'notes', label:'Notes', type:'textarea', default:existing?existing.notes:''},
+    ],
+    onSave:(vals)=>{
+      vals.quantity = Math.max(0, +vals.quantity||0);
+      vals.cost = vals.cost!=='' ? +vals.cost : '';
+      if(existing){
+        const condChanged = vals.condition!==existing.condition;
+        const locChanged = (vals.location||'')!==(existing.location||'');
+        const assignChanged = (vals.assignedTo||'')!==(existing.assignedTo||'');
+        vals.tag = (vals.tag||'').trim() || existing.tag || existing.id;
+        Object.assign(existing, vals);
+        if(condChanged || locChanged || assignChanged){
+          if(!Array.isArray(existing.history)) existing.history = [];
+          existing.history.unshift({date:todayISO(), condition:vals.condition, location:vals.location, assignedTo:vals.assignedTo, note:'Updated via edit'});
+        }
+        saveDB(); render(); toast('Asset updated');
+      } else {
+        vals.id = uid('EQP');
+        vals.tag = (vals.tag||'').trim() || vals.id;
+        vals.history = [{date: vals.dateAdded||todayISO(), condition:vals.condition, location:vals.location, assignedTo:vals.assignedTo, note:'Added to inventory'}];
+        DB.equipment.unshift(vals); saveDB(); render(); toast('Asset added to inventory');
+      }
+    }
+  });
+}
+/* Quick logging for a condition/location/assignment change without opening the full edit
+   form — the everyday action for recording "still here, still fine" or "moved / handed
+   over / needs repair" without touching name, category, quantity, etc. */
+function openEquipmentLogUpdateForm(id){
+  if(!isAdmin()) return requireAdmin('log an asset update');
+  const item = DB.equipment.find(x=>x.id===id); if(!item) return;
+  openModal({
+    title:'Log update — '+item.name,
+    fields:[
+      {row:[
+        {key:'condition', label:'Condition', type:'select', options:['GOOD','FAIR','DAMAGED','OUT OF SERVICE'], required:true, default:item.condition},
+        {key:'location', label:'Location / Shelf', default:item.location},
+      ]},
+      {key:'assignedTo', label:'Assigned to (person/department, optional)', default:item.assignedTo||''},
+      {key:'note', label:'Note for this update (optional)', type:'textarea', default:''},
+    ],
+    onSave:(vals)=>{
+      const changed = vals.condition!==item.condition || (vals.location||'')!==(item.location||'') || (vals.assignedTo||'')!==(item.assignedTo||'');
+      item.condition = vals.condition; item.location = vals.location; item.assignedTo = vals.assignedTo;
+      if(changed || vals.note){
+        if(!Array.isArray(item.history)) item.history = [];
+        item.history.unshift({date:todayISO(), condition:vals.condition, location:vals.location, assignedTo:vals.assignedTo, note:vals.note||''});
+      }
+      saveDB(); render(); toast('Update logged');
+    }
+  });
+}
+function openEquipmentHistoryModal(id){
+  const item = DB.equipment.find(x=>x.id===id); if(!item) return;
+  const log = (Array.isArray(item.history) && item.history.length) ? item.history
+    : [{date:item.dateAdded, condition:item.condition, location:item.location, assignedTo:item.assignedTo, note:'Added to inventory'}];
+  const rows = log.map(h=>`<tr><td>${fmtDate(h.date)}</td><td><span class="badge ${equipmentCondBadgeClass(h.condition)}">${esc(h.condition||'—')}</span></td><td>${esc(h.location||'—')}</td><td>${esc(h.assignedTo||'—')}</td><td>${esc(h.note||'')}</td></tr>`).join('');
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  wrap.innerHTML = `
+    <div class="modal wide">
+      <div class="modal-head"><h3>History — ${esc(item.name)}</h3><button id="mClose">✕</button></div>
+      <div class="modal-body"><div class="table-wrap"><table class="datatable">
+        <thead><tr><th>Date</th><th>Condition</th><th>Location</th><th>Assigned to</th><th>Note</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div></div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
+}
+function deleteEquipmentItem(id){
+  if(!isAdmin()) return requireAdmin('delete equipment');
+  confirmDelete('Delete this equipment record?', ()=>{
+    DB.equipment = DB.equipment.filter(x=>x.id!==id);
+    saveDB(); render(); toast('Equipment deleted');
+  });
+}
+function deleteSelectedEquipment(){
+  if(!isAdmin()) return requireAdmin('delete equipment');
+  const ids = equipmentModuleState.selected ? Array.from(equipmentModuleState.selected) : [];
+  if(!ids.length){ toast('Tick at least one row first'); return; }
+  if(!confirm(`Delete ${ids.length} selected equipment record(s)?`)) return;
+  const idSet = new Set(ids);
+  DB.equipment = DB.equipment.filter(x=>!idSet.has(x.id));
+  equipmentModuleState.selected.clear();
+  saveDB(); render(); toast('Selected equipment deleted');
+}
+/* Codes-only labels (barcode or QR, per Setup → same engine as catalogue/member codes) —
+   the asset tag itself if one was recorded, falling back to the item's internal ID so every
+   asset always has something scannable to print. */
+function equipmentCodeItems(rows){
+  return rows.map(r=>({ code: r.tag || r.id, title: r.name, sub: [r.category, r.location].filter(Boolean).join(' · ') || (r.tag||r.id) }));
+}
+function openEquipmentTagModal(id){
+  const item = DB.equipment.find(x=>x.id===id); if(!item) return;
+  openBarcodeModal('Asset tag — '+item.name, equipmentCodeItems([item]));
+}
+function printAllEquipmentTags(){
+  const rows = equipmentRowsForSharing();
+  if(!rows.length) return toast('No equipment records match the current view');
+  openBarcodeModal('Asset tags', equipmentCodeItems(rows));
+}
+function openEquipmentCategoriesModal(){
+  if(!isAdmin()) return requireAdmin('manage equipment categories');
+  const current = (DB.setup.equipmentCategories && DB.setup.equipmentCategories.length) ? DB.setup.equipmentCategories : DEFAULT_EQUIPMENT_CATEGORIES;
+  openModal({
+    title:'Manage equipment categories',
+    wide:true,
+    fields:[
+      {key:'categories', label:'Categories (one per line)', type:'textarea', default:current.join('\n'), subHint:'Existing items keep their current category even if you remove it from this list.'},
+    ],
+    onSave:(vals)=>{
+      const list = String(vals.categories||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      const deduped = [...new Set(list)];
+      DB.setup.equipmentCategories = deduped.length ? deduped : DEFAULT_EQUIPMENT_CATEGORIES.slice();
+      saveDB(); render(); toast('Categories updated');
+    }
+  });
+}
+/* Rows currently in view for the Equipment module — respects the active search/filters, and
+   narrows to just the ticked rows when any are selected (same convention as print/export). */
+function equipmentRowsForSharing(){
+  let rows = filterRows(DB.equipment, equipmentModuleState, ['name','tag','category','location','supplier','notes']);
+  if(equipmentModuleState.selected && equipmentModuleState.selected.size){
+    rows = rows.filter(r=> equipmentModuleState.selected.has(r.id));
+  }
+  return rows;
+}
+/* Builds a readable, grouped-by-category summary for sharing outside the app. Capped at a
+   sensible length for a chat/email message — Export (CSV/Excel/PDF) is the way to hand off
+   the complete, unabridged list. */
+function formatEquipmentSummaryText(rows){
+  const org = (DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'Library';
+  if(!rows.length) return `*${org} — Assets & Equipment*\nNo equipment records match the current view.`;
+  const grouped = {};
+  rows.forEach(r=>{ const cat = r.category||'Uncategorized'; (grouped[cat] = grouped[cat]||[]).push(r); });
+  const lines = [`*${org} — Assets & Equipment*`, `Generated ${new Date().toLocaleDateString('en-GB')} · ${rows.length} item(s)`, ''];
+  const CAP = 40;
+  let shown = 0, truncated = false;
+  for(const cat of Object.keys(grouped)){
+    if(truncated) break;
+    lines.push(`*${cat}*`);
+    for(const r of grouped[cat]){
+      if(shown>=CAP){ lines.push(`…and ${rows.length-shown} more item(s) — use Export for the complete list.`); truncated = true; break; }
+      lines.push(`• ${r.name}${r.tag?' ('+r.tag+')':''} — Qty ${+r.quantity||0}${r.unit?' '+r.unit:''}, ${r.condition||'—'}${r.location?', '+r.location:''}${r.assignedTo?', assigned to '+r.assignedTo:''}`);
+      shown++;
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+function shareEquipmentViaWhatsApp(){
+  const rows = equipmentRowsForSharing();
+  window.open(whatsAppLink('', formatEquipmentSummaryText(rows)), '_blank', 'noopener');
+}
+function shareEquipmentViaEmail(){
+  const rows = equipmentRowsForSharing();
+  const msg = formatEquipmentSummaryText(rows).replace(/\*/g,'');
+  const subject = encodeURIComponent('Assets & Equipment' + (DB.setup.institutionName ? ' — '+DB.setup.institutionName : ''));
+  const body = encodeURIComponent(msg + '\n\nFor the complete list with every column, use Export (CSV/Excel/PDF) in Assets & Equipment and attach the downloaded file to this email.');
+  window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+}
+
 /* ================= PAGE: SETUP (admin only) ================= */
 function pageSetup(){
   if(!isAdmin()){
@@ -12538,6 +12815,7 @@ function render(){
     case 'analytics': html = pageAnalytics(); break;
     case 'catalogue': html = pageCatalogue(); break;
     case 'users': html = pageUsers(); break;
+    case 'equipment': html = pageEquipment(); break;
     case 'circulation': html = pageCirculation() + pageCirculationTable(); break;
     case 'reservations': html = pageReservations(); break;
     case 'memberProfile': html = pageMemberProfile(); break;
@@ -12561,6 +12839,7 @@ function render(){
   if(route==='circulation' && circulationModule){ circulationModule.bind(); }
   if(route==='reservations' && reservationsModule){ reservationsModule.bind(); }
   if(route==='users' && usersModule){ $('#mod_users').innerHTML = usersModule.render(); MODULE_CONTAINERS.users={host:{render:()=>{ $('#mod_users').innerHTML=usersModule.render(); usersModule.bind(); }}}; usersModule.bind(); }
+  if(route==='equipment' && equipmentModule){ $('#mod_equipment').innerHTML = equipmentModule.render(); MODULE_CONTAINERS.equipment={host:{render:()=>{ $('#mod_equipment').innerHTML=equipmentModule.render(); equipmentModule.bind(); }}}; equipmentModule.bind(); }
   if(route==='reminders' && remindersModule){ $('#mod_reminders').innerHTML = remindersModule.render(); MODULE_CONTAINERS.reminders={host:{render:()=>{ $('#mod_reminders').innerHTML=remindersModule.render(); remindersModule.bind(); }}}; remindersModule.bind(); }
   if(route==='reminders' && nearOverdueModule){ $('#mod_nearoverdue').innerHTML = nearOverdueModule.render(); MODULE_CONTAINERS.nearoverdue={host:{render:()=>{ $('#mod_nearoverdue').innerHTML=nearOverdueModule.render(); nearOverdueModule.bind(); }}}; nearOverdueModule.bind(); }
   if(route==='reminders' && reminderHistoryModule){ $('#mod_reminderhistory').innerHTML = reminderHistoryModule.render(); MODULE_CONTAINERS.reminderhistory={host:{render:()=>{ $('#mod_reminderhistory').innerHTML=reminderHistoryModule.render(); reminderHistoryModule.bind(); }}}; reminderHistoryModule.bind(); }
