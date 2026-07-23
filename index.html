@@ -2541,12 +2541,11 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-dots span{ width:6px;height:6px;border-radius:50%; background:rgba(255,255,255,.25);}
 .auth-dots span.active{ background:var(--brass-light); width:18px; border-radius:4px; transition:all .3s;}
 .auth-bottom-cluster{ margin-top:16px;}
-/* Dots + Tips/Getting started/bell now live together right above the footer text, instead of
-   the bell floating in a separate top-right overlay — keeps the two visually paired and behaves
-   identically on every viewport since it's plain flow layout, not JS-driven repositioning. */
-.auth-dots-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; position:relative; z-index:2;}
-.auth-footer-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap; line-height:1;}
-.auth-footer-row-centered{ flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px;}
+/* Tips/Getting started/bell sit directly under the dots now — plain flow layout, so it renders
+   the same way on a real phone as it does when you shrink a desktop browser window, instead of
+   relying on JS or box-state tricks. */
+.auth-notif-bell{ margin-top:8px; position:relative; z-index:2;}
+.auth-footer-row{ display:flex; align-items:center; justify-content:flex-start; gap:10px; margin-top:12px; flex-wrap:wrap; line-height:1; text-align:left;}
 .auth-carousel-actions{ display:flex; gap:8px; align-items:center; flex:none; line-height:1;}
 .getting-started-btn{
   background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25);
@@ -2555,8 +2554,11 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 }
 .getting-started-btn:hover{ background:rgba(255,255,255,.2);}
 .auth-foot{ font-size:11px; color:rgba(255,255,255,.5); position:relative; z-index:2; line-height:1; display:inline-flex; align-items:center;}
-.auth-contact-dev-link{ display:block; font-size:11px; color:rgba(255,255,255,.55); text-decoration:underline; text-align:center;}
+.auth-contact-dev-link{ display:block; font-size:11px; color:rgba(255,255,255,.55); text-decoration:underline; text-align:left;}
 .auth-contact-dev-link:hover{ color:#fff;}
+/* Same app name / contact link repeated on the form screen (Sign in / Create account), so it's
+   still visible after navigating away from the carousel screen — same left alignment. */
+.auth-form-footer{ margin-top:18px;}
 .lock-loan-search{ position:relative; display:flex; align-items:center; gap:6px; margin-top:10px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:6px 8px; max-width:320px;}
 .lock-loan-search .lls-ic{ font-size:13px; opacity:.85;}
 .lock-loan-search input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:#F3EEDD; font-size:12px; padding:2px 0;}
@@ -2565,15 +2567,14 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .lock-loan-search .icon-btn:hover{ border-color:var(--brass-light);}
 .lock-loan-search .scan-suggest{ left:0; right:auto; top:calc(100% + 6px); width:280px; max-width:80vw; color:#111;}
 @media (max-width:640px){ .lock-loan-search{ max-width:100%;} }
-/* Tips / Getting started / bell sit inline right next to the carousel dots now (not a floating
-   absolute overlay), so this is plain flow layout — it renders the same way on a real phone as
-   it does when you shrink a desktop browser window, because both simply match the same CSS
-   width media query below instead of relying on JS or box-state tricks. */
-.auth-notif-bell{ position:relative; flex:none; z-index:6;}
-.auth-top-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+/* Tips / Getting started / bell sit directly under the dots now (not a floating absolute
+   overlay), so this is plain flow layout — it renders the same way on a real phone as it does
+   when you shrink a desktop browser window, because both simply match the same CSS width media
+   query below instead of relying on JS or box-state tricks. */
+.auth-top-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-start;}
 .auth-notif-bell .icon-btn{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#EFE8D3; position:relative;}
 .auth-notif-bell .icon-btn:hover{ border-color:var(--brass-light);}
-.auth-notif-preview{ display:none; position:absolute; bottom:calc(100% + 8px); top:auto; right:0; width:300px; max-width:min(88vw,320px); max-height:360px; overflow:auto;
+.auth-notif-preview{ display:none; position:absolute; top:calc(100% + 8px); bottom:auto; left:0; right:auto; width:300px; max-width:min(88vw,320px); max-height:360px; overflow:auto;
   background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:6px; z-index:20;}
 .auth-notif-preview.open{ display:block;}
 .auth-notif-preview .notif-row{ cursor:default;}
@@ -2582,7 +2583,6 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
    the dots, so the two buttons collapse to icon-only (label shows in a small flyout on
    hover/focus/tap) — same rule for every device at this width, phone or desktop window. */
 @media (max-width:480px){
-  .auth-dots-row{ gap:8px;}
   .auth-top-actions .getting-started-btn{
     width:32px; height:32px; padding:0; border-radius:8px; justify-content:center; position:relative; overflow:visible;
   }
@@ -2695,9 +2695,8 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
   .auth-slide .big{ font-size:22px;}
   .auth-slide .lbl{ font-size:10px;}
   .auth-bottom-cluster{ grid-area:bottom; margin-top:2px;}
-  .auth-dots-row{ margin-top:0;}
-  .auth-dots{ justify-content:flex-start;}
-  .auth-footer-row-centered{ margin-top:8px;}
+  .auth-dots{ justify-content:flex-start; margin-top:0;}
+  .auth-footer-row{ margin-top:8px;}
   .auth-carousel-actions{ gap:6px;}
   .getting-started-btn{ font-size:10px; padding:5px 9px;}
   .auth-form-side{ padding:24px 20px 46px;}
@@ -3383,26 +3382,24 @@ html, body{ overflow-x:hidden;}
         <div class="auth-carousel" id="authCarousel"></div>
       </div>
       <div class="auth-bottom-cluster">
-        <div class="auth-dots-row">
-          <div class="auth-dots" id="authDots"></div>
-          <div class="auth-notif-bell" id="authNotifBell">
-            <div class="auth-top-actions">
-              <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡<span class="gsb-label"> Tips</span></button>
-              <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()" title="Getting started">🚀<span class="gsb-label"> Getting started</span></button>
-              <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
-                🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
-              </button>
-            </div>
-            <div class="auth-notif-preview" id="authNotifPreview"></div>
+        <div class="auth-dots" id="authDots"></div>
+        <div class="auth-notif-bell" id="authNotifBell">
+          <div class="auth-top-actions">
+            <button class="getting-started-btn auth-tips-btn" onclick="openQuickTipsModal()" title="Quick tips">💡<span class="gsb-label"> Tips</span></button>
+            <button class="getting-started-btn auth-getting-started-btn" onclick="openGettingStartedModal()" title="Getting started">🚀<span class="gsb-label"> Getting started</span></button>
+            <button type="button" class="icon-btn" onclick="event.stopPropagation();toggleAuthNotifPreview();" title="Notification previews — sign in to open them">
+              🔔<span id="authNotifBellCount" class="nav-badge" style="position:absolute;top:-2px;right:-2px;display:none"></span>
+            </button>
           </div>
-        </div>
-        <div class="auth-footer-row auth-footer-row-centered">
-          <div class="auth-foot">ALCMS — Automated Library &amp; Circulation Management System</div>
-          <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
+          <div class="auth-notif-preview" id="authNotifPreview"></div>
         </div>
         <div class="auth-mobile-tabs">
           <button type="button" class="auth-mobile-tab" onclick="mobileAuthGo('signin')">Sign in</button>
           <button type="button" class="auth-mobile-tab primary" onclick="mobileAuthGo('signup')">Create account</button>
+        </div>
+        <div class="auth-footer-row">
+          <div class="auth-foot">ALCMS — Automated Library &amp; Circulation Management System</div>
+          <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
         </div>
       </div>
     </div>
@@ -3422,6 +3419,10 @@ html, body{ overflow-x:hidden;}
           </div>
           <div id="authError" class="auth-error"></div>
           <div id="authFormArea"></div>
+        </div>
+        <div class="auth-footer-row auth-form-footer">
+          <div class="auth-foot">ALCMS — Automated Library &amp; Circulation Management System</div>
+          <a href="#" class="auth-contact-dev-link" onclick="openDeveloperContactForm();return false;">Contact the developer</a>
         </div>
       </div>
     </div>
