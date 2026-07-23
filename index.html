@@ -6955,7 +6955,7 @@ function pageHome(){
   <div class="home-hero">
     ${renderWeatherAmbience()}
     ${renderWeatherLabel()}
-    <h1>${greeting}, ${esc(firstNameOf((SESSION&&SESSION.fullName)||''))}.</h1>
+    <h1>${greeting}, ${esc(firstNameOf((SESSION&&SESSION.fullName)||''))}!</h1>
     <p>${DB.setup.institutionName? esc(DB.setup.institutionName)+' — ':''}Search the catalogue, issue and return loans, keep an eye on overdue titles, and manage your members — all from one shelf.</p>
   </div>
   <div class="grid kpis">
