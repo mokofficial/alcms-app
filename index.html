@@ -2635,7 +2635,7 @@ html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-li
    so it occupies the exact same footprint as sign-in on every screen size — no widening, no
    floating out over the page. The extra fields simply scroll inside that fixed-size box, same
    idea as the in-container scroll already used on the mobile lockscreen. */
-.auth-box.floating{ overflow-y:auto;}
+.auth-box.floating{ overflow-y:auto; max-height:min(560px,80vh);}
 .auth-box.floating h2{ font-size:19px; margin-bottom:4px;}
 .auth-box.floating .sub{ margin-bottom:14px;}
 .auth-box.floating .field{ margin-bottom:10px;}
@@ -3506,6 +3506,50 @@ function nextSequentialId(prefix, existingIds){
   const next = max+1;
   return prefix+'-'+String(next).padStart(3,'0');
 }
+/* ============ Dewey Decimal main-class suggestion ============
+   Two layers, both fully offline (no network, no external service):
+   1. DB.setup.divisions — the ~150-entry built-in DDC reference library already shipped with
+      every install (used elsewhere for the fuller subject-division picklist) — every word in
+      each division's description becomes a keyword pointing back at that division's main class.
+   2. A small built-in fallback keyword list per main class, for common terms (e.g. "novel",
+      "atlas") that the formal DDC division wording doesn't use but a real book title often will.
+   Scoring is just keyword-occurrence counting — simple, transparent, and good enough to save
+   re-typing on the obvious cases; the suggestion is always shown as editable, never forced. */
+const DDC_FALLBACK_KEYWORDS = {
+  '000': ['computer','computing','software','internet','programming','coding','encyclopedia','information','library','data','technology general','ai','artificial intelligence'],
+  '100': ['philosophy','psychology','ethics','logic','mind','self-help','self help','paranormal','dream','personality'],
+  '200': ['religion','bible','god','christian','islam','muslim','quran','spiritual','theology','church','faith','prayer','mythology'],
+  '300': ['sociology','government','politics','political','law','economics','economy','education','business','social','folklore','custom','tradition','finance','trade','military'],
+  '400': ['language','grammar','dictionary','linguistics','vocabulary','spelling','english language','french language','foreign language'],
+  '500': ['mathematics','math','science','physics','chemistry','biology','astronomy','geology','nature','animals','plants'],
+  '600': ['medicine','health','engineering','agriculture','cooking','recipe','management','invention','technology','farming','nursing','veterinary'],
+  '700': ['art','music','sport','sports','painting','drawing','photography','film','dance','craft','game','games','drama performance','architecture'],
+  '800': ['literature','poetry','poem','novel','fiction','play','essay','stories','short story','rhetoric'],
+  '900': ['history','geography','biography','travel','atlas','war','ancient','world history','memoir'],
+};
+function suggestMainClassFromText(text){
+  const q = String(text||'').toLowerCase().trim();
+  if(!q || q.length<3) return null;
+  const words = q.split(/[^a-z0-9]+/).filter(Boolean);
+  if(!words.length) return null;
+  const scoreByPrefix = {};
+  const bump = (prefix, n)=>{ scoreByPrefix[prefix] = (scoreByPrefix[prefix]||0) + n; };
+  // Layer 1: the built-in DDC division library (DB.setup.divisions), e.g. "590 ANIMALS"
+  (DB.setup.divisions||[]).forEach(div=>{
+    const m = String(div).match(/^(\d{3}(?:\.\d+)?)\s+(.*)$/);
+    if(!m) return;
+    const prefix = m[1].slice(0,1)+'00';
+    const divWords = m[2].toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>3);
+    divWords.forEach(dw=>{ if(words.includes(dw)) bump(prefix, 2); });
+  });
+  // Layer 2: compact fallback keyword list per main class
+  Object.entries(DDC_FALLBACK_KEYWORDS).forEach(([prefix, kws])=>{
+    kws.forEach(kw=>{ if(q.includes(kw)) bump(prefix, 1); });
+  });
+  const best = Object.entries(scoreByPrefix).sort((a,b)=>b[1]-a[1])[0];
+  if(!best || best[1]<1) return null;
+  return (DB.setup.mainClasses||[]).find(c=>c.startsWith(best[0])) || null;
+}
 function sortClassesChrono(list){
   return [...list].sort((a,b)=>{
     const na = parseInt((String(a).match(/YEAR\s*(\d+)/i)||[])[1]||'999',10);
@@ -4298,9 +4342,10 @@ function setAuthTab(tab){
     box.style.height = (tab==='signup' && authSigninBoxHeight) ? authSigninBoxHeight+'px' : '';
   }
   renderAuthForm();
-  if(box && tab==='signin'){
-    requestAnimationFrame(()=>{ authSigninBoxHeight = box.offsetHeight; });
-  }
+  // Reading offsetHeight forces layout immediately — no need to wait a frame, which closes a
+  // race where switching to Create account fast (before a deferred measurement ran) would leave
+  // the box unconstrained and spread to fit all the extra fields instead of matching sign-in.
+  if(box && tab==='signin') authSigninBoxHeight = box.offsetHeight;
 }
 function renderAuthForm(){
   const area = $('#authFormArea');
@@ -5620,7 +5665,7 @@ function openImageLightbox(src){
   wrap.onclick = (e)=>{ if(e.target===wrap || e.target.classList.contains('img-lightbox-close')) close(); };
   document.body.appendChild(wrap);
 }
-function openModal({title, fields, values={}, onSave, wide, validate}){
+function openModal({title, fields, values={}, onSave, wide, validate, postRender}){
   const root = $('#modalRoot');
   const html = `
   <div class="modal-backdrop" id="mb">
@@ -5651,6 +5696,7 @@ function openModal({title, fields, values={}, onSave, wide, validate}){
     if(validate){ const err = validate(out); if(err){ toast(err); return; } }
     onSave(out); close();
   };
+  if(postRender) postRender(root);
   return close;
 }
 function flattenFields(fields){
@@ -5695,7 +5741,7 @@ function fieldHtml(f,values){
       input = `<input id="f_${f.key}" type="${f.type||'text'}" value="${esc(val)}" ${f.readonly?'readonly':''}>`;
     }
   }
-  return `<div class="field" ${f.wrapId?`id="${f.wrapId}"`:''} ${f.hidden?'style="display:none"':''}><label>${esc(f.label)}${f.required?' *':''}</label>${input}</div>`;
+  return `<div class="field" ${f.wrapId?`id="${f.wrapId}"`:''} ${f.hidden?'style="display:none"':''}><label>${esc(f.label)}${f.required?' *':''}</label>${f.extra? `<div style="display:flex;gap:6px;align-items:center">${input}${f.extra}</div>` : input}${f.subHint?`<p class="field-hint" id="hint_${f.key}" style="margin-top:4px">${f.subHint}</p>`:''}</div>`;
 }
 function confirmDelete(msg, cb){
   if(confirm(msg)) cb();
@@ -7194,6 +7240,7 @@ function pageCatalogue(){
         {key:'acc', label:'Accession No.', synonyms:['acc no','accession number','acc']},
         {key:'title', label:'Title', required:true},
         {key:'author', label:'Author', synonyms:['author/creator']},
+        {key:'isbn', label:'ISBN', synonyms:['isbn13','isbn10','isbn-13','isbn-10']},
         {key:'publisher', label:'Publisher'},
         {key:'year', label:'Year', synonyms:['year published']},
         {key:'category', label:'Category', synonyms:['subject']},
@@ -7210,8 +7257,8 @@ function pageCatalogue(){
           existingAcc.add(acc);
           DB.catalogue.push({
             acc, title:r.title, info:'', edition:'', vol:'', cls:'',
-            author:r.author||'', publisher:r.publisher||'', year:r.year||'', category:r.category||'', division:'',
-            mainClass:r.mainClass||'', shelf:r.shelf||'', dateAdded:todayISO(), condition:'GOOD', available:'AVAILABLE'
+            author:r.author||'', isbn:r.isbn||'', publisher:r.publisher||'', year:r.year||'', category:r.category||'', division:'',
+            mainClass:r.mainClass|| suggestMainClassFromText(r.title+' '+(r.category||''))||'', shelf:r.shelf||'', dateAdded:todayISO(), condition:'GOOD', available:'AVAILABLE'
           });
           added++;
         });
@@ -7229,6 +7276,7 @@ function viewBook(acc){
     ['Accession No.', b.acc],
     ['Title', b.title],
     ['Author', b.author||'—'],
+    ['ISBN', b.isbn||'—'],
     ['Publisher', b.publisher||'—'],
     ['Year', b.year||'—'],
     ['Category', b.category||'—'],
@@ -7267,13 +7315,18 @@ function viewBook(acc){
 }
 function bookFields(b={}){
   return [
-    {row:[{key:'acc',label:'Accession No.',required:true, default:b.acc || nextSequentialId('ACC', DB.catalogue.map(x=>x.acc))},{key:'year',label:'Year published', default:b.year}]},
-    {key:'title', label:'Title', required:true, default:b.title},
+    {row:[
+      {key:'isbn',label:'ISBN (optional)', default:b.isbn, extra:`<button type="button" class="btn secondary small" style="flex:none" onclick="lookupBookByIsbn()" title="Fetch title/author/publisher/year from the ISBN">🔍 Look up</button><button type="button" class="btn secondary small" style="flex:none" onclick="openScanModal('isbn')" title="Scan the ISBN barcode with your camera">📷 Scan</button>`},
+      {key:'acc',label:'Accession No.',required:true, default:b.acc || nextSequentialId('ACC', DB.catalogue.map(x=>x.acc))},
+    ]},
+    {row:[{key:'title', label:'Title', required:true, default:b.title},{key:'year',label:'Year published', default:b.year}]},
     {key:'author', label:'Author / Creator', default:b.author},
     {row:[{key:'publisher',label:'Publisher / Source', default:b.publisher},{key:'edition',label:'Edition', default:b.edition}]},
     {row:[{key:'category',label:'Subject / Category', default:b.category},{key:'vol',label:'Volume', default:b.vol}]},
     {row:[
-      {key:'mainClass',label:'Main class (Dewey)', type:'select', required:true, options:DB.setup.mainClasses, default:b.mainClass||''},
+      {key:'mainClass',label:'Main class (Dewey)', type:'select', required:true, options:DB.setup.mainClasses, default:b.mainClass||'',
+        extra:`<button type="button" class="btn secondary small" style="flex:none" onclick="applyMainClassSuggestion(true)" title="Suggest from the title/category, using the built-in Dewey library">🔎 Suggest</button>`,
+        subHint:'Suggested automatically from the title once you move on — always yours to change.'},
       {key:'shelf',label:'Shelf location', type:'select', required:true, options:DB.setup.shelves, default:b.shelf||''},
     ]},
     {row:[
@@ -7282,6 +7335,46 @@ function bookFields(b={}){
     ]},
     {key:'info', label:'Additional info', type:'textarea', default:b.info},
   ];
+}
+/* Dewey suggestion: fires once, quietly, the first time the Main class field is still empty
+   when the person moves on from Title or Subject/Category — never overwrites a value they (or
+   an ISBN lookup) already set, and the 🔎 Suggest button next to the field re-runs it on demand. */
+function applyMainClassSuggestion(force){
+  const sel = document.getElementById('f_mainClass');
+  if(!sel) return;
+  const alreadySet = sel.value && sel.value!=='';
+  if(alreadySet && !force) return;
+  const title = (document.getElementById('f_title')||{}).value || '';
+  const category = (document.getElementById('f_category')||{}).value || '';
+  const suggestion = suggestMainClassFromText(title+' '+category);
+  if(!suggestion){ if(force) toast("Couldn't guess a main class from that — pick one manually"); return; }
+  sel.value = suggestion;
+  const hint = document.getElementById('hint_mainClass');
+  if(hint) hint.textContent = `Suggested: "${suggestion}" — change it if that's not right.`;
+}
+/* ISBN lookup: Open Library's book API is free, keyless, and CORS-enabled for client-side use —
+   fills Title/Author/Publisher/Year, then runs the same Dewey suggestion as a normal title entry. */
+async function lookupBookByIsbn(){
+  const isbnEl = document.getElementById('f_isbn');
+  const isbn = (isbnEl? isbnEl.value : '').replace(/[^0-9Xx]/g,'');
+  if(!isbn){ toast('Enter an ISBN first'); return; }
+  toast('Looking up ISBN…');
+  try{
+    const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+    const data = await res.json();
+    const rec = data['ISBN:'+isbn];
+    if(!rec){ toast('No match found for that ISBN — enter details manually'); return; }
+    const setIfEmpty = (key, val)=>{ const el = document.getElementById('f_'+key); if(el && val && !el.value) el.value = val; };
+    setIfEmpty('title', rec.title);
+    setIfEmpty('author', (rec.authors||[]).map(a=>a.name).join(', '));
+    setIfEmpty('publisher', (rec.publishers||[]).map(p=>p.name).join(', '));
+    const yearMatch = String(rec.publish_date||'').match(/\d{4}/);
+    setIfEmpty('year', yearMatch? yearMatch[0] : '');
+    applyMainClassSuggestion();
+    toast('Filled in from Open Library — check it over before saving');
+  } catch(e){
+    toast('Lookup failed — check your connection, or enter details manually');
+  }
 }
 function openBookForm(acc){
   if(!isAdmin()) return requireAdmin('edit the catalogue');
@@ -7298,6 +7391,12 @@ function openBookForm(acc){
       if(existing){ Object.assign(existing, vals); toast('Title updated'); }
       else { vals.dateAdded = todayISO(); DB.catalogue.push(vals); toast('Title added to catalogue'); }
       saveDB(); render();
+    },
+    postRender: ()=>{
+      if(existing) return; // don't second-guess an already-classified title being edited
+      const titleEl = document.getElementById('f_title'), catEl = document.getElementById('f_category');
+      if(titleEl) titleEl.addEventListener('blur', ()=>applyMainClassSuggestion());
+      if(catEl) catEl.addEventListener('blur', ()=>applyMainClassSuggestion());
     }
   });
 }
@@ -7498,6 +7597,7 @@ function openUserForm(id){
     }
   });
   const catSel = document.getElementById('f_category'), clsSel = document.getElementById('f_cls');
+  const maxEl = document.getElementById('f_maxAllowed');
   if(catSel && clsSel){
     catSel.addEventListener('change', ()=>{
       const isStaff = catSel.value === 'STAFF';
@@ -7505,6 +7605,11 @@ function openUserForm(id){
       clsSel.innerHTML = opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
       const phoneWrap = document.getElementById('phoneFieldWrap');
       if(phoneWrap) phoneWrap.style.display = isStaff ? '' : 'none';
+      // Only nudge the max-books default along with category if the person hasn't already
+      // typed a value of their own — never overwrite a deliberate choice.
+      if(maxEl && (maxEl.value==='' || maxEl.value===String(existing? existing.maxAllowed : (isStaff?2:3)))){
+        maxEl.value = isStaff ? 3 : 2;
+      }
     });
   }
 }
@@ -8240,7 +8345,7 @@ function openNotificationCenter(refreshOnly){
         <div class="notif-row-body">${esc(n.body)}</div>
         <div class="notif-row-time">${timeAgo(n.ts)}</div>
       </div>
-      <button class="notif-row-close" onclick="dismissNotification('${n.id}')" title="Dismiss">✕</button>
+      <button class="notif-row-close" onclick="event.stopPropagation();dismissNotification('${n.id}')" title="Dismiss">✕</button>
     </div>`).join('') : `<div class="empty" style="padding:26px 10px"><div class="big">🔔</div>Nothing yet — alerts you get will show up here</div>`;
   if(refreshOnly && wrap){ wrap.querySelector('.notif-list').innerHTML = bodyHtml; return; }
   if(wrap) wrap.remove();
@@ -8251,7 +8356,7 @@ function openNotificationCenter(refreshOnly){
     <div class="notif-center-head">
       <strong>Notifications</strong>
       <div style="display:flex;gap:8px">
-        <a href="#" onclick="markAllNotificationsRead();openNotificationCenter(true);return false;">Mark all read</a>
+        <a href="#" onclick="event.stopPropagation();markAllNotificationsRead();openNotificationCenter(true);return false;">Mark all as read</a>
         <a href="#" onclick="clearAllNotifications();return false;">Clear all</a>
         <a href="#" onclick="closeNotificationCenter();return false;">Close</a>
       </div>
@@ -8705,9 +8810,7 @@ function memberCardExpiry(){
 }
 function cardPhotoIcon(it){
   if(it.kind==='book') return '📖';
-  if(it.gender==='FEMALE') return '👩';
-  if(it.gender==='MALE') return '👨';
-  return '👤';
+  return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>`;
 }
 /* it: {kind:'member'|'book', code, line1, line2, line3} */
 function idCardHtml(it, i){
@@ -8933,22 +9036,23 @@ async function startCameraScan(wrap, onDetect){
   }
 }
 function openScanModal(mode){
-  // mode: 'issue' | 'return' | 'lookup'
+  // mode: 'issue' | 'return' | 'lookup' | 'isbn' | 'batch' | 'selfcheck'
+  const isIsbnMode = mode==='isbn';
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop'; wrap.id = 'mb';
   const cameraOk = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   wrap.innerHTML = `
     <div class="modal">
-      <div class="modal-head"><h3>📷 Scan a barcode</h3><button id="mClose">✕</button></div>
+      <div class="modal-head"><h3>📷 ${isIsbnMode? 'Scan an ISBN barcode' : 'Scan a barcode'}</h3><button id="mClose">✕</button></div>
       <div class="modal-body">
         <div id="scanCamBox" class="scan-cam-box" style="${cameraOk?'':'display:none'}">
           <video id="scanVideo" playsinline muted></video>
           <div class="scan-cam-frame"></div>
         </div>
-        <p class="field-hint" id="scanCamStatus">${cameraOk? 'Starting the camera — allow camera access if your browser asks…' : "This browser doesn't support camera access (no getUserMedia API). A mobile camera / code scanner device, or typing the code below, still works."}</p>
+        <p class="field-hint" id="scanCamStatus">${cameraOk? (isIsbnMode? 'Starting the camera — point it at the barcode on the back cover…' : 'Starting the camera — allow camera access if your browser asks…') : "This browser doesn't support camera access (no getUserMedia API). A mobile camera / code scanner device, or typing the code below, still works."}</p>
         <div class="field" style="position:relative">
-          <label>Or type / scan with a mobile camera or code scanner device</label>
-          <input type="text" id="scanCodeInput" placeholder="Type a name or code, or scan…" autocomplete="off">
+          <label>${isIsbnMode? 'Or type / scan the ISBN' : 'Or type / scan with a mobile camera or code scanner device'}</label>
+          <input type="text" id="scanCodeInput" placeholder="${isIsbnMode? 'Type or scan the ISBN…' : 'Type a name or code, or scan…'}" autocomplete="off">
           <div id="scanSuggest" class="scan-suggest"></div>
         </div>
         <div id="scanVerifiedRow" class="scan-verified-row" style="display:none">
@@ -8974,6 +9078,7 @@ function openScanModal(mode){
   let paused = false;
   const closeSuggest = ()=>{ suggestEl.innerHTML=''; suggestEl.classList.remove('open'); };
   const renderSuggest = ()=>{
+    if(isIsbnMode){ closeSuggest(); return; }
     const q = input.value.trim().toLowerCase();
     if(!q){ closeSuggest(); return; }
     const bookMatches = DB.catalogue.filter(b=> b.acc.toLowerCase().includes(q) || String(b.title||'').toLowerCase().includes(q)).slice(0,5);
@@ -8998,6 +9103,17 @@ function openScanModal(mode){
     const code = String(rawCode||'').trim();
     if(!code) return;
     closeSuggest();
+    if(isIsbnMode){
+      const digits = code.replace(/[^0-9Xx]/g,'');
+      if(!digits){ resEl.innerHTML = `<p style="margin:8px 0;color:var(--terracotta)">That doesn't look like an ISBN — try again or type it in manually</p>`; input.value=''; input.focus(); return; }
+      paused = true;
+      const isbnEl = document.getElementById('f_isbn');
+      if(isbnEl) isbnEl.value = digits;
+      resEl.innerHTML = `<p style="margin:8px 0"><strong>Captured ISBN:</strong> ${esc(digits)}</p>`;
+      close();
+      if(isbnEl) lookupBookByIsbn();
+      return;
+    }
     const book = DB.catalogue.find(b=>b.acc.toLowerCase()===code.toLowerCase());
     const user = DB.users.find(u=>u.id.toLowerCase()===code.toLowerCase());
     if(!book && !user){
@@ -9799,7 +9915,7 @@ function pageSetup(){
         <label class="btn secondary small" style="cursor:pointer">Upload Institution Logo<input type="file" accept="image/*" id="logoInput" style="display:none"></label>
         ${DB.setup.institutionLogo? `<button class="btn danger small" id="logoRemove" style="margin-left:6px">Remove</button>`:''}
         ${DB.setup.institutionLogo? `<button class="btn secondary small" style="margin-left:6px" onclick="generatePaletteFromLogo(DB.setup.institutionLogo)">🎨 Regenerate palette from logo</button>`:''}
-        <p class="field-hint">Replaces the library icon in the sidebar. Under 800KB. Uploading a logo automatically generates a matching colour palette (Personalization → Colour palette) that also carries through to downloaded/printed PDFs — pick a different palette there any time.</p>
+        <p class="field-hint">Replaces the library icon in the sidebar. Under 800KB — also generates a matching colour palette (Personalization → Colour palette).</p>
         <div id="logoRepositionWrap" style="${DB.setup.institutionLogo?'':'display:none'};margin-top:8px">
           <label style="font-size:11px;color:var(--muted)">Reposition logo</label>
           <input type="range" id="logoPosX" min="0" max="100" value="${(DB.setup.institutionLogoPos||{x:50,y:50}).x}" style="width:100%">
@@ -9808,31 +9924,6 @@ function pageSetup(){
       </div>
     </div>
     <button class="btn secondary" onclick="saveInstitution()">Save</button>
-  </div>
-  <div class="card panel">
-    <div class="panel-head"><h3>Fines &amp; renewals</h3><div class="hint">How overdue fines are calculated, and how many times a loan can be renewed</div></div>
-    <div class="field"><label><input type="checkbox" id="setFineEnabled" ${DB.setup.fineEnabled?'checked':''}> Charge a fine for overdue loans</label></div>
-    <div class="field-row">
-      <div class="field"><label>Fine per day overdue</label><input type="number" id="setFineRate" min="0" step="1" value="${DB.setup.fineRatePerDay||0}"></div>
-      <div class="field"><label>Currency symbol</label><input type="text" id="setFineCurrency" value="${esc(DB.setup.fineCurrency||'₦')}" maxlength="3" style="max-width:80px"></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>Max renewals per loan</label><select id="setMaxRenewals">${[0,1,2,3,4].map(n=>`<option value="${n}" ${(DB.setup.maxRenewals??2)===n?'selected':''}>${n}</option>`).join('')}</select></div>
-      <div class="field"><label>Days added per renewal</label><select id="setRenewalDays">${[3,7,14,21].map(n=>`<option value="${n}" ${(DB.setup.renewalDays||7)===n?'selected':''}>${n} days</option>`).join('')}</select></div>
-    </div>
-    <p class="field-hint">A loan can't be renewed if another member has reserved that title.</p>
-    <button class="btn secondary" onclick="saveFineSettings()">Save</button>
-  </div>
-  <div class="card panel">
-    <div class="panel-head"><h3>Codes</h3><div class="hint">Used on member ID cards, catalogue cards and the scan/verify screen</div></div>
-    <div class="field">
-      <label>Code type generated</label>
-      <div class="role-choice">
-        <div class="role-opt compact ${(DB.setup.codeType||'barcode')==='barcode'?'selected':''}" id="codeTypeOptBarcode" onclick="setCodeTypeOption('barcode')"><span class="ic">▮▯▮</span>Barcode<br><span style="color:var(--muted)">CODE128, scans with any laser/CCD scanner</span></div>
-        <div class="role-opt compact ${(DB.setup.codeType||'barcode')==='qr'?'selected':''}" id="codeTypeOptQr" onclick="setCodeTypeOption('qr')"><span class="ic">▦</span>QR code<br><span style="color:var(--muted)">Reads well with any phone camera</span></div>
-      </div>
-    </div>
-    <button class="btn secondary" onclick="saveCodeTypeSetting()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Academic term &amp; session</h3><div class="hint">Shown on every export and printed report</div></div>
@@ -9845,11 +9936,6 @@ function pageSetup(){
       <div class="field"><label>${esc(DB.setup.sessionLabel||'Academic Session')}</label><select id="setSession">${academicSessionOptions().map(s=>`<option ${DB.setup.currentSession===s?'selected':''}>${s}</option>`).join('')}${!academicSessionOptions().includes(DB.setup.currentSession) && DB.setup.currentSession? `<option selected>${esc(DB.setup.currentSession)}</option>`:''}</select></div>
     </div>
     <button class="btn secondary" onclick="saveAcademicPeriod()">Save term &amp; session</button>
-  </div>
-  <div class="card panel">
-    <div class="panel-head"><h3>Notifications</h3><div class="hint">Optional — off by default</div></div>
-    <div class="field"><label><input type="checkbox" id="setWaReceipts" ${DB.setup.whatsappReceipts?'checked':''} onchange="toggleWhatsAppReceipts(this.checked)"> Send a WhatsApp transaction receipt automatically on every successful borrow/return</label></div>
-    <p class="field-hint">Goes to the staff member themselves, or a student's class teacher, using the phone numbers on file. Nothing sends if no number is on file.</p>
   </div>
   <div class="grid two-col">
     <div class="card panel">
@@ -9870,20 +9956,21 @@ function pageSetup(){
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Promote students</h3><div class="hint">Stage students from one or more classes, then move them all together</div></div>
-    <div class="field-row">
-      <div class="field"><label>From class</label><select id="promoteFrom" onchange="onPromoteFromChange()"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-      <div class="field"><label>Move to</label><select id="promoteTo"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+    <div class="panel-head"><h3>Subjects offered</h3><div class="hint">The school-wide subject list, used to auto-assign each class's combination</div></div>
+    <div id="subjectList">${DB.setup.subjects.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
+    <div class="field-row" style="margin-top:12px">
+      <div class="field"><label>New subject code</label><input id="newSubject" placeholder="e.g. MUS"></div>
     </div>
-    <p class="field-hint">Students in the selected "From class" not already staged:</p>
-    <div id="promoteSourceList"></div>
-    <button class="btn secondary" style="margin-top:8px" onclick="addSelectedToPromoteBatch()">+ Add selected to batch</button>
-    <p class="field-hint" style="margin-top:16px">Staged for promotion (<span id="promoteStageCount">0</span>) — you can switch "From class" above and keep adding more before moving them all</p>
-    <div id="promoteStagingList"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn" onclick="commitPromotion()">Move all staged students</button>
-      <button class="btn secondary" onclick="clearPromoteStaging()">Clear staging</button>
-    </div>
+    <button class="btn secondary" onclick="addSubject()">+ Add subject</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Class subject distribution</h3><div class="hint">Default subjects auto-assigned to every student in a class — override per-student from Members → Subjects</div></div>
+    <div id="classSubjectGrid">${renderClassSubjectGridHtml()}</div>
+    <button class="btn secondary" onclick="saveClassSubjects()">Save subject distribution</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Schedule management</h3><div class="hint">Add, edit or remove weekly periods</div></div>
+    <p style="font-size:12.5px;color:var(--muted)">Manage the weekly timetable and per-student subject combinations from the <a href="#" onclick="route='schedule';render();return false;" style="color:var(--forest);font-weight:600">Schedule page</a> — every row there has Edit/Delete when you're signed in as admin.</p>
   </div>
   <div class="grid two-col">
     <div class="card panel">
@@ -9903,14 +9990,29 @@ function pageSetup(){
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Integrations</h3><div class="hint">Connect scans and circulation events to an external system (e.g. a Scan2Flow-style workflow endpoint). Optional — leave the URL blank to keep everything purely local.</div></div>
-    <div class="field"><label>Webhook URL</label><input type="url" id="setScanWebhookUrl" value="${esc(DB.setup.scanWebhookUrl||'')}" placeholder="https://your-scan2flow-endpoint.example.com/hook"></div>
-    <div class="field"><label>Station ID</label><input type="text" id="setStationId" value="${esc(DB.setup.stationId||'')}" placeholder="e.g. DESK1"></div>
-    <p class="field-hint">Every scan, issue, return, and check-in is POSTed here as JSON (event, station, token, and the relevant details) if a URL is set. A station/token can also be supplied via the URL when the app is opened, e.g. <code>?station=DESK1&amp;token=abc123</code> — useful for a kiosk or a link launched from another system.</p>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-      <button class="btn secondary" onclick="saveIntegrationSettings()">Save integration settings</button>
-      <button class="btn secondary small" onclick="sendScanWebhook('test',{note:'Test event from ALCMS Setup'}); toast(DB.setup.scanWebhookUrl? 'Test event sent' : 'Set a webhook URL first')">Send test event</button>
+    <div class="panel-head"><h3>Codes</h3><div class="hint">Used on member ID cards, catalogue cards and the scan/verify screen</div></div>
+    <div class="field">
+      <label>Code type generated</label>
+      <div class="role-choice">
+        <div class="role-opt compact ${(DB.setup.codeType||'barcode')==='barcode'?'selected':''}" id="codeTypeOptBarcode" onclick="setCodeTypeOption('barcode')"><span class="ic">▮▯▮</span>Barcode<br><span style="color:var(--muted)">CODE128, scans with any laser/CCD scanner</span></div>
+        <div class="role-opt compact ${(DB.setup.codeType||'barcode')==='qr'?'selected':''}" id="codeTypeOptQr" onclick="setCodeTypeOption('qr')"><span class="ic">▦</span>QR code<br><span style="color:var(--muted)">Reads well with any phone camera</span></div>
+      </div>
     </div>
+    <button class="btn secondary" onclick="saveCodeTypeSetting()">Save</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Fines &amp; renewals</h3><div class="hint">How overdue fines are calculated, and how many times a loan can be renewed</div></div>
+    <div class="field"><label><input type="checkbox" id="setFineEnabled" ${DB.setup.fineEnabled?'checked':''}> Charge a fine for overdue loans</label></div>
+    <div class="field-row">
+      <div class="field"><label>Fine per day overdue</label><input type="number" id="setFineRate" min="0" step="1" value="${DB.setup.fineRatePerDay||0}"></div>
+      <div class="field"><label>Currency symbol</label><input type="text" id="setFineCurrency" value="${esc(DB.setup.fineCurrency||'₦')}" maxlength="3" style="max-width:80px"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Max renewals per loan</label><select id="setMaxRenewals">${[0,1,2,3,4].map(n=>`<option value="${n}" ${(DB.setup.maxRenewals??2)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label>Days added per renewal</label><select id="setRenewalDays">${[3,7,14,21].map(n=>`<option value="${n}" ${(DB.setup.renewalDays||7)===n?'selected':''}>${n} days</option>`).join('')}</select></div>
+    </div>
+    <p class="field-hint">A loan can't be renewed if another member has reserved that title.</p>
+    <button class="btn secondary" onclick="saveFineSettings()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Discipline &amp; consequences</h3><div class="hint">Applied automatically when a loan is returned — logged to the Register as a discipline entry, same as a manually-recorded offense</div></div>
@@ -9944,22 +10046,35 @@ function pageSetup(){
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Subjects offered</h3><div class="hint">The school-wide subject list, used to auto-assign each class's combination</div></div>
-    <div id="subjectList">${DB.setup.subjects.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('')}</div>
-    <div class="field-row" style="margin-top:12px">
-      <div class="field"><label>New subject code</label><input id="newSubject" placeholder="e.g. MUS"></div>
+    <div class="panel-head"><h3>Promote students</h3><div class="hint">Stage students from one or more classes, then move them all together</div></div>
+    <div class="field-row">
+      <div class="field"><label>From class</label><select id="promoteFrom" onchange="onPromoteFromChange()"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>Move to</label><select id="promoteTo"><option value="" selected disabled>Select class</option>${sortedClasses().map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
     </div>
-    <button class="btn secondary" onclick="addSubject()">+ Add subject</button>
+    <p class="field-hint">Students in the selected "From class" not already staged:</p>
+    <div id="promoteSourceList"></div>
+    <button class="btn secondary" style="margin-top:8px" onclick="addSelectedToPromoteBatch()">+ Add selected to batch</button>
+    <p class="field-hint" style="margin-top:16px">Staged for promotion (<span id="promoteStageCount">0</span>) — you can switch "From class" above and keep adding more before moving them all</p>
+    <div id="promoteStagingList"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="commitPromotion()">Move all staged students</button>
+      <button class="btn secondary" onclick="clearPromoteStaging()">Clear staging</button>
+    </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Class subject distribution</h3><div class="hint">Default subjects auto-assigned to every student in a class — override per-student from Members → Subjects</div></div>
-    <div id="classSubjectGrid">${renderClassSubjectGridHtml()}</div>
-    <button class="btn secondary" onclick="saveClassSubjects()">Save subject distribution</button>
+    <div class="panel-head"><h3>Notifications</h3><div class="hint">Optional — off by default</div></div>
+    <div class="field"><label><input type="checkbox" id="setWaReceipts" ${DB.setup.whatsappReceipts?'checked':''} onchange="toggleWhatsAppReceipts(this.checked)"> Send a WhatsApp transaction receipt automatically on every successful borrow/return</label></div>
+    <p class="field-hint">Goes to the staff member themselves, or a student's class teacher, using the phone numbers on file. Nothing sends if no number is on file.</p>
   </div>
-  <p class="field-hint" style="margin:-8px 0 4px">Note: adding or removing a class/subject refreshes its own list and the grid above immediately (so no stale subject checkboxes linger), without clearing anything you're mid-typing in the other boxes on this page. The "From/Move to" pickers above pick up new classes next time you open Setup.</p>
   <div class="card panel">
-    <div class="panel-head"><h3>Schedule management</h3><div class="hint">Add, edit or remove weekly periods</div></div>
-    <p style="font-size:12.5px;color:var(--muted)">Manage the weekly timetable and per-student subject combinations from the <a href="#" onclick="route='schedule';render();return false;" style="color:var(--forest);font-weight:600">Schedule page</a> — every row there has Edit/Delete when you're signed in as admin.</p>
+    <div class="panel-head"><h3>Integrations</h3><div class="hint">Connect scans and circulation events to an external system (e.g. a Scan2Flow-style workflow endpoint). Optional — leave the URL blank to keep everything purely local.</div></div>
+    <div class="field"><label>Webhook URL</label><input type="url" id="setScanWebhookUrl" value="${esc(DB.setup.scanWebhookUrl||'')}" placeholder="https://your-scan2flow-endpoint.example.com/hook"></div>
+    <div class="field"><label>Station ID</label><input type="text" id="setStationId" value="${esc(DB.setup.stationId||'')}" placeholder="e.g. DESK1"></div>
+    <p class="field-hint">Every scan, issue, return, and check-in is POSTed here as JSON if a URL is set. A station/token can also be supplied via the URL, e.g. <code>?station=DESK1&amp;token=abc123</code>.</p>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="saveIntegrationSettings()">Save integration settings</button>
+      <button class="btn secondary small" onclick="sendScanWebhook('test',{note:'Test event from ALCMS Setup'}); toast(DB.setup.scanWebhookUrl? 'Test event sent' : 'Set a webhook URL first')">Send test event</button>
+    </div>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>System</h3></div>
@@ -10344,13 +10459,13 @@ function pageSettings(){
       <div class="field"><label>Login box opacity (<span id="authBoxOpacityVal">${PREFS.authBoxOpacity??90}</span>%)</label><input type="range" id="setAuthBoxOpacity" min="30" max="100" value="${PREFS.authBoxOpacity??90}" oninput="document.getElementById('authBoxOpacityVal').textContent=this.value; document.documentElement.style.setProperty('--auth-box-opacity', this.value/100);"></div>
     </div>
     <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background. Its colour is set above, in Backgrounds → Login container colour.</p>
-    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock &amp; decoration style</h4><div class="hint">Clock style, and the corner flourish behind the sign-in form — like the style gallery at the top of Microsoft Office</div></div>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock &amp; decoration style</h4><div class="hint">Clock style, and the corner flourish behind the sign-in form</div></div>
     <div class="field-row">
       <div class="field"><label>Clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
       <div class="field"><label>Decoration style</label><select id="setLockscreenDecorStyle" onchange="previewLockscreenDecorStyle(this.value)">${Object.entries(LOCKSCREEN_DECOR_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.lockscreenDecorStyle||'circle')===k?'selected':''}>${v}</option>`).join('')}</select></div>
     </div>
     <p class="field-hint" style="margin:4px 0 10px">Tip: clicking the clock on the sign-in screen also cycles through the decoration styles.</p>
-    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Elements shown on the lockscreen</h4><div class="hint">Pick which pieces appear — like the Insert ribbon in Microsoft Office</div></div>
+    <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Elements shown on the lockscreen</h4><div class="hint">Pick which pieces appear</div></div>
     <div class="ribbon-picker" id="lockscreenRibbon">${renderLockscreenRibbon()}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <button class="btn secondary" onclick="saveLockscreenAppearance()">Save lockscreen appearance</button>
