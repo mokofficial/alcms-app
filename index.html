@@ -2567,7 +2567,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .lock-loan-search input::placeholder{ color:rgba(255,255,255,.55);}
 .lock-loan-search .icon-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); color:#F3EEDD; width:26px; height:26px; padding:0; flex:none;}
 .lock-loan-search .icon-btn:hover{ border-color:var(--brass-light);}
-.lock-loan-search .scan-suggest{ left:0; right:auto; top:calc(100% + 6px); width:280px; max-width:80vw; color:#111;}
+.lock-loan-search .scan-suggest{ left:0; right:auto; top:calc(100% + 6px); width:320px; max-width:88vw; max-height:340px; color:#111;}
 @media (max-width:640px){ .lock-loan-search{ max-width:100%;} }
 /* Tips / Getting started / bell sit directly under the dots now (not a floating absolute
    overlay), so this is plain flow layout — it renders the same way on a real phone as it does
@@ -2576,8 +2576,12 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-top-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-start;}
 .auth-notif-bell .icon-btn{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#EFE8D3; position:relative;}
 .auth-notif-bell .icon-btn:hover{ border-color:var(--brass-light);}
-.auth-notif-preview{ display:none; position:absolute; top:calc(100% + 8px); bottom:auto; left:0; right:auto; width:300px; max-width:min(88vw,320px); max-height:360px; overflow:auto;
-  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:6px; z-index:20;}
+/* Fixed (not absolute) so the dropdown is positioned straight off the viewport instead of the
+   .auth-notif-bell wrapper — it can then never be clipped by .auth-info's overflow:hidden
+   (desktop) or overflow-y:auto/100dvh box (mobile). Exact top/left/bottom are set inline by
+   JS (toggleAuthNotifPreview) once it knows how much room there is above/below the bell. */
+.auth-notif-preview{ display:none; position:fixed; width:300px; max-width:min(88vw,320px); max-height:360px; overflow:auto;
+  background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:6px; z-index:1200;}
 .auth-notif-preview.open{ display:block;}
 .auth-notif-preview .notif-row{ cursor:default;}
 .auth-notif-preview .auth-notif-signin-hint{ font-size:11px; color:var(--muted); text-align:center; padding:8px 6px 4px; border-top:1px solid var(--line); margin-top:4px;}
@@ -2856,6 +2860,21 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 
 .panel{ padding:18px 20px; margin-bottom:18px;}
 .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
+.panel-head-actions{ display:flex; gap:8px; flex-wrap:wrap;}
+/* Members (Users) page: keep every header button on a single row instead of wrapping onto
+   several lines. If the row is wider than the panel it scrolls horizontally rather than
+   wrapping, so the buttons always stay lined up together. */
+.panel-head[data-mod="users"]{ flex-wrap:nowrap; align-items:center;}
+.panel-head[data-mod="users"] .panel-head-actions{
+  flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; max-width:100%;
+}
+.panel-head[data-mod="users"] .panel-head-actions button{ flex:none; white-space:nowrap;}
+.panel-head[data-mod="users"] .panel-head-actions::-webkit-scrollbar{ height:5px;}
+.panel-head[data-mod="users"] .panel-head-actions::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px;}
+@media (max-width:820px){
+  .panel-head[data-mod="users"]{ flex-wrap:nowrap; align-items:center;}
+  .panel-head[data-mod="users"] .panel-head-actions{ width:100%;}
+}
 .home-alert-dismiss{
   align-self:center; flex:none; display:inline-flex; align-items:center; gap:6px;
   padding:7px 14px; border-radius:999px; background:var(--parchment-dim); border:1px solid var(--line);
@@ -3311,7 +3330,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   .toolbar input[type=text], .toolbar select{ width:100%;}
   .search-input-wrap{ width:100%;}
   .panel-head{ flex-direction:column; align-items:stretch;}
-  .panel-head > div[style]{ display:flex; gap:8px; flex-wrap:wrap;}
+  .panel-head > div[style], .panel-head > .panel-head-actions{ display:flex; gap:8px; flex-wrap:wrap;}
   .modal{ max-width:calc(100% - 24px); width:100%; max-height:calc(100% - 48px); border-radius:12px;}
   .modal-backdrop{ padding:12px;}
   .btn, .btn.small{ min-height:38px;}
@@ -3391,10 +3410,10 @@ html, body{ overflow-x:hidden;}
       <div class="auth-form-col">
         <button type="button" class="auth-mobile-back" onclick="mobileAuthBack()">← Back</button>
         <div class="lock-loan-search">
-          <span class="lls-ic">📖</span>
-          <input type="text" id="lockLoanSearchInput" placeholder="Check your loans — member ID or name" autocomplete="off" oninput="renderLockLoanSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault();lockLoanSearchSubmit();}">
-          <button type="button" class="icon-btn" onclick="lockLoanSearchSubmit()" title="Check loans">🔍</button>
-          <div id="lockLoanSuggest" class="scan-suggest"></div>
+          <span class="lls-ic">🔎</span>
+          <input type="text" id="lockLoanSearchInput" placeholder="Search titles, members, loans, reminders, reservations…" autocomplete="off" oninput="renderLockLoanSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault();lockLoanSearchSubmit();}">
+          <button type="button" class="icon-btn" onclick="lockLoanSearchSubmit()" title="Search the library">🔍</button>
+          <div id="lockLoanSuggest" class="scan-suggest lock-search-suggest"></div>
         </div>
         <div class="auth-box">
           <div class="auth-tabs">
@@ -5850,9 +5869,9 @@ function GenericModule(cfg){
     render(){
       return `
       <div class="card panel">
-        <div class="panel-head">
+        <div class="panel-head" data-mod="${cfg.key}">
           <div><h3>${esc(cfg.title)}</h3><div class="hint">${esc(cfg.hint||'')}</div></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="panel-head-actions">
             ${cfg.exportColumns? `
             <button class="btn secondary small" data-act="print-${cfg.key}">🖶 Print</button>
             <button class="btn secondary small" data-act="export-${cfg.key}">⭳ Export</button>`:''}
@@ -8611,7 +8630,7 @@ function renderAuthNotifBell(){
 }
 function toggleAuthNotifPreview(){
   const box = document.getElementById('authNotifPreview'); if(!box) return;
-  if(box.classList.contains('open')){ box.classList.remove('open'); box.innerHTML=''; document.removeEventListener('click', authNotifOutsideClickHandler); return; }
+  if(box.classList.contains('open')){ box.classList.remove('open'); box.innerHTML=''; box.removeAttribute('style'); box.style.display='none'; window.removeEventListener('resize', repositionAuthNotifPreview); document.removeEventListener('click', authNotifOutsideClickHandler); return; }
   const list = (DB && DB.notifications) ? DB.notifications.slice(0,6) : [];
   const rows = list.length ? list.map(n=>`
     <div class="notif-row ${n.read?'':'unread'}">
@@ -8623,31 +8642,71 @@ function toggleAuthNotifPreview(){
     </div>`).join('') : `<div class="empty" style="padding:20px 10px"><div class="big">🔔</div>Nothing yet</div>`;
   box.innerHTML = rows + `<div class="auth-notif-signin-hint">Sign in to open, dismiss or manage these</div>`;
   box.classList.add('open');
+  repositionAuthNotifPreview();
+  window.addEventListener('resize', repositionAuthNotifPreview);
   setTimeout(()=> document.addEventListener('click', authNotifOutsideClickHandler), 0);
+}
+/* Positions the (position:fixed) preview relative to the bell button itself, using its live
+   viewport coordinates — works identically on desktop and mobile and is immune to any
+   ancestor's overflow:hidden/overflow-y:auto clipping, since fixed elements are placed
+   relative to the viewport, not their scrolling ancestor. Opens downward when there's room;
+   flips to open upward (anchored above the bell) when there isn't. */
+function repositionAuthNotifPreview(){
+  const box = document.getElementById('authNotifPreview');
+  const wrap = document.getElementById('authNotifBell');
+  if(!box || !wrap || !box.classList.contains('open')) return;
+  const btn = wrap.querySelector('.icon-btn') || wrap;
+  const r = btn.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const boxWidth = Math.min(300, vw*0.88);
+  const margin = 8;
+  const spaceBelow = vh - r.bottom - margin;
+  const spaceAbove = r.top - margin;
+  const openDown = spaceBelow >= 160 || spaceBelow >= spaceAbove;
+  box.style.width = boxWidth+'px';
+  box.style.maxHeight = Math.max(160, (openDown? spaceBelow : spaceAbove) - margin) + 'px';
+  let left = r.left;
+  if(left + boxWidth + margin > vw) left = vw - boxWidth - margin;
+  if(left < margin) left = margin;
+  box.style.left = left+'px';
+  box.style.right = 'auto';
+  if(openDown){ box.style.top = (r.bottom + margin)+'px'; box.style.bottom = 'auto'; }
+  else{ box.style.bottom = (vh - r.top + margin)+'px'; box.style.top = 'auto'; }
 }
 function authNotifOutsideClickHandler(e){
   const wrap = document.getElementById('authNotifBell');
   if(wrap && !wrap.contains(e.target)){
     const box = document.getElementById('authNotifPreview');
-    if(box){ box.classList.remove('open'); box.innerHTML=''; }
+    if(box){ box.classList.remove('open'); box.innerHTML=''; box.removeAttribute('style'); box.style.display='none'; }
+    window.removeEventListener('resize', repositionAuthNotifPreview);
     document.removeEventListener('click', authNotifOutsideClickHandler);
   }
 }
-/* Self-service loan check, right from the lockscreen — no sign-in needed, but it only ever
-   shows the one member's own loans/reservations by exact ID match; nothing else about the
-   library, and no way to act on a loan (return, renew, etc.) without an actual staff sign-in. */
+/* Lockscreen search — no sign-in needed. Shares the exact same matching logic as the staff
+   global search (collectSearchMatches), covering the whole app: catalogue, members,
+   circulation/loans, reservations and reminders. Everything shown is read-only: picking a
+   member still only opens THAT member's own loans/reservations (openSelfCheckLoansFor);
+   picking a book/transaction/reservation/reminder opens a small read-only info card. There is
+   still no way to act on anything (return, renew, issue, dismiss, etc.) without an actual
+   staff sign-in. */
 function renderLockLoanSuggest(){
   const input = document.getElementById('lockLoanSearchInput');
   const box = document.getElementById('lockLoanSuggest');
-  if(!input || !box) return;
-  const q = input.value.trim().toLowerCase();
-  if(!q || !DB || !DB.users){ box.classList.remove('open'); box.innerHTML=''; return; }
-  const matches = DB.users.filter(u=> u.id.toLowerCase().includes(q) || String(u.name||'').toLowerCase().includes(q)).slice(0,6);
-  if(!matches.length){ box.classList.remove('open'); box.innerHTML=''; return; }
-  box.innerHTML = matches.map(u=>`<div class="scan-suggest-row" data-id="${esc(u.id)}"><span class="ss-ic">👤</span><span class="ss-main"><strong>${esc(u.name)}</strong><span class="ss-sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</span></span></div>`).join('');
+  if(!input || !box || !DB) return;
+  const q = input.value;
+  if(!q.trim()){ box.classList.remove('open'); box.innerHTML=''; return; }
+  const m = collectSearchMatches(q);
+  let html = '';
+  if(m.books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + m.books.map(b=>`<div class="scan-suggest-row" data-kind="book" data-id="${esc(b.acc)}"><span class="ss-ic">📘</span><span class="ss-main"><strong>${esc(b.title)}</strong><span class="ss-sub">${esc(b.acc)} · ${esc(b.available)}</span></span></div>`).join(''); }
+  if(m.members.length){ html += `<div class="gsearch-group-label">Members</div>` + m.members.map(u=>`<div class="scan-suggest-row" data-kind="member" data-id="${esc(u.id)}"><span class="ss-ic">👤</span><span class="ss-main"><strong>${esc(u.name)}</strong><span class="ss-sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</span></span></div>`).join(''); }
+  if(m.txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + m.txns.map(t=>`<div class="scan-suggest-row" data-kind="txn" data-id="${esc(t.trxId)}"><span class="ss-ic">🔄</span><span class="ss-main"><strong>${esc(t.title)}</strong><span class="ss-sub">${esc(t.name)} · ${esc(txnStatus(t))}</span></span></div>`).join(''); }
+  if(m.reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + m.reservations.map(r=>`<div class="scan-suggest-row" data-kind="reservation" data-id="${esc(r.id)}"><span class="ss-ic">📌</span><span class="ss-main"><strong>${esc(r.title)}</strong><span class="ss-sub">${esc(r.name)} · ${esc(r.status)}</span></span></div>`).join(''); }
+  if(m.reminders.length){ html += `<div class="gsearch-group-label">Reminders</div>` + m.reminders.map(r=>`<div class="scan-suggest-row" data-kind="reminder" data-id="${esc(r.trxId)}"><span class="ss-ic">✉</span><span class="ss-main"><strong>${esc(r.title)}</strong><span class="ss-sub">${esc(r.name)} · sent ${esc(fmtDate(r.dateSent))}</span></span></div>`).join(''); }
+  if(!html){ box.classList.remove('open'); box.innerHTML=`<div class="empty" style="padding:16px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`; box.classList.add('open'); return; }
+  box.innerHTML = html;
   box.classList.add('open');
   box.querySelectorAll('.scan-suggest-row').forEach(row=>{
-    row.onclick = ()=>{ box.classList.remove('open'); box.innerHTML=''; input.value=''; openSelfCheckLoansFor(row.dataset.id); };
+    row.onclick = ()=>{ box.classList.remove('open'); box.innerHTML=''; input.value=''; lockSearchGoto(row.dataset.kind, row.dataset.id); };
   });
 }
 document.addEventListener('click', e=>{
@@ -8659,7 +8718,79 @@ function lockLoanSearchSubmit(){
   const box = document.getElementById('lockLoanSuggest'); if(box){ box.classList.remove('open'); box.innerHTML=''; }
   const v = input ? input.value.trim() : '';
   if(!v){ openSelfCheckLoans(); return; }
-  openSelfCheckLoansFor(v);
+  // Enter with no suggestion picked yet: if it matches a member, jump straight to their
+  // loans/reservations (old behaviour); otherwise fall back to whichever single category
+  // has a match, using the same search used for suggestions.
+  const m = collectSearchMatches(v);
+  if(m.members.length===1 && !m.books.length && !m.txns.length && !m.reservations.length && !m.reminders.length){ openSelfCheckLoansFor(m.members[0].id); return; }
+  if(m.members.some(u=>u.id.toLowerCase()===v.toLowerCase())){ openSelfCheckLoansFor(v); return; }
+  if(m.books.length){ lockSearchGoto('book', m.books[0].acc); return; }
+  if(m.members.length){ openSelfCheckLoansFor(m.members[0].id); return; }
+  if(m.txns.length){ lockSearchGoto('txn', m.txns[0].trxId); return; }
+  if(m.reservations.length){ lockSearchGoto('reservation', m.reservations[0].id); return; }
+  if(m.reminders.length){ lockSearchGoto('reminder', m.reminders[0].trxId); return; }
+  openSelfCheckLoansFor(v); // no matches anywhere — show the same "no member found" message as before
+}
+function lockSearchGoto(kind, id){
+  if(kind==='member') openSelfCheckLoansFor(id);
+  else openLockSearchDetail(kind, id);
+}
+/* Read-only info card for a book / loan / reservation / reminder picked from the lockscreen
+   search — same idea as openSelfCheckLoans's modal, just generic across categories. No return,
+   renew, issue, or dismiss actions are ever offered here; those still require a staff sign-in. */
+function openLockSearchDetail(kind, id){
+  if(!DB) return;
+  let title = 'Details', bodyHtml = '';
+  if(kind==='book'){
+    const b = DB.catalogue.find(x=>x.acc===id);
+    title = '📘 Book details';
+    bodyHtml = b ? `
+      <p style="margin:8px 0 4px"><strong>${esc(b.title)}</strong></p>
+      <p class="field-hint" style="margin:0 0 8px">${esc(b.author||'Unknown author')} · Acc. ${esc(b.acc)}</p>
+      <div class="activity-row"><div class="dot" style="background:${b.available==='AVAILABLE'?'#3E6B52':'#B8863E'}"></div>
+        <div style="flex:1">Availability</div><span class="badge ${b.available==='AVAILABLE'?'green':'gold'}">${esc(b.available)}</span></div>
+    ` : `<p style="margin:10px 0;color:var(--terracotta)">Book not found.</p>`;
+  } else if(kind==='txn'){
+    const t = DB.circulation.find(x=>x.trxId===id);
+    const status = t ? txnStatus(t) : '';
+    title = '🔄 Loan details';
+    bodyHtml = t ? `
+      <p style="margin:8px 0 4px"><strong>${esc(t.title)}</strong></p>
+      <p class="field-hint" style="margin:0 0 8px">Borrower: ${esc(t.name)} (${esc(t.userId)})</p>
+      <div class="activity-row"><div class="dot" style="background:${status==='OVERDUE'?'#A8452F':'#3E6B52'}"></div>
+        <div style="flex:1">Due ${esc(fmtDate(t.dueDate))}</div><span class="badge ${status==='OVERDUE'?'red':'green'}">${esc(status)}</span></div>
+    ` : `<p style="margin:10px 0;color:var(--terracotta)">Transaction not found.</p>`;
+  } else if(kind==='reservation'){
+    const r = (DB.reservations||[]).find(x=>x.id===id);
+    title = '📌 Reservation details';
+    bodyHtml = r ? `
+      <p style="margin:8px 0 4px"><strong>${esc(r.title)}</strong></p>
+      <p class="field-hint" style="margin:0 0 8px">Reserved by: ${esc(r.name)}</p>
+      <div class="activity-row"><div class="dot" style="background:#B8863E"></div><div style="flex:1">Status</div><span class="badge gold">${esc(r.status)}</span></div>
+    ` : `<p style="margin:10px 0;color:var(--terracotta)">Reservation not found.</p>`;
+  } else if(kind==='reminder'){
+    const r = (DB.reminders||[]).find(x=>x.trxId===id);
+    title = '✉ Reminder details';
+    bodyHtml = r ? `
+      <p style="margin:8px 0 4px"><strong>${esc(r.title)}</strong></p>
+      <p class="field-hint" style="margin:0 0 8px">Sent to: ${esc(r.name)} (${esc(r.userId)})</p>
+      <div class="activity-row"><div class="dot" style="background:#A8452F"></div>
+        <div style="flex:1">Sent ${esc(fmtDate(r.dateSent))}</div><span class="badge red">${r.daysOverdue!==''&&r.daysOverdue!=null? esc(r.daysOverdue)+'d overdue':'Overdue'}</span></div>
+    ` : `<p style="margin:10px 0;color:var(--terracotta)">Reminder not found.</p>`;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>${title}</h3><button id="mClose">✕</button></div>
+      <div class="modal-body"><p class="field-hint" style="margin-top:0">No sign-in needed for this read-only view.</p>${bodyHtml}</div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
 }
 function openSelfCheckLoansFor(idOrQuery){
   openSelfCheckLoans();
@@ -8818,29 +8949,39 @@ function globalSearchGoto(kind, id){
   else if(kind==='member'){ openMemberProfile(id); return; }
   else if(kind==='txn'){ route='circulation'; render(); viewTransaction(id); }
   else if(kind==='reservation'){ route='reservations'; render(); }
+  else if(kind==='reminder'){ route='circulation'; render(); viewTransaction(id); }
 }
 /* Builds the categorised results markup shared by both the full-screen modal (mobile /
    Ctrl+K) and the inline dropdown under the stretched desktop search bar.
    A purely-numeric query (accession no., member ID, phone digits…) is treated as an
    identifier lookup: it searches Catalogue and Members at once and returns more rows of
-   each (still grouped under their own headings) instead of the usual short preview list. */
-function buildGlobalSearchHTML(q){
+   each (still grouped under their own headings) instead of the usual short preview list.
+   collectSearchMatches() is shared with the lockscreen search (buildLockSearchHTML) below,
+   so both stay in sync — same data, same categories, same matching rules. */
+function collectSearchMatches(q){
   const query = (q||'').trim().toLowerCase();
-  if(!DB) return '';
-  if(!query){
-    return `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members and transactions across the whole app</div>`;
-  }
+  if(!DB || !query) return {query, isNumeric:false, books:[], members:[], txns:[], reservations:[], reminders:[]};
   const isNumeric = /^\d+$/.test(query);
   const limit = isNumeric ? 10 : 6;
   const books = DB.catalogue.filter(b=> (b.title||'').toLowerCase().includes(query) || (b.author||'').toLowerCase().includes(query) || (b.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,limit);
   const members = DB.users.filter(u=> (u.name||'').toLowerCase().includes(query) || (u.id||'').toLowerCase().includes(query) || (isNumeric && (u.teacher||'').toLowerCase().includes(query))).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).slice(0,limit);
   const txns = isNumeric ? [] : DB.circulation.filter(t=> (t.title||'').toLowerCase().includes(query) || (t.name||'').toLowerCase().includes(query) || (t.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,6);
   const reservations = isNumeric ? [] : DB.reservations.filter(r=> (r.title||'').toLowerCase().includes(query) || (r.name||'').toLowerCase().includes(query) || (r.acc||'').toLowerCase().includes(query)).sort((a,b)=>(a.title||'').localeCompare(b.title||'')).slice(0,6);
+  const reminders = isNumeric ? [] : (DB.reminders||[]).filter(r=> (r.title||'').toLowerCase().includes(query) || (r.name||'').toLowerCase().includes(query) || (r.acc||'').toLowerCase().includes(query) || (r.userId||'').toLowerCase().includes(query)).sort((a,b)=>String(b.dateSent||'').localeCompare(String(a.dateSent||''))).slice(0,6);
+  return {query, isNumeric, books, members, txns, reservations, reminders};
+}
+function buildGlobalSearchHTML(q){
+  if(!DB) return '';
+  const m = collectSearchMatches(q);
+  if(!m.query){
+    return `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members, loans, reminders and reservations across the whole app</div>`;
+  }
   let html = '';
-  if(books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
-  if(members.length){ html += `<div class="gsearch-group-label">Members</div>` + members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
-  if(txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
-  if(reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + reservations.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reservation','${esc(r.id)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · ${esc(r.status)}</div></div></div>`).join(''); }
+  if(m.books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + m.books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
+  if(m.members.length){ html += `<div class="gsearch-group-label">Members</div>` + m.members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
+  if(m.txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + m.txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
+  if(m.reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + m.reservations.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reservation','${esc(r.id)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · ${esc(r.status)}</div></div></div>`).join(''); }
+  if(m.reminders.length){ html += `<div class="gsearch-group-label">Reminders</div>` + m.reminders.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reminder','${esc(r.trxId)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · sent ${esc(fmtDate(r.dateSent))}</div></div></div>`).join(''); }
   return html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
 }
 function renderGlobalSearchResults(q){
