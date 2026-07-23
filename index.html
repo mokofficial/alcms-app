@@ -2504,10 +2504,12 @@ input,select,textarea{font-family:inherit;}
 .auth-wrap .auth-bg-image-layer{ position:absolute; inset:0; background-size:cover; background-position:center; z-index:0;}
 .auth-info{
   flex:1.1; color:#F3EEDD;
-  padding:60px 50px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; min-width:320px;
+  padding:60px 50px; display:flex; flex-direction:column; justify-content:space-between; position:relative; z-index:2; overflow:hidden; min-width:320px;
 }
 /* Decoration flourish — anchored to the bottom-right corner of the whole auth screen
-   (not just the info side), since a single shared background now spans the entire screen. */
+   (not just the info side), since a single shared background now spans the entire screen.
+   z-index sits below .auth-info/.auth-form-side (both z-index:2) so the circle/spiral/etc never
+   paints over the dots, buttons, or footer text, even where it overlaps them visually. */
 .auth-decor-layer{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
 .auth-decor{ position:absolute; right:-220px; bottom:-220px; width:640px; height:640px; display:block; pointer-events:auto; cursor:pointer;}
 .auth-decor::before{ content:""; position:absolute; inset:0; border-radius:50%; border:1px solid rgba(255,255,255,.08);}
@@ -2545,7 +2547,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
    the same way on a real phone as it does when you shrink a desktop browser window, instead of
    relying on JS or box-state tricks. */
 .auth-notif-bell{ margin-top:8px; position:relative; z-index:2;}
-.auth-footer-row{ display:flex; align-items:center; justify-content:flex-start; gap:10px; margin-top:12px; flex-wrap:wrap; line-height:1; text-align:left;}
+.auth-footer-row{ display:flex; align-items:center; justify-content:flex-start; gap:10px; margin-top:28px; flex-wrap:wrap; line-height:1; text-align:left;}
 .auth-carousel-actions{ display:flex; gap:8px; align-items:center; flex:none; line-height:1;}
 .getting-started-btn{
   background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25);
@@ -2558,7 +2560,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .auth-contact-dev-link:hover{ color:#fff;}
 /* Same app name / contact link repeated on the form screen (Sign in / Create account), so it's
    still visible after navigating away from the carousel screen — same left alignment. */
-.auth-form-footer{ margin-top:18px;}
+.auth-form-footer{ margin-top:28px;}
 .lock-loan-search{ position:relative; display:flex; align-items:center; gap:6px; margin-top:10px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:6px 8px; max-width:320px;}
 .lock-loan-search .lls-ic{ font-size:13px; opacity:.85;}
 .lock-loan-search input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:#F3EEDD; font-size:12px; padding:2px 0;}
@@ -2624,7 +2626,7 @@ body[data-lockscreen-notifbell="off"] .auth-notif-bell{ display:none;}
 .ribbon-item.active{ background:var(--card); border-color:var(--brass); box-shadow:0 0 0 1px var(--brass) inset;}
 .ribbon-item.active .ic{ color:var(--forest);}
 html[data-theme="dark"] .ribbon-item.active{ box-shadow:0 0 0 1px var(--brass-light) inset;}
-.auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:48px 30px; position:relative; z-index:1;}
+.auth-form-side{ flex:1; display:flex; align-items:center; justify-content:center; padding:48px 30px; position:relative; z-index:2;}
 .auth-form-col{ display:flex; flex-direction:column; align-items:stretch; width:100%; max-width:380px;}
 .auth-form-col .lock-loan-search{ max-width:none; width:100%; margin:0 0 14px; background:rgba(0,0,0,.18); border-color:rgba(255,255,255,.3);}
 .auth-form-col .auth-box.wide{ max-width:none; width:100%;}
@@ -2696,15 +2698,16 @@ html[data-theme="dark"] .auth-box{ background:rgba(var(--auth-box-bg-rgb-dark,30
   .auth-slide .lbl{ font-size:10px;}
   .auth-bottom-cluster{ grid-area:bottom; margin-top:2px;}
   .auth-dots{ justify-content:flex-start; margin-top:0;}
-  .auth-footer-row{ margin-top:8px;}
+  .auth-footer-row{ margin-top:22px;}
   .auth-carousel-actions{ gap:6px;}
   .getting-started-btn{ font-size:10px; padding:5px 9px;}
   .auth-form-side{ padding:24px 20px 46px;}
   .auth-box{ padding:22px 18px; border-radius:14px;}
-  /* Loan-search bar: pulled into this same flow (from the sign-in screen), centered. */
-  .lock-loan-search.mobile-flow{ margin:12px auto 0; max-width:320px; width:100%;}
+  /* Loan-search bar: pulled into this same flow (from the sign-in screen), centered — enough
+     space above it so it doesn't crowd the Tips/Getting started/bell row just above it. */
+  .lock-loan-search.mobile-flow{ margin:22px auto 0; max-width:320px; width:100%;}
   /* Sign in / Create account tabs: keep them side-by-side but center the pair as a group. */
-  .auth-mobile-tabs.mobile-centered{ max-width:280px; margin:14px auto 6px;}
+  .auth-mobile-tabs.mobile-centered{ max-width:280px; margin:18px auto 6px;}
 }
 @media (max-width:400px){
   /* Very narrow phones: name/clock no longer fit comfortably on one row, so let the
