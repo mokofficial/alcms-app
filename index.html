@@ -4941,7 +4941,17 @@ function migrateNewFeatureData(db){
   if(!Array.isArray(db.consequenceLog)) db.consequenceLog = [];
   if(db.setup.scanWebhookUrl===undefined) db.setup.scanWebhookUrl = '';
   if(db.setup.stationId===undefined) db.setup.stationId = '';
-  (db.circulation||[]).forEach(t=>{ if(t.renewCount===undefined) t.renewCount = 0; if(t.finePaid===undefined) t.finePaid = false; });
+  if(!db.setup.notifTypes) db.setup.notifTypes = {};
+  ['schedule','overdue','dueSoon','feedback','summary','reservation'].forEach(k=>{
+    if(db.setup.notifTypes[k]===undefined) db.setup.notifTypes[k] = true;
+  });
+  (db.circulation||[]).forEach(t=>{
+    if(t.renewCount===undefined) t.renewCount = 0;
+    if(t.finePaid===undefined) t.finePaid = false;
+    if(t.finePaidAmount===undefined) t.finePaidAmount = null; // null = defer to legacy finePaid boolean, see fineStatus()
+    if(t.fineWaived===undefined) t.fineWaived = false;
+    if(t.fineWaiveReason===undefined) t.fineWaiveReason = '';
+  });
 }
 async function saveDB(){
   try{ return await storeSet(STORAGE_KEY, JSON.stringify(DB)); }
@@ -5044,7 +5054,11 @@ function buildSeedDB(){
   ];
   if(setup.scanWebhookUrl===undefined) setup.scanWebhookUrl = '';
   if(setup.stationId===undefined) setup.stationId = '';
-  circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; });
+  if(!setup.notifTypes) setup.notifTypes = {};
+  ['schedule','overdue','dueSoon','feedback','summary','reservation'].forEach(k=>{
+    if(setup.notifTypes[k]===undefined) setup.notifTypes[k] = true;
+  });
+  circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; t.finePaidAmount = 0; t.fineWaived = false; t.fineWaiveReason = ''; });
 
   return {
     catalogue, users, circulation, feedback, registerLog,
@@ -5116,6 +5130,7 @@ function openTimedAlert({title, bodyHtml, actions}){
 let scheduleAlertDayKey = null, scheduleAlertedSlots = new Set();
 function checkScheduleAlerts(){
   if(!SESSION || !DB || !Array.isArray(DB.scheduleDays) || $('#timedAlertBackdrop')) return;
+  if(!DB.setup.notifTypes.schedule) return;
   const now = new Date();
   const dayKey = now.toDateString();
   if(scheduleAlertDayKey !== dayKey){ scheduleAlertDayKey = dayKey; scheduleAlertedSlots = new Set(); }
@@ -5133,6 +5148,7 @@ function checkScheduleAlerts(){
 let reminderAlertedIds = new Set();
 function checkReminderAlerts(){
   if(!SESSION || !DB || !Array.isArray(DB.circulation) || $('#timedAlertBackdrop')) return;
+  if(!DB.setup.notifTypes.overdue) return;
   const overdue = DB.circulation.filter(x=>txnStatus(x)==='OVERDUE');
   const newOnes = overdue.filter(x=>!reminderAlertedIds.has(x.trxId));
   if(!newOnes.length) return;
@@ -5160,6 +5176,7 @@ function getNearOverdueLoans(){
 let nearOverdueAlertedIds = new Set();
 function checkNearOverdueAlerts(){
   if(!SESSION || !DB || !Array.isArray(DB.circulation) || $('#timedAlertBackdrop')) return;
+  if(!DB.setup.notifTypes.dueSoon) return;
   const nearOverdue = getNearOverdueLoans();
   const newOnes = nearOverdue.filter(x=>!nearOverdueAlertedIds.has(x.trxId));
   if(!newOnes.length) return;
@@ -5180,6 +5197,7 @@ function checkNearOverdueAlerts(){
 let feedbackAlertedIds = new Set();
 function checkFeedbackAlerts(){
   if(!SESSION || !DB || !Array.isArray(DB.feedback) || $('#timedAlertBackdrop')) return;
+  if(!DB.setup.notifTypes.feedback) return;
   const unresolved = DB.feedback.filter(f=>f.status!=='RESOLVED');
   const newOnes = unresolved.filter(f=>!feedbackAlertedIds.has(f.entryId));
   if(!newOnes.length) return;
@@ -5197,6 +5215,7 @@ function checkFeedbackAlerts(){
 let outstandingSnoozeUntil = 0;
 function checkOutstandingSummaryAlert(){
   if(!SESSION || !DB || $('#timedAlertBackdrop')) return;
+  if(!DB.setup.notifTypes.summary) return;
   if(Date.now() < outstandingSnoozeUntil) return;
   const overdueCount = Array.isArray(DB.circulation) ? DB.circulation.filter(x=>txnStatus(x)==='OVERDUE').length : 0;
   const nearOverdueCount = getNearOverdueLoans().length;
@@ -5905,15 +5924,21 @@ function GenericModule(cfg){
         const btn = document.querySelector(`[data-act="extra${i}-${cfg.key}"]`);
         if(btn) btn.onclick = ()=> a.onClick();
       });
+      const rowsForAction = ()=>{
+        const rows = filteredRows();
+        if(cfg.selectable && state.selected.size) return rows.filter(r=>state.selected.has(keyOf(r)));
+        return rows;
+      };
       const exportBtn = document.querySelector(`[data-act="export-${cfg.key}"]`);
       if(exportBtn) exportBtn.onclick = ()=>{
-        openExportModal(cfg.title, cfg.key+'_export_'+todayISO(), cfg.exportColumns, ()=>filteredRows());
+        openExportModal(cfg.title, cfg.key+'_export_'+todayISO(), cfg.exportColumns, rowsForAction);
       };
       const printBtn = document.querySelector(`[data-act="print-${cfg.key}"]`);
       if(printBtn) printBtn.onclick = ()=>{
-        const rows = filteredRows();
+        const rows = rowsForAction();
         if(!rows.length) return toast('No records match the current search/filters');
-        printReport(cfg.title, `${rows.length} record(s) matching current search/filters`, cfg.exportColumns, rows);
+        const usingSelection = cfg.selectable && state.selected.size>0;
+        printReport(cfg.title, `${rows.length} record(s) ${usingSelection? 'selected' : 'matching current search/filters'}`, cfg.exportColumns, rows);
       };
       function bindRowSelection(){
         if(!cfg.selectable) return;
@@ -7207,6 +7232,7 @@ function pageCatalogue(){
     state:catalogueModuleState, key:'catalogue', title:'Catalogue', hint:'Search by title, author or accession number', cap:200,
     data:()=>DB.catalogue,
     searchKeys:['acc','title','author','category','division','mainClass'],
+    selectable:true, rowKey:r=>r.acc,
     filters:[
       {key:'mainClass', label:'Main class', options:[...new Set(DB.catalogue.map(b=>b.mainClass))].filter(Boolean).sort()},
       {key:'available', label:'Status', options:['AVAILABLE','ISSUED','MISSING']},
@@ -7238,6 +7264,8 @@ function pageCatalogue(){
     extraActions:[
       {label:'🪪 Catalogue cards', alwaysShow:true, onClick:()=> openAllBookCardsModal()},
       {label:'🏷 Print codes only', alwaysShow:true, onClick:()=> openAllBookCodesModal()},
+      {label:'📍 Reassign shelf (selected)', onClick:()=> bulkReassignShelf()},
+      {label:'🗑 Delete selected', onClick:()=> bulkDeleteCatalogue(), danger:true},
       {label:'⚠ Clear all titles', onClick:clearAllCatalogue, danger:true},
     ],
     onImport:()=>openImportModal({
@@ -7499,6 +7527,35 @@ function deleteBook(acc){
     DB.catalogue = DB.catalogue.filter(x=>x.acc!==acc); saveDB(); render(); toast('Title moved to Trash — restorable for 30 days');
   });
 }
+function bulkDeleteCatalogue(){
+  if(!isAdmin()) return requireAdmin('delete titles');
+  const accs = [...(catalogueModuleState.selected||[])];
+  if(!accs.length){ toast('Tick one or more titles first'); return; }
+  const issuedCount = DB.catalogue.filter(b=>accs.includes(b.acc) && b.available==='ISSUED').length;
+  confirmDelete(`Move ${accs.length} title(s) to Trash? (Restorable for 30 days.)${issuedCount? ` Note: ${issuedCount} of these are currently issued — this removes the catalogue entry only, not the active loan.`:''}`, ()=>{
+    accs.forEach(acc=>{
+      const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
+      DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+acc, type:'book', label:b.title+' — '+b.acc, data:b, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
+    });
+    DB.catalogue = DB.catalogue.filter(x=>!accs.includes(x.acc));
+    catalogueModuleState.selected.clear();
+    saveDB(); render(); toast(`${accs.length} title(s) moved to Trash — restorable for 30 days`);
+  });
+}
+function bulkReassignShelf(){
+  if(!isAdmin()) return requireAdmin('edit the catalogue');
+  const accs = [...(catalogueModuleState.selected||[])];
+  if(!accs.length){ toast('Tick one or more titles first'); return; }
+  openModal({
+    title:`Reassign shelf for ${accs.length} title(s)`,
+    fields:[{key:'shelf', label:'New shelf location', type:'select', required:true, options:DB.setup.shelves, default:''}],
+    onSave:(vals)=>{
+      DB.catalogue.forEach(b=>{ if(accs.includes(b.acc)) b.shelf = vals.shelf; });
+      catalogueModuleState.selected.clear();
+      saveDB(); render(); toast(`${accs.length} title(s) moved to "${vals.shelf}"`);
+    }
+  });
+}
 
 /* ================= PAGE: USERS ================= */
 let usersModule;
@@ -7514,6 +7571,7 @@ function pageUsers(){
     state:usersModuleState, key:'users', title:'Members', hint:'Students and staff registered with the library',
     data:()=>DB.users,
     searchKeys:['id','name','cls','teacher'],
+    selectable:true, rowKey:r=>r.id,
     filters:[
       {key:'category', label:'Category', options:DB.setup.userCategories},
       {key:'cls', label:'Class / Designation', options:[...sortedClasses(), ...DB.setup.staffDesignations]},
@@ -7547,6 +7605,8 @@ function pageUsers(){
     ],
     extraActions:[
       {label:'🪪 Member ID cards', alwaysShow:true, onClick:()=> openAllMemberCardsModal()},
+      {label:'🏫 Reassign class (selected)', onClick:()=> bulkReassignClass()},
+      {label:'🗑 Delete selected', onClick:()=> bulkDeleteUsers(), danger:true},
       {label:'⚠ Clear all strikes', onClick:clearAllStrikes},
       {label:'⚠ Clear all members', onClick:clearAllMembers, danger:true},
     ],
@@ -7627,7 +7687,7 @@ function userFields(u={}){
     {key:'name', label:'Full name', required:true, default:u.name},
     {row:[
       {key:'category',label:'Category', type:'select', options:DB.setup.userCategories, default:u.category||'STUDENT'},
-      {key:'cls',label:'Class / Designation', type:'select', required:true, options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls||''},
+      {key:'cls',label: isStaff?'Designation':'Class', type:'select', required:true, options: isStaff? DB.setup.staffDesignations : sortedClasses(), default:u.cls||'', wrapId:'clsFieldWrap'},
     ]},
     {row:[{key:'teacher',label:'Phone number', type:'tel', default:u.teacher, wrapId:'phoneFieldWrap', hidden:!isStaff},{key:'maxAllowed',label:'Max books allowed', type:'number', default:u.maxAllowed ?? (isStaff?3:2)}]},
     {row:[
@@ -7663,6 +7723,8 @@ function openUserForm(id){
       const isStaff = catSel.value === 'STAFF';
       const opts = isStaff ? DB.setup.staffDesignations : sortedClasses();
       clsSel.innerHTML = opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+      const clsLabel = document.querySelector('#clsFieldWrap label');
+      if(clsLabel) clsLabel.textContent = (isStaff?'Designation':'Class') + ' *';
       const phoneWrap = document.getElementById('phoneFieldWrap');
       if(phoneWrap) phoneWrap.style.display = isStaff ? '' : 'none';
       // Only nudge the max-books default along with category if the person hasn't already
@@ -7679,6 +7741,39 @@ function deleteUser(id){
     const u = DB.users.find(x=>x.id===id); if(!u) return;
     DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:'member', label:u.name+' — '+u.id, data:u, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
     DB.users = DB.users.filter(x=>x.id!==id); saveDB(); render(); toast('Member moved to Trash — restorable for 30 days');
+  });
+}
+function bulkDeleteUsers(){
+  if(!isAdmin()) return requireAdmin('delete members');
+  const ids = [...(usersModuleState.selected||[])];
+  if(!ids.length){ toast('Tick one or more members first'); return; }
+  confirmDelete(`Move ${ids.length} member(s) to Trash? (Restorable for 30 days.)`, ()=>{
+    ids.forEach(id=>{
+      const u = DB.users.find(x=>x.id===id); if(!u) return;
+      DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+id, type:'member', label:u.name+' — '+u.id, data:u, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
+    });
+    DB.users = DB.users.filter(x=>!ids.includes(x.id));
+    usersModuleState.selected.clear();
+    saveDB(); render(); toast(`${ids.length} member(s) moved to Trash — restorable for 30 days`);
+  });
+}
+function bulkReassignClass(){
+  if(!isAdmin()) return requireAdmin('edit members');
+  const ids = [...(usersModuleState.selected||[])];
+  if(!ids.length){ toast('Tick one or more members first'); return; }
+  const selectedUsers = DB.users.filter(u=>ids.includes(u.id));
+  const mixedCategory = new Set(selectedUsers.map(u=>u.category)).size > 1;
+  openModal({
+    title:`Reassign class/designation for ${ids.length} member(s)`,
+    fields:[
+      {key:'cls', label:'New class / designation', type:'select', required:true, options:[...sortedClasses(), ...DB.setup.staffDesignations], default:'',
+        subHint: mixedCategory? 'Selected members mix Student and Staff — pick from the combined list above.' : null},
+    ],
+    onSave:(vals)=>{
+      DB.users.forEach(u=>{ if(ids.includes(u.id)) u.cls = vals.cls; });
+      usersModuleState.selected.clear();
+      saveDB(); render(); toast(`${ids.length} member(s) reassigned to "${vals.cls}"`);
+    }
   });
 }
 function studentSubjects(u){
@@ -7762,7 +7857,7 @@ function pageMemberProfile(){
   const active = allTxns.filter(t=>!t.returnDate);
   const history = allTxns.filter(t=>t.returnDate);
   const fines = DB.setup.fineEnabled ? allTxns.map(t=>({t, fine:fineForTxn(t)})).filter(x=>x.fine.amount>0) : [];
-  const outstanding = fines.filter(x=>!x.t.finePaid).reduce((s,x)=>s+x.fine.amount,0);
+  const outstanding = fines.reduce((s,x)=>s+fineStatus(x.t).outstanding,0);
   const visits = DB.registerLog.filter(r=>r.id===u.id).sort((a,b)=>(parseAnyDate(b.date)||0)-(parseAnyDate(a.date)||0)).slice(0,15);
   const holds = DB.reservations.filter(r=>r.userId===u.id);
 
@@ -7807,9 +7902,9 @@ function pageMemberProfile(){
     </tbody></table></div>` : `<div class="empty" style="padding:16px"><div class="big">🚪</div>No register visits on file</div>`;
   } else if(activeTab==='fines'){
     tabBody = `<table class="datatable"><thead><tr><th>Title</th><th>Days overdue</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
-      ${fines.map(({t,fine})=>`<tr><td>${esc(t.title)}</td><td>${fine.days}</td><td>${fmtCurrency(fine.amount)}</td>
-        <td><span class="badge ${t.finePaid?'green':'red'}">${t.finePaid?'Paid':'Outstanding'}</span></td>
-        <td>${!t.finePaid? `<button class="btn secondary small" onclick="markFinePaid('${esc(t.trxId)}')">Mark paid</button>`:''}</td></tr>`).join('')}
+      ${fines.map(({t})=>{ const st=fineStatus(t); return `<tr><td>${esc(t.title)}</td><td>${fineForTxn(t).days}</td><td>${fmtCurrency(st.amount)}</td>
+        <td><span class="badge ${st.outstanding<=0?'green':st.paidAmount>0?'gold':'red'}">${st.label}${st.outstanding>0 && st.paidAmount>0? ' · '+fmtCurrency(st.outstanding)+' left':''}</span></td>
+        <td>${!st.waived? `<button class="btn secondary small" onclick="openFinePaymentModal('${esc(t.trxId)}')">${st.outstanding<=0?'View':'Record payment'}</button>`:''}</td></tr>`; }).join('')}
     </tbody></table>`;
   } else if(activeTab==='reservations'){
     tabBody = `<table class="datatable"><thead><tr><th>Title</th><th>Requested</th><th>Status</th></tr></thead><tbody>
@@ -8006,7 +8101,8 @@ function pageCirculationTable(){
         if(!DB.setup.fineEnabled) return badge;
         const fine = fineForTxn(r);
         if(!fine.amount) return badge;
-        return badge + `<div style="font-size:10.5px;margin-top:3px;color:${r.finePaid?'var(--muted)':'var(--terracotta)'}">${r.finePaid?'Paid':fmtCurrency(fine.amount)}</div>`;
+        const st = fineStatus(r);
+        return badge + `<div style="font-size:10.5px;margin-top:3px;color:${st.outstanding<=0?'var(--muted)':'var(--terracotta)'}">${st.label}${st.outstanding>0?' · '+fmtCurrency(st.outstanding):''}</div>`;
       }},
     ],
     exportColumns:[
@@ -8017,7 +8113,7 @@ function pageCirculationTable(){
     ],
     rowActions:r=>`<button class="btn secondary small" onclick="viewTransaction('${esc(r.trxId)}')">View</button>
       ${!r.returnDate? `<button class="btn secondary small" onclick="renewLoan('${esc(r.trxId)}')">Renew</button>`:''}
-      ${DB.setup.fineEnabled && !r.finePaid && fineForTxn(r).amount>0? `<button class="btn secondary small" onclick="markFinePaid('${esc(r.trxId)}')">Mark fine paid</button>`:''}
+      ${DB.setup.fineEnabled && fineStatus(r).outstanding>0? `<button class="btn secondary small" onclick="openFinePaymentModal('${esc(r.trxId)}')">Record fine payment</button>`:''}
       <button class="btn danger small" onclick="deleteTransaction('${esc(r.trxId)}')">Delete</button>`,
     extraActions:[
       {label:'🖨 Print transactions', onClick:openCirculationPrintModal},
@@ -8348,13 +8444,76 @@ function fineForTxn(t){
   return {days, amount: days * DB.setup.fineRatePerDay};
 }
 function fmtCurrency(n){ return (DB.setup.fineCurrency||'₦') + Number(n||0).toLocaleString(); }
-function markFinePaid(trxId){
-  if(!isAdmin()) return requireAdmin('mark fines as paid');
-  const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
-  t.finePaid = true; saveDB(); render(); toast('Fine marked as paid');
+/* Fine status: paidAmount/waived are the source of truth going forward; the old boolean
+   t.finePaid (from before partial payments existed) is still honoured as "fully paid" for any
+   already-saved record that never got the newer fields, so nothing already marked paid reverts
+   to outstanding. */
+function fineStatus(t){
+  const amount = fineForTxn(t).amount;
+  if(t.fineWaived) return {amount, paidAmount:amount, outstanding:0, waived:true, label:'Waived'};
+  const paidAmount = Math.min(amount, t.finePaidAmount!=null ? (+t.finePaidAmount||0) : (t.finePaid? amount : 0));
+  const outstanding = Math.max(0, amount - paidAmount);
+  return {amount, paidAmount, outstanding, waived:false, label: outstanding<=0 && amount>0 ? 'Paid' : (paidAmount>0? 'Partial' : 'Outstanding')};
 }
 function totalOutstandingFines(userId){
-  return DB.circulation.filter(t=>t.userId===userId && !t.finePaid).reduce((sum,t)=> sum + fineForTxn(t).amount, 0);
+  return DB.circulation.filter(t=>t.userId===userId).reduce((sum,t)=> sum + fineStatus(t).outstanding, 0);
+}
+/* Record a payment (full or partial) or waive the remaining balance — replaces the old single
+   "mark paid" toggle. Waiving requires a reason and is logged to the Register, same as any other
+   discipline/finance exception, so there's an audit trail for why a fine was let go. */
+function openFinePaymentModal(trxId){
+  if(!isAdmin()) return requireAdmin('record fine payments');
+  const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
+  const st = fineStatus(t);
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>Fine — ${esc(t.title||'')}</h3><button id="mClose">✕</button></div>
+      <div class="modal-body">
+        <table class="datatable" style="margin-bottom:14px">
+          <tr><td style="font-weight:600;width:50%">Total fine</td><td>${fmtCurrency(st.amount)}</td></tr>
+          <tr><td style="font-weight:600">Already paid</td><td>${fmtCurrency(st.paidAmount)}</td></tr>
+          <tr><td style="font-weight:600">Outstanding</td><td style="color:${st.outstanding?'var(--terracotta)':'inherit'};font-weight:700">${fmtCurrency(st.outstanding)}</td></tr>
+        </table>
+        ${st.waived? `<p class="field-hint">This fine was waived${t.fineWaiveReason? ' — "'+esc(t.fineWaiveReason)+'"':''}.</p>` : st.outstanding<=0 ? `<p class="field-hint">Fully paid — nothing further owed.</p>` : `
+        <div class="field"><label>Amount received</label><input type="number" id="finePayAmount" min="0" max="${st.outstanding}" step="1" value="${st.outstanding}"></div>
+        <button class="btn secondary" id="finePayBtn" style="margin-bottom:16px">Record payment</button>
+        <p class="field-hint" style="margin-bottom:6px">Or, if this balance won't be collected:</p>
+        <div class="field"><label>Reason for waiving</label><input type="text" id="fineWaiveReason" placeholder="e.g. Hardship case, approved by admin"></div>
+        <button class="btn danger small" id="fineWaiveBtn">Waive remaining balance</button>
+        `}
+      </div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
+  const payBtn = wrap.querySelector('#finePayBtn');
+  if(payBtn) payBtn.onclick = ()=>{
+    const amt = Math.max(0, Math.min(st.outstanding, +document.getElementById('finePayAmount').value || 0));
+    if(amt<=0){ toast('Enter an amount greater than 0'); return; }
+    t.finePaidAmount = (st.paidAmount + amt);
+    saveDB(); render(); close();
+    toast(t.finePaidAmount >= st.amount ? 'Fine paid in full' : `Payment of ${fmtCurrency(amt)} recorded — ${fmtCurrency(st.amount-t.finePaidAmount)} still outstanding`);
+  };
+  const waiveBtn = wrap.querySelector('#fineWaiveBtn');
+  if(waiveBtn) waiveBtn.onclick = ()=>{
+    const reason = document.getElementById('fineWaiveReason').value.trim();
+    if(!reason){ toast('Enter a reason to waive this fine'); return; }
+    const user = DB.users.find(u=>u.id===t.userId);
+    t.fineWaived = true; t.fineWaiveReason = reason;
+    if(!Array.isArray(DB.registerLog)) DB.registerLog = [];
+    DB.registerLog.unshift({
+      entryId: uid('FWV'), source:'DESK', date: todayISO(), timeIn:'', timeOut:'', period:'',
+      id:t.userId, name:t.name||(user&&user.name)||'', category:(user&&user.category)||'', cls:(user&&user.cls)||'', purpose:'CIRCULATION',
+      conduct:'NONE', action:'NONE', borrow:'NO', verifiedBy:(typeof SESSION!=='undefined' && SESSION.fullName)||'',
+      note:`Fine of ${fmtCurrency(st.outstanding)} waived — "${reason}"`, offense:'FINE WAIVED', offenseOther:'', consequence:reason, consequenceOther:''
+    });
+    saveDB(); render(); close(); toast('Remaining fine waived');
+  };
 }
 
 /* ================= NOTIFICATIONS ================= */
@@ -8607,7 +8766,7 @@ function fulfillReservationsForReturn(acc, book){
   if(!waiting.length) return;
   const next = waiting[0];
   next.status = 'READY'; next.notifiedAt = new Date().toISOString();
-  pushNotification({type:'reservation', title:'Reservation ready', body:`${next.name} — "${next.title}" is back and ready for pickup`, route:'reservations'});
+  if(DB.setup.notifTypes.reservation) pushNotification({type:'reservation', title:'Reservation ready', body:`${next.name} — "${next.title}" is back and ready for pickup`, route:'reservations'});
   const user = DB.users.find(u=>u.id===next.userId);
   const recipient = userRecipient(user);
   if(recipient && book){
@@ -9003,7 +9162,7 @@ function printMemberFullProfile(id){
     ['Strikes', u.strike||0],['Discipline', u.discipline||'—'],['Eligibility', u.eligibility||'—'],
     ['Status', u.status||'—'],['Notes', u.notes||'—'],
   ];
-  if(DB.setup.fineEnabled) rows.push(['Outstanding fines', fmtCurrency(fines.filter(x=>!x.t.finePaid).reduce((s,x)=>s+x.fine.amount,0))]);
+  if(DB.setup.fineEnabled) rows.push(['Outstanding fines', fmtCurrency(fines.reduce((s,x)=>s+fineStatus(x.t).outstanding,0))]);
   const sections = [
     { heading:'Member details', columns:[{label:'Field',get:r=>r[0]},{label:'Value',get:r=>String(r[1])}], rows },
     { heading:'Loan history', columns:[
@@ -9018,7 +9177,7 @@ function printMemberFullProfile(id){
   sections.push({ heading:'Register visit history', columns:[{label:'Date',get:r=>fmtDate(r.date)},{label:'Purpose',get:r=>r.purpose||'—'}], rows: visits });
   if(DB.setup.fineEnabled && fines.length){
     sections.push({ heading:'Fines', columns:[
-      {label:'Title',get:r=>r.t.title},{label:'Days overdue',get:r=>r.fine.days},{label:'Amount',get:r=>fmtCurrency(r.fine.amount)},{label:'Status',get:r=>r.t.finePaid?'Paid':'Outstanding'},
+      {label:'Title',get:r=>r.t.title},{label:'Days overdue',get:r=>r.fine.days},{label:'Amount',get:r=>fmtCurrency(r.fine.amount)},{label:'Status',get:r=>fineStatus(r.t).label},
     ], rows: fines });
   }
   if(holds.length){
@@ -10122,8 +10281,18 @@ function pageSetup(){
     </div>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Notifications</h3><div class="hint">Optional — off by default</div></div>
-    <div class="field"><label><input type="checkbox" id="setWaReceipts" ${DB.setup.whatsappReceipts?'checked':''} onchange="toggleWhatsAppReceipts(this.checked)"> Send a WhatsApp transaction receipt automatically on every successful borrow/return</label></div>
+    <div class="panel-head"><h3>Notifications</h3><div class="hint">Choose which alerts appear — everything's on by default</div></div>
+    <div class="field">
+      <label style="margin-bottom:6px;display:block">Notification bell &amp; pop-up alerts</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifOverdue" ${DB.setup.notifTypes.overdue?'checked':''} onchange="saveNotifTypeSetting('overdue', this.checked)"> Loans now overdue</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifDueSoon" ${DB.setup.notifTypes.dueSoon?'checked':''} onchange="saveNotifTypeSetting('dueSoon', this.checked)"> Loans due soon (within 2 days)</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifReservation" ${DB.setup.notifTypes.reservation?'checked':''} onchange="saveNotifTypeSetting('reservation', this.checked)"> Reservation ready for pickup</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifFeedback" ${DB.setup.notifTypes.feedback?'checked':''} onchange="saveNotifTypeSetting('feedback', this.checked)"> Unresolved feedback</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifSchedule" ${DB.setup.notifTypes.schedule?'checked':''} onchange="saveNotifTypeSetting('schedule', this.checked)"> Class period starting</label>
+      <label style="display:block;font-weight:400"><input type="checkbox" id="setNotifSummary" ${DB.setup.notifTypes.summary?'checked':''} onchange="saveNotifTypeSetting('summary', this.checked)"> Periodic "Needs your attention" summary</label>
+    </div>
+    <p class="field-hint">Turning one off stops that pop-up/bell alert from firing again — it doesn't affect the underlying record (an overdue loan is still overdue, a reservation is still marked ready) or the WhatsApp receipt below.</p>
+    <div class="field" style="margin-top:12px"><label><input type="checkbox" id="setWaReceipts" ${DB.setup.whatsappReceipts?'checked':''} onchange="toggleWhatsAppReceipts(this.checked)"> Send a WhatsApp transaction receipt automatically on every successful borrow/return</label></div>
     <p class="field-hint">Goes to the staff member themselves, or a student's class teacher, using the phone numbers on file. Nothing sends if no number is on file.</p>
   </div>
   <div class="card panel">
@@ -12038,6 +12207,10 @@ function saveWeatherAmbiencePrefs(){
 function toggleWhatsAppReceipts(on){
   DB.setup.whatsappReceipts = on; saveDB();
   toast(on? 'WhatsApp transaction receipts turned on' : 'WhatsApp transaction receipts turned off');
+}
+function saveNotifTypeSetting(key, on){
+  if(!DB.setup.notifTypes) DB.setup.notifTypes = {};
+  DB.setup.notifTypes[key] = on; saveDB();
 }
 function sendTransactionReceiptIfEnabled(trx, kind){
   // kind: 'BORROWED' | 'RETURNED' — optional, off by default (Setup → Notifications)
