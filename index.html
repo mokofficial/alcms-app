@@ -3,7 +3,12 @@
 <head>
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ALCMS">
+<meta name="theme-color" content="#1F3A2E">
 <title>ALCMS — Automated Library &amp; Circulation Management System</title>
 <script>
 /* Runs synchronously, before any CSS paints, so the splash screen never flashes the default
@@ -21,6 +26,41 @@
     document.documentElement.setAttribute('data-theme', theme);
   }catch(e){ /* no saved prefs yet, or storage blocked — default :root colours are fine */ }
 })();
+</script>
+<script>
+/* Global fatal-error surface — installed before anything else runs. On mobile there is no
+   console the person can open, so an uncaught error anywhere (a blocked CDN script, a storage
+   quota error, an old browser missing a feature the app assumes exists, etc.) previously just
+   left a blank page or a splash screen spinning forever with zero indication of what happened.
+   This shows the actual error on screen so the issue is diagnosable from the phone itself,
+   and keeps a short log in case several errors fire before the DOM is ready. */
+window.__alcmsBootErrors = [];
+function alcmsShowFatalError(message, detail){
+  window.__alcmsBootErrors.push({message:message, detail:detail, at:new Date().toISOString()});
+  try{
+    var overlay = document.getElementById('fatalErrorOverlay');
+    var pre = document.getElementById('fatalErrorDetails');
+    if(!overlay || !pre) return; // DOM not ready yet — the error is still queued in the array above
+    var lines = window.__alcmsBootErrors.map(function(e){
+      return '['+e.at+'] '+e.message+(e.detail ? '\n'+e.detail : '');
+    });
+    pre.textContent = lines.join('\n\n');
+    overlay.classList.add('show');
+    var splash = document.getElementById('splash');
+    if(splash) splash.classList.add('hide');
+  }catch(displayErr){ /* if even the overlay itself fails, there's nothing further we can do */ }
+}
+window.addEventListener('error', function(e){
+  var msg = (e && e.message) || 'Unknown script error';
+  var detail = e && e.error && e.error.stack ? e.error.stack : (e && e.filename ? (e.filename+':'+e.lineno+':'+e.colno) : '');
+  alcmsShowFatalError(msg, detail);
+});
+window.addEventListener('unhandledrejection', function(e){
+  var reason = e && e.reason;
+  var msg = 'Unhandled promise rejection: ' + (reason && reason.message ? reason.message : String(reason));
+  var detail = reason && reason.stack ? reason.stack : '';
+  alcmsShowFatalError(msg, detail);
+});
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231F3A2E'/%3E%3Cpath d='M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M32 18v30' stroke='%23B8863E' stroke-width='2'/%3E%3Ccircle cx='32' cy='12' r='4' fill='%23D9A94F'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3381,6 +3421,36 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 html, body{ overflow-x:hidden;}
 .content{ max-width:100vw; overflow-x:hidden;}
 
+/* Mobile safe-area support (notches / home indicator on iOS, gesture bars on Android).
+   Without this, fixed-position UI (splash, auth screen, topbar, sidebar) can render partly
+   underneath the status bar or bottom gesture area when the site is opened full-screen or
+   added to the home screen on a phone. */
+#splash, #authScreen, #app{
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  box-sizing: border-box;
+}
+
+/* Fatal-error overlay shown by the global error handler below. Hidden by default. */
+#fatalErrorOverlay{
+  display:none; position:fixed; inset:0; z-index:99999; background:rgba(10,15,12,0.94);
+  color:#F6F1E2; padding:24px; box-sizing:border-box; overflow:auto;
+  font-family:inherit; -webkit-overflow-scrolling:touch;
+}
+#fatalErrorOverlay.show{ display:block; }
+#fatalErrorOverlay h2{ margin:0 0 8px; font-size:18px; }
+#fatalErrorOverlay p{ font-size:13px; line-height:1.5; color:#cfcabb; }
+#fatalErrorOverlay pre{
+  white-space:pre-wrap; word-break:break-word; background:rgba(255,255,255,0.06);
+  padding:10px; border-radius:8px; font-size:11.5px; max-height:40vh; overflow:auto;
+}
+#fatalErrorOverlay button{
+  margin-top:12px; padding:10px 16px; border-radius:8px; border:1px solid #D9A94F;
+  background:#D9A94F; color:#1F3A2E; font-weight:600; font-size:14px;
+}
+
 </style>
 </head>
 <body>
@@ -3391,6 +3461,15 @@ html, body{ overflow-x:hidden;}
   <div class="splash-title stamp-font" id="splashTitle">ALCMS</div>
   <div class="splash-sub">Access Library · Circulation Desk</div>
   <div class="splash-bar"></div>
+</div>
+
+<div id="fatalErrorOverlay">
+  <h2>ALCMS couldn't finish loading</h2>
+  <p>Something went wrong while starting the app on this device/browser. This is usually caused
+     by a slow or blocked network connection, a browser that's blocking storage, or an old
+     browser version. The details below can help fix it — please share them if you report this.</p>
+  <pre id="fatalErrorDetails"></pre>
+  <button type="button" onclick="location.reload()">Reload</button>
 </div>
 
 <div id="authScreen">
@@ -4235,7 +4314,7 @@ function routeExternalScanPayload(code, meta={}){
     if(e.key==='Enter'){
       if(buffer.length>=3) routeExternalScanPayload(buffer, {source:'hardware'});
       buffer = '';
-    } else if(e.key.length===1){
+    } else if(e.key && e.key.length===1){
       buffer += e.key;
     }
   });
@@ -13512,8 +13591,15 @@ async function enterApp(){
   tickClocks();
   await loadPrefs();
   tickClocks();
-  // absolute failsafe: no matter what happens above, force the splash away after 4s
-  const failsafe = setTimeout(()=>{ $('#splash').classList.add('hide'); if(!$('#authScreen').classList.contains('show') && !$('#app').classList.contains('show')) showAuthScreen(); }, 4000);
+  // absolute failsafe: no matter what happens above, force the splash away after 8s. (Mobile
+  // networks can be slow, so this is longer than the desktop-tuned 4s originally used here —
+  // that was firing before slow connections finished loading, which read as "stuck on splash".)
+  const failsafe = setTimeout(()=>{
+    $('#splash').classList.add('hide');
+    if(!$('#authScreen').classList.contains('show') && !$('#app').classList.contains('show')){
+      try{ showAuthScreen(); }catch(e){ alcmsShowFatalError('Timed out starting the app', e && e.stack || String(e)); }
+    }
+  }, 8000);
   try{
     ACCOUNTS = await loadAccounts();
     await loadAdminKey();
@@ -13542,7 +13628,15 @@ async function enterApp(){
     showAuthScreen();
   }
 })();
-window.addEventListener('error', e=> console.error('Runtime error:', e.error||e.message));
+window.addEventListener('error', e=>{
+  console.error('Runtime error:', e.error||e.message);
+  // Only escalate to the full-screen fatal overlay if the app never actually finished starting —
+  // once the app or auth screen is showing, a later error is handled inline (toast/console) so a
+  // single click-handler bug doesn't nuke an otherwise-working session.
+  var app = $('#app'), auth = $('#authScreen');
+  var appUp = (app && app.classList.contains('show')) || (auth && auth.classList.contains('show'));
+  if(!appUp && typeof alcmsShowFatalError==='function') alcmsShowFatalError(e.message||'Runtime error', (e.error&&e.error.stack)||'');
+});
 
 </script>
 </body>
