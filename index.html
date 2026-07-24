@@ -3,12 +3,7 @@
 <head>
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ALCMS">
-<meta name="theme-color" content="#1F3A2E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ALCMS — Automated Library &amp; Circulation Management System</title>
 <script>
 /* Runs synchronously, before any CSS paints, so the splash screen never flashes the default
@@ -26,41 +21,6 @@
     document.documentElement.setAttribute('data-theme', theme);
   }catch(e){ /* no saved prefs yet, or storage blocked — default :root colours are fine */ }
 })();
-</script>
-<script>
-/* Global fatal-error surface — installed before anything else runs. On mobile there is no
-   console the person can open, so an uncaught error anywhere (a blocked CDN script, a storage
-   quota error, an old browser missing a feature the app assumes exists, etc.) previously just
-   left a blank page or a splash screen spinning forever with zero indication of what happened.
-   This shows the actual error on screen so the issue is diagnosable from the phone itself,
-   and keeps a short log in case several errors fire before the DOM is ready. */
-window.__alcmsBootErrors = [];
-function alcmsShowFatalError(message, detail){
-  window.__alcmsBootErrors.push({message:message, detail:detail, at:new Date().toISOString()});
-  try{
-    var overlay = document.getElementById('fatalErrorOverlay');
-    var pre = document.getElementById('fatalErrorDetails');
-    if(!overlay || !pre) return; // DOM not ready yet — the error is still queued in the array above
-    var lines = window.__alcmsBootErrors.map(function(e){
-      return '['+e.at+'] '+e.message+(e.detail ? '\n'+e.detail : '');
-    });
-    pre.textContent = lines.join('\n\n');
-    overlay.classList.add('show');
-    var splash = document.getElementById('splash');
-    if(splash) splash.classList.add('hide');
-  }catch(displayErr){ /* if even the overlay itself fails, there's nothing further we can do */ }
-}
-window.addEventListener('error', function(e){
-  var msg = (e && e.message) || 'Unknown script error';
-  var detail = e && e.error && e.error.stack ? e.error.stack : (e && e.filename ? (e.filename+':'+e.lineno+':'+e.colno) : '');
-  alcmsShowFatalError(msg, detail);
-});
-window.addEventListener('unhandledrejection', function(e){
-  var reason = e && e.reason;
-  var msg = 'Unhandled promise rejection: ' + (reason && reason.message ? reason.message : String(reason));
-  var detail = reason && reason.stack ? reason.stack : '';
-  alcmsShowFatalError(msg, detail);
-});
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231F3A2E'/%3E%3Cpath d='M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z' fill='%23F6F1E2'/%3E%3Cpath d='M32 18v30' stroke='%23B8863E' stroke-width='2'/%3E%3Ccircle cx='32' cy='12' r='4' fill='%23D9A94F'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2819,21 +2779,21 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
   display:flex; align-items:center; justify-content:space-between; padding:14px 26px;
   background:var(--sidebar-bg); border-bottom:1px solid rgba(255,255,255,.12); position:sticky; top:0; z-index:5; gap:16px;
 }
-.topbar > div:first-child{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto;}
-.topbar .titles{ min-width:0;}
-.topbar .titles h2{ font-size:20px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.topbar .titles p{ margin:2px 0 0; font-size:12.5px; color:rgba(239,232,211,.68); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.topbar .titles h2{ font-size:20px; color:#fff;}
+.topbar .titles p{ margin:2px 0 0; font-size:12.5px; color:rgba(239,232,211,.68);}
 .topbar .today{ font-size:12px; color:rgba(239,232,211,.68); text-align:right;}
-.topbar-right{ display:flex; align-items:center; gap:14px; flex:none;}
+.topbar-right{ display:flex; align-items:center; gap:14px;}
 .topbar-search{ position:relative; display:flex; align-items:center;}
 .topbar-search-input{ display:none;}
+.topbar-search-submit{ display:none;}
 .topbar-search-results{ display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:280px; overflow-y:auto; overflow-x:hidden;
   background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.32); padding:6px; z-index:60; flex-direction:column;}
 .topbar-search-results.open{ display:flex;}
 @media (min-width:821px){
-  .topbar-right{ justify-content:flex-end;}
-  .topbar-search{ flex:none; width:min(440px,32vw); margin-right:6px;}
+  .topbar-right{ flex:1; justify-content:flex-end;}
+  .topbar-search{ flex:1; max-width:440px; margin-right:6px;}
   .topbar-search-icon{ display:none;}
+  .topbar-search-submit{ display:flex; flex:none; margin-left:6px;}
   .topbar-search-input{ display:block; width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
     color:#EFE8D3; border-radius:22px; padding:9px 16px; font-size:13px;}
   .topbar-search-input::placeholder{ color:rgba(239,232,211,.55);}
@@ -2901,17 +2861,21 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 .kpi::after{ content:""; position:absolute; right:-10px; top:-10px; width:60px;height:60px;border-radius:50%; background:var(--parchment-dim); z-index:0;}
 
 .panel{ padding:18px 20px; margin-bottom:18px;}
-.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
-/* Only the primary action (+ Add) and the "⋯ More" trigger stay visible in the header row;
-   everything else (Print, Export, Import, extra admin actions) lives inside the "⋯ More"
-   dropdown. That keeps the row short and fixed-height on every screen size — it never needs
-   to scroll horizontally, and it never needs to wrap onto extra lines either. */
-.panel-head-actions{
-  display:flex; gap:8px; flex-wrap:nowrap; align-items:center; max-width:100%;
+.panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
+.panel-head-actions{ display:flex; gap:8px; flex-wrap:wrap;}
+/* Members (Users) page: keep every header button on a single row instead of wrapping onto
+   several lines. If the row is wider than the panel it scrolls horizontally rather than
+   wrapping, so the buttons always stay lined up together. */
+.panel-head[data-mod="users"]{ flex-wrap:nowrap; align-items:center;}
+.panel-head[data-mod="users"] .panel-head-actions{
+  flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; max-width:100%;
 }
-.panel-head-actions button{ flex:none; white-space:nowrap;}
+.panel-head[data-mod="users"] .panel-head-actions button{ flex:none; white-space:nowrap;}
+.panel-head[data-mod="users"] .panel-head-actions::-webkit-scrollbar{ height:5px;}
+.panel-head[data-mod="users"] .panel-head-actions::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px;}
 @media (max-width:820px){
-  .panel-head{ flex-wrap:nowrap; align-items:center;}
+  .panel-head[data-mod="users"]{ flex-wrap:nowrap; align-items:center;}
+  .panel-head[data-mod="users"] .panel-head-actions{ width:100%;}
 }
 .home-alert-dismiss{
   align-self:center; flex:none; display:inline-flex; align-items:center; gap:6px;
@@ -2927,27 +2891,10 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
   border-radius:8px; box-shadow:var(--shadow); z-index:40; overflow:hidden; display:none;
 }
 .dropdown-menu.open{ display:block;}
-.dropdown-menu a,.dropdown-menu button{
-  display:block; width:100%; text-align:left; padding:9px 14px; font-size:13px; color:var(--ink);
-  text-decoration:none; cursor:pointer; background:transparent; border:none; font-family:inherit;
-}
-.dropdown-menu a:hover,.dropdown-menu button:hover{ background:var(--parchment-dim);}
+.dropdown-menu a{ display:block; padding:9px 14px; font-size:13px; color:var(--ink); text-decoration:none; cursor:pointer;}
+.dropdown-menu a:hover{ background:var(--parchment-dim);}
 .dropdown-menu a.disabled{ color:var(--muted); cursor:default; pointer-events:none;}
 .dropdown-menu .divider{ height:1px; background:var(--line); margin:4px 0;}
-.dropdown-menu .danger-text{ color:var(--terracotta);}
-/* Row-level "⋯ More" menu (used when a table row has more actions than fit comfortably).
-   Fixed (not absolute) and positioned by JS from the trigger button's own coordinates, so it's
-   never clipped by .table-wrap's overflow:auto — the same reasoning as .auth-notif-preview above.
-   One shared element is reused for every row instead of one dropdown per row. */
-.row-more-menu{ position:fixed; display:none; min-width:180px; background:var(--card); border:1px solid var(--line);
-  border-radius:8px; box-shadow:var(--shadow); z-index:1200; overflow:hidden;}
-.row-more-menu.open{ display:block;}
-.row-more-menu a,.row-more-menu button{
-  display:block; width:100%; text-align:left; padding:9px 14px; font-size:13px; color:var(--ink);
-  text-decoration:none; cursor:pointer; background:transparent; border:none; font-family:inherit;
-}
-.row-more-menu a:hover,.row-more-menu button:hover{ background:var(--parchment-dim);}
-.row-more-menu .danger-text{ color:var(--terracotta);}
 .panel-head h3{ font-size:15.5px;}
 .panel-head .hint{ font-size:11.5px; color:var(--muted);}
 .charts-row{ grid-template-columns:repeat(auto-fit,minmax(460px,1fr));}
@@ -2966,8 +2913,7 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 .chart-data-table th{ color:var(--muted-label); font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; position:sticky; top:0; background:var(--card);}
 .chart-data-table td:last-child, .chart-data-table th:last-child{ text-align:right;}
 
-.toolbar{ display:flex; gap:8px; flex-wrap:nowrap; align-items:center; margin-bottom:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:3px;}
-.toolbar > *{ flex:none;}
+.toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
 .toolbar input[type=text],.toolbar select{
   padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; font-size:13px; color:var(--ink);
 }
@@ -3184,7 +3130,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .gsearch-group-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:0; padding:6px 6px 2px;}
 .gsearch-group-label:first-child{ padding-top:2px;}
 .gsearch-row{ display:flex; align-items:center; gap:8px; margin:0; padding:5px 6px; border-radius:0; cursor:pointer; border-bottom:1px solid var(--line); line-height:1.25;}
-.gsearch-row .gs-ic{ font-size:15px; flex:none;}
 .gsearch-row:last-child{ border-bottom:none;}
 .gsearch-row:hover, .gsearch-row.active{ background:rgba(31,58,46,.08);}
 .gsearch-row .gs-main{ flex:1; min-width:0;}
@@ -3383,12 +3328,11 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   .charts-row{ grid-template-columns:1fr;}
   .two-col{ grid-template-columns:1fr;}
   .quicklinks{ grid-template-columns:repeat(2,1fr);}
-  .toolbar{ flex-wrap:nowrap; overflow-x:auto;}
-  .toolbar input[type=text]{ min-width:180px;}
-  .search-input-wrap{ flex:none;}
+  .toolbar{ flex-direction:column; align-items:stretch;}
+  .toolbar input[type=text], .toolbar select{ width:100%;}
+  .search-input-wrap{ width:100%;}
   .panel-head{ flex-direction:column; align-items:stretch;}
-  .panel-head > div[style]{ display:flex; gap:8px; flex-wrap:wrap;}
-  .panel-head-actions{ width:100%;}
+  .panel-head > div[style], .panel-head > .panel-head-actions{ display:flex; gap:8px; flex-wrap:wrap;}
   .modal{ max-width:calc(100% - 24px); width:100%; max-height:calc(100% - 48px); border-radius:12px;}
   .modal-backdrop{ padding:12px;}
   .btn, .btn.small{ min-height:38px;}
@@ -3421,36 +3365,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 html, body{ overflow-x:hidden;}
 .content{ max-width:100vw; overflow-x:hidden;}
 
-/* Mobile safe-area support (notches / home indicator on iOS, gesture bars on Android).
-   Without this, fixed-position UI (splash, auth screen, topbar, sidebar) can render partly
-   underneath the status bar or bottom gesture area when the site is opened full-screen or
-   added to the home screen on a phone. */
-#splash, #authScreen, #app{
-  padding-top: env(safe-area-inset-top, 0);
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  padding-left: env(safe-area-inset-left, 0);
-  padding-right: env(safe-area-inset-right, 0);
-  box-sizing: border-box;
-}
-
-/* Fatal-error overlay shown by the global error handler below. Hidden by default. */
-#fatalErrorOverlay{
-  display:none; position:fixed; inset:0; z-index:99999; background:rgba(10,15,12,0.94);
-  color:#F6F1E2; padding:24px; box-sizing:border-box; overflow:auto;
-  font-family:inherit; -webkit-overflow-scrolling:touch;
-}
-#fatalErrorOverlay.show{ display:block; }
-#fatalErrorOverlay h2{ margin:0 0 8px; font-size:18px; }
-#fatalErrorOverlay p{ font-size:13px; line-height:1.5; color:#cfcabb; }
-#fatalErrorOverlay pre{
-  white-space:pre-wrap; word-break:break-word; background:rgba(255,255,255,0.06);
-  padding:10px; border-radius:8px; font-size:11.5px; max-height:40vh; overflow:auto;
-}
-#fatalErrorOverlay button{
-  margin-top:12px; padding:10px 16px; border-radius:8px; border:1px solid #D9A94F;
-  background:#D9A94F; color:#1F3A2E; font-weight:600; font-size:14px;
-}
-
 </style>
 </head>
 <body>
@@ -3461,15 +3375,6 @@ html, body{ overflow-x:hidden;}
   <div class="splash-title stamp-font" id="splashTitle">ALCMS</div>
   <div class="splash-sub">Access Library · Circulation Desk</div>
   <div class="splash-bar"></div>
-</div>
-
-<div id="fatalErrorOverlay">
-  <h2>ALCMS couldn't finish loading</h2>
-  <p>Something went wrong while starting the app on this device/browser. This is usually caused
-     by a slow or blocked network connection, a browser that's blocking storage, or an old
-     browser version. The details below can help fix it — please share them if you report this.</p>
-  <pre id="fatalErrorDetails"></pre>
-  <button type="button" onclick="location.reload()">Reload</button>
 </div>
 
 <div id="authScreen">
@@ -3567,7 +3472,8 @@ html, body{ overflow-x:hidden;}
           <button class="icon-btn topbar-search-icon" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)">🔎</button>
           <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="Search titles, members, transactions…" autocomplete="off"
             oninput="renderTopbarSearchResults(this.value)" onfocus="renderTopbarSearchResults(this.value)"
-            onkeydown="if(event.key==='Escape'){this.value=''; this.blur(); closeTopbarSearch();}">
+            onkeydown="if(event.key==='Escape'){this.value=''; this.blur(); closeTopbarSearch();} else if(event.key==='Enter'){event.preventDefault(); renderTopbarSearchResults(this.value);}">
+          <button type="button" class="icon-btn topbar-search-submit" onclick="renderTopbarSearchResults(document.getElementById('topbarSearchInput').value)" title="Search the library">🔍</button>
           <div class="topbar-search-results" id="topbarSearchResults"></div>
         </div>
         <button class="icon-btn" id="notifBellBtn" onclick="event.stopPropagation();openNotificationCenter();" title="Notifications" style="position:relative">
@@ -3681,23 +3587,6 @@ function sortClassesChrono(list){
   });
 }
 const todayISO = ()=> new Date().toISOString().slice(0,10);
-/* App-wide activity trail — every add/edit/delete/issue/return/etc. across every module lands
-   here as one running log, newest first, capped so the save file doesn't grow unbounded.
-   This is separate from the per-item History (Catalogue/Members/Circulation/Equipment), which
-   only tracks that one record's own timeline — this is the single place to see everything
-   that's happened across the whole app. */
-const ACTIVITY_LOG_CAP = 500;
-function logActivity(module, action, summary){
-  if(!DB) return;
-  if(!Array.isArray(DB.activityLog)) DB.activityLog = [];
-  DB.activityLog.unshift({
-    id:'ACT-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
-    ts:new Date().toISOString(), module, action,
-    by:(typeof SESSION!=='undefined' && SESSION && SESSION.fullName)||'—',
-    summary
-  });
-  if(DB.activityLog.length > ACTIVITY_LOG_CAP) DB.activityLog.length = ACTIVITY_LOG_CAP;
-}
 function parseAnyDate(v){
   if(!v) return null;
   if(v instanceof Date) return v;
@@ -4314,7 +4203,7 @@ function routeExternalScanPayload(code, meta={}){
     if(e.key==='Enter'){
       if(buffer.length>=3) routeExternalScanPayload(buffer, {source:'hardware'});
       buffer = '';
-    } else if(e.key && e.key.length===1){
+    } else if(e.key.length===1){
       buffer += e.key;
     }
   });
@@ -4914,6 +4803,7 @@ function pageAccount(){
     <p class="field-hint" style="margin-bottom:8px">You can delete any account except the one you're currently signed in as — at least one account must always remain.</p>
     <div class="table-wrap"><table class="datatable"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Phone</th><th></th></tr></thead>
     <tbody id="otherAccountsBody">${renderOtherAccountRows()}</tbody></table></div>
+    <p class="field-hint" style="margin-top:8px">The admin key, login lockout and inactivity auto-lock now live in <strong>Privacy &amp; Security</strong> in the sidebar.</p>
   </div>` : ''}
   <div class="card panel">
     <button class="btn danger" onclick="signOut()">Sign out</button>
@@ -5060,26 +4950,14 @@ function migrateNewFeatureData(db){
   if(!Array.isArray(db.reservations)) db.reservations = [];
   if(!Array.isArray(db.notifications)) db.notifications = [];
   if(!Array.isArray(db.trash)) db.trash = [];
-  if(!Array.isArray(db.activityLog)) db.activityLog = [];
   if(!Array.isArray(db.equipment)) db.equipment = [];
   db.equipment.forEach(it=>{
     if(it.assignedTo===undefined) it.assignedTo = '';
-    if(it.description===undefined) it.description = '';
-    if(it.photo===undefined) it.photo = null;
     if(!Array.isArray(it.history)) it.history = [{date:it.dateAdded||todayISO(), condition:it.condition, location:it.location, assignedTo:it.assignedTo, note:'Added to inventory'}];
     if(!it.tag) it.tag = it.id;
   });
   if(!db.setup) db.setup = {};
   if(!Array.isArray(db.setup.equipmentCategories) || !db.setup.equipmentCategories.length) db.setup.equipmentCategories = DEFAULT_EQUIPMENT_CATEGORIES.slice();
-  if(!db.setup.aiDescription) db.setup.aiDescription = {enabled:false, endpoint:'https://api.openai.com/v1/chat/completions', model:'gpt-4o-mini', apiKey:''};
-  if(Array.isArray(db.users)){
-    db.users.forEach(u=>{
-      if(!u.statusUpdated){
-        u.statusUpdated = (Array.isArray(u.history) && u.history.length) ? u.history[0].date : todayISO();
-      }
-      delete u.history;
-    });
-  }
   if(!db.setup) db.setup = {};
   if(db.setup.fineEnabled===undefined) db.setup.fineEnabled = false;
   if(db.setup.fineRatePerDay===undefined) db.setup.fineRatePerDay = 0;
@@ -5104,7 +4982,6 @@ function migrateNewFeatureData(db){
   ['schedule','overdue','dueSoon','feedback','summary','reservation'].forEach(k=>{
     if(db.setup.notifTypes[k]===undefined) db.setup.notifTypes[k] = true;
   });
-  if(!db.setup.shelfMap || typeof db.setup.shelfMap!=='object') db.setup.shelfMap = {};
   (db.circulation||[]).forEach(t=>{
     if(t.renewCount===undefined) t.renewCount = 0;
     if(t.finePaid===undefined) t.finePaid = false;
@@ -5215,18 +5092,16 @@ function buildSeedDB(){
   if(setup.scanWebhookUrl===undefined) setup.scanWebhookUrl = '';
   if(setup.stationId===undefined) setup.stationId = '';
   if(!Array.isArray(setup.equipmentCategories) || !setup.equipmentCategories.length) setup.equipmentCategories = DEFAULT_EQUIPMENT_CATEGORIES.slice();
-  if(!setup.aiDescription) setup.aiDescription = {enabled:false, endpoint:'https://api.openai.com/v1/chat/completions', model:'gpt-4o-mini', apiKey:''};
   if(!setup.notifTypes) setup.notifTypes = {};
   ['schedule','overdue','dueSoon','feedback','summary','reservation'].forEach(k=>{
     if(setup.notifTypes[k]===undefined) setup.notifTypes[k] = true;
   });
-  if(!setup.shelfMap || typeof setup.shelfMap!=='object') setup.shelfMap = {};
   circulation.forEach(t=>{ t.renewCount = 0; t.finePaid = false; t.finePaidAmount = 0; t.fineWaived = false; t.fineWaiveReason = ''; });
 
   return {
     catalogue, users, circulation, feedback, registerLog,
     scheduleDays: SEED_SCHEDULE_DAYS.map(r=>[...r]), scheduleRoster: SEED_SCHEDULE_ROSTER.map(r=>[...r]), scheduleSubjects: [...SEED_SCHEDULE_SUBJECTS],
-    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], consequenceLog: [], equipment: [], activityLog: [], meta:{seededAt: new Date().toISOString()}
+    setup, reminders: [], reservations: [], notifications: [], versions: [], trash: [], consequenceLog: [], equipment: [], meta:{seededAt: new Date().toISOString()}
   };
 }
 
@@ -5436,7 +5311,6 @@ const NAV = [
     {id:'setup', label:'Setup', ico:'⚙'},
     {id:'settings', label:'Personalization', ico:'◐'},
     {id:'security', label:'Privacy & Security', ico:'⛨'},
-    {id:'activitylog', label:'Activity Log', ico:'📜'},
     {id:'backup', label:'Backup & Restore', ico:'⟲'},
   ]},
   {group:'Help', items:[
@@ -5706,20 +5580,19 @@ const PAGE_META = {
   analytics:['Analytics','Top borrowers, top titles and overdue detail'],
   catalogue:['Catalogue','Every accessioned title in the collection'],
   users:['Members','Students and staff registered to borrow'],
-  equipment:['Assets & Equipment','Furniture, electronics and other non-book assets'],
+  equipment:['Assets & Equipment','Furniture, electronics and other non-book assets — tracked by category, condition, location and assignment'],
   circulation:['Circulation','Issue and return titles'],
   reservations:['Reservations','Holds placed on titles that are currently out'],
   memberProfile:['Member profile','Loans, history, fines and visits for this member'],
   reminders:['Reminder Log','Overdue loans awaiting a reminder'],
-  register:['Register','Desk sign-ins and class period visits'],
+  register:['Register','Desk sign-ins and class period visits, in one place'],
   schedule:['Schedule','Weekly library timetable'],
   feedback:['Feedback','Suggestions, complaints and requests'],
-  setup:['Setup','Institution, term, classes, shelves and configuration'],
-  settings:['Personalization','Appearance, typography, icons and backgrounds'],
-  security:['Privacy & Security','Admin key, lockout and account creation rules'],
-  activitylog:['Activity Log','A running trail of changes made across the app'],
-  account:['My Account','Your profile, password and access'],
-  backup:['Backup & Restore','Data backup, GitHub sync and checkpoints'],
+  setup:['Setup','Institution branding, academic term, classes, subjects, shelves and other library configuration'],
+  settings:['Personalization','Appearance, typography, icons, backgrounds and weather ambience'],
+  security:['Privacy & Security','Admin key, login lockout, inactivity auto-lock and account creation rules'],
+  account:['My Account','Your profile, password, and — for admins — access and other accounts'],
+  backup:['Backup & Restore','Account backup, data backup, GitHub sync, scheduled backups and checkpoints'],
   guide:['User guide','How to use every part of the desk'],
   about:['About','ALCMS — Automated Library & Circulation Management System'],
 };
@@ -5730,7 +5603,7 @@ function renderNav(){
   const logo = $('#sidebarLogo');
   if(logo){
     const pos = DB.setup.institutionLogoPos || {x:50,y:50};
-    logo.innerHTML = (DB && DB.setup && DB.setup.institutionLogo) ? `<img src="${DB.setup.institutionLogo}" style="object-position:${pos.x}% ${pos.y}%">` : APP_LOGO_SVG;
+    logo.innerHTML = (DB && DB.setup && DB.setup.institutionLogo) ? `<img src="${DB.setup.institutionLogo}" style="object-position:${pos.x}% ${pos.y}%">` : 'AL';
   }
   const el = $('#navlist'); el.innerHTML='';
   const reminderCount = (DB && DB.circulation) ? reminderNeedsCount() : 0;
@@ -5908,7 +5781,6 @@ function renderFields(fields, values){
   }).join('');
 }
 function fieldHtml(f,values){
-  if(f.type==='custom') return f.html||'';
   const val = values[f.key] ?? f.default ?? '';
   let input;
   if(f.type==='select'){
@@ -6021,23 +5893,12 @@ function GenericModule(cfg){
         <div class="panel-head" data-mod="${cfg.key}">
           <div><h3>${esc(cfg.title)}</h3><div class="hint">${esc(cfg.hint||'')}</div></div>
           <div class="panel-head-actions">
-            ${(()=>{
-              const items = [];
-              if(cfg.exportColumns){
-                items.push(`<a data-act="print-${cfg.key}">🖶 Print</a>`);
-                items.push(`<a data-act="export-${cfg.key}">⭳ Export</a>`);
-              }
-              if(cfg.onImport && isAdmin()) items.push(`<a data-act="import-${cfg.key}">⭱ Import</a>`);
-              (cfg.extraActions||[]).forEach((a,i)=>{
-                if(a.alwaysShow||isAdmin()) items.push(`<a data-act="extra${i}-${cfg.key}" ${a.danger?'class="danger-text"':''}>${esc(a.label)}</a>`);
-              });
-              if(!items.length) return '';
-              return `<div class="dropdown-wrap">
-                <button class="btn secondary small" data-dropdown-toggle="moremenu_${cfg.key}">⋯ More</button>
-                <div class="dropdown-menu" id="moremenu_${cfg.key}">${items.join('')}</div>
-              </div>`;
-            })()}
+            ${cfg.exportColumns? `
+            <button class="btn secondary small" data-act="print-${cfg.key}">🖶 Print</button>
+            <button class="btn secondary small" data-act="export-${cfg.key}">⭳ Export</button>`:''}
+            ${cfg.onImport && isAdmin() ? `<button class="btn secondary small" data-act="import-${cfg.key}">⭱ Import</button>`:''}
             ${cfg.onAdd && isAdmin() ? `<button class="btn small" data-act="add-${cfg.key}">${cfg.addLabel||'+ Add'}</button>`:''}
+            ${(cfg.extraActions||[]).map((a,i)=> (a.alwaysShow||isAdmin()) ? `<button class="btn small ${a.danger?'danger':'secondary'}" data-act="extra${i}-${cfg.key}">${esc(a.label)}</button>` : '').join('')}
             ${cfg.onAdd && !isAdmin() ? `<span class="badge grey">View only</span>`:''}
           </div>
         </div>
@@ -7478,7 +7339,7 @@ function pageCatalogue(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">Details</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">Details</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn secondary small" onclick="duplicateBook('${esc(r.acc)}')" title="Add a new title, pre-filled with this one's details">📋 Copy</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
   });
   return `<div id="mod_catalogue"></div>`;
 }
@@ -7503,8 +7364,6 @@ function viewBook(acc){
     ['Info / notes', b.info||'—'],
   ];
   const txns = DB.circulation.filter(t=>t.acc===acc).sort((a,b2)=>(parseAnyDate(b2.dateBorrowed)||0)-(parseAnyDate(a.dateBorrowed)||0));
-  const log = (Array.isArray(b.history) && b.history.length) ? b.history
-    : [{date:b.dateAdded, condition:b.condition, shelf:b.shelf, available:b.available, note:'Added to catalogue'}];
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop'; wrap.id = 'mb';
   wrap.innerHTML = `
@@ -7518,10 +7377,6 @@ function viewBook(acc){
         ${txns.length? `<div class="table-wrap" style="max-height:220px;overflow:auto"><table class="datatable"><thead><tr><th>Member</th><th>Borrowed</th><th>Due</th><th>Returned</th><th>Status</th></tr></thead><tbody>
           ${txns.map(t=>`<tr><td>${esc(t.name)}</td><td>${fmtDate(t.dateBorrowed)}</td><td>${fmtDate(t.dueDate)}</td><td>${t.returnDate?fmtDate(t.returnDate):'—'}</td><td>${esc(txnStatus(t))}</td></tr>`).join('')}
         </tbody></table></div>` : `<div class="empty" style="padding:12px"><div class="big">📚</div>No transactions on file for this item yet</div>`}
-        <h4 style="margin:16px 0 6px">Item history (${log.length})</h4>
-        <div class="table-wrap" style="max-height:220px;overflow:auto"><table class="datatable"><thead><tr><th>Date</th><th>Status</th><th>Condition</th><th>Shelf</th><th>Note</th></tr></thead><tbody>
-          ${log.map(h=>`<tr><td>${fmtDate(h.date)}</td><td><span class="badge grey">${esc(h.available||'—')}</span></td><td>${esc(h.condition||'—')}</td><td>${esc(h.shelf||'—')}</td><td>${esc(h.note||'')}</td></tr>`).join('')}
-        </tbody></table></div>
       </div>
       <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button><button class="btn secondary" id="mCard">🪪 Generate card</button></div>
     </div>`;
@@ -7532,13 +7387,8 @@ function viewBook(acc){
   wrap.querySelector('#mCancel').onclick = close;
   wrap.querySelector('#mCard').onclick = ()=> openBookCardModal(b.acc);
 }
-function bookFields(b={}, isNew){
+function bookFields(b={}){
   return [
-    ...(isNew && DB.catalogue.length ? [
-      {key:'_copyFrom', label:'Copy details from an existing title (optional)', type:'select', placeholder:'Select a title to copy from…',
-        options: [...DB.catalogue].sort((a,b2)=>(a.title||'').localeCompare(b2.title||'')).map(x=>`${x.title} — ${x.acc}`),
-        subHint:'Fills in everything below from that title — the accession number stays fresh, and you can still edit anything before saving.'}
-    ] : []),
     {row:[
       {key:'isbn',label:'ISBN (optional)', default:b.isbn, extra:`<button type="button" class="btn secondary small" style="flex:none" onclick="lookupBookByIsbn()" title="Fetch title/author/publisher/year from the ISBN">🔍 Look up</button><button type="button" class="btn secondary small" style="flex:none" onclick="openScanModal('isbn')" title="Scan the ISBN barcode with your camera">📷 Scan</button>`},
       {key:'acc',label:'Accession No.',required:true, default:b.acc || nextSequentialId('ACC', DB.catalogue.map(x=>x.acc))},
@@ -7551,8 +7401,7 @@ function bookFields(b={}, isNew){
       {key:'mainClass',label:'Main class (Dewey)', type:'select', required:true, options:DB.setup.mainClasses, default:b.mainClass||'',
         extra:`<button type="button" class="btn secondary small" style="flex:none" onclick="applyMainClassSuggestion(true)" title="Suggest from the title/category, using the built-in Dewey library">🔎 Suggest</button>`,
         subHint:'Suggested automatically from the title once you move on — always yours to change.'},
-      {key:'shelf',label:'Shelf location', type:'select', required:true, options:DB.setup.shelves, default:b.shelf||'',
-        subHint: (DB.setup.shelfMap && Object.keys(DB.setup.shelfMap).length) ? 'Auto-picked from the shelf mapping once a main class is set — always yours to change.' : undefined},
+      {key:'shelf',label:'Shelf location', type:'select', required:true, options:DB.setup.shelves, default:b.shelf||''},
     ]},
     {row:[
       {key:'condition',label:'Condition', type:'select', options:DB.setup.conditions, default:b.condition||'GOOD'},
@@ -7576,22 +7425,6 @@ function applyMainClassSuggestion(force){
   sel.value = suggestion;
   const hint = document.getElementById('hint_mainClass');
   if(hint) hint.textContent = `Suggested: "${suggestion}" — change it if that's not right.`;
-  autoAssignShelfForField();
-}
-/* Auto-shelf-assignment: once a main class is set on a new title (suggested or manually
-   picked), fills the Shelf field with the least-full shelf mapped to that class — using
-   DB.setup.shelfMap, configured in Setup → Shelf mapping. Never overwrites a shelf the person
-   already chose themselves, unless force is passed. */
-function autoAssignShelfForField(force){
-  const mcEl = document.getElementById('f_mainClass');
-  const shelfEl = document.getElementById('f_shelf');
-  if(!mcEl || !shelfEl || !mcEl.value) return;
-  if(shelfEl.value && !force) return;
-  const suggestion = leastFilledShelfFor(mcEl.value);
-  if(!suggestion) return;
-  shelfEl.value = suggestion;
-  const hint = document.getElementById('hint_shelf');
-  if(hint) hint.textContent = `Auto-assigned: "${suggestion}" (least-full shelf in this class) — change it if that's not right.`;
 }
 /* ISBN lookup: Open Library's book API is free, keyless, and CORS-enabled for client-side use —
    fills Title/Author/Publisher/Year, pulls in whatever subject/edition/classification data it has,
@@ -7674,31 +7507,16 @@ function openBookForm(acc){
   const existing = acc ? DB.catalogue.find(b=>b.acc===acc) : null;
   openModal({
     title: existing? 'Edit title' : 'Add title to catalogue',
-    fields: bookFields(existing||{}, !existing), values: existing||{}, wide:true,
+    fields: bookFields(existing||{}), values: existing||{}, wide:true,
     validate: (vals)=>{
       const clash = DB.catalogue.find(b=>b.acc.toLowerCase()===String(vals.acc||'').toLowerCase() && b!==existing);
       if(clash) return `Accession number "${vals.acc}" is already used by "${clash.title}" — pick a different one`;
       return null;
     },
     onSave: (vals)=>{
-      delete vals._copyFrom; // helper field only, not part of the catalogue record
       upperizeStrings(vals, ['isbn','acc','title','year','author','publisher','edition','category','vol','info']);
-      if(existing){
-        const condChanged = vals.condition!==existing.condition;
-        const shelfChanged = (vals.shelf||'')!==(existing.shelf||'');
-        const statusChanged = vals.available!==existing.available;
-        Object.assign(existing, vals);
-        if(condChanged || shelfChanged || statusChanged){
-          if(!Array.isArray(existing.history)) existing.history = [];
-          existing.history.unshift({date:todayISO(), condition:vals.condition, shelf:vals.shelf, available:vals.available, note:'Updated via edit'});
-        }
-        toast('Title updated');
-      } else {
-        vals.dateAdded = todayISO();
-        vals.history = [{date:vals.dateAdded, condition:vals.condition, shelf:vals.shelf, available:vals.available, note:'Added to catalogue'}];
-        DB.catalogue.push(vals); toast('Title added to catalogue');
-      }
-      logActivity('catalogue', existing?'edit':'add', `${existing?'Updated':'Added'} "${vals.title}" (${vals.acc})`);
+      if(existing){ Object.assign(existing, vals); toast('Title updated'); }
+      else { vals.dateAdded = todayISO(); DB.catalogue.push(vals); toast('Title added to catalogue'); }
       saveDB(); render();
     },
     postRender: ()=>{
@@ -7706,21 +7524,6 @@ function openBookForm(acc){
       const titleEl = document.getElementById('f_title'), catEl = document.getElementById('f_category');
       if(titleEl) titleEl.addEventListener('blur', ()=>applyMainClassSuggestion());
       if(catEl) catEl.addEventListener('blur', ()=>applyMainClassSuggestion());
-      const mainClassEl = document.getElementById('f_mainClass');
-      if(mainClassEl) mainClassEl.addEventListener('change', ()=>autoAssignShelfForField());
-      const copyEl = document.getElementById('f__copyFrom');
-      if(copyEl) copyEl.addEventListener('change', ()=>{
-        const acc = copyEl.value.split(' — ').pop();
-        const src = DB.catalogue.find(b=>b.acc===acc);
-        if(!src) return;
-        ['isbn','title','year','author','publisher','edition','category','vol','mainClass','shelf','condition','info'].forEach(k=>{
-          const el = document.getElementById('f_'+k);
-          if(el) el.value = src[k] || (k==='condition' ? 'GOOD' : '');
-        });
-        const hint = document.getElementById('hint_mainClass');
-        if(hint) hint.textContent = `Copied from "${src.title}" — change anything that should differ for this copy.`;
-        toast(`Copied details from "${src.title}" — accession number stays fresh`);
-      });
     }
   });
 }
@@ -7745,9 +7548,7 @@ function duplicateBook(acc){
     onSave: (vals)=>{
       upperizeStrings(vals, ['isbn','acc','title','year','author','publisher','edition','category','vol','info']);
       vals.dateAdded = todayISO();
-      vals.history = [{date:vals.dateAdded, condition:vals.condition, shelf:vals.shelf, available:vals.available, note:`Added to catalogue (copied from "${src.title}")`}];
       DB.catalogue.push(vals);
-      logActivity('catalogue', 'add', `Added "${vals.title}" (${vals.acc}) — copied from "${src.title}"`);
       saveDB(); render(); toast('Title added to catalogue');
     }
   });
@@ -7789,9 +7590,7 @@ function deleteBook(acc){
   confirmDelete('Remove this title from the catalogue? (It goes to Trash for 30 days, so this is recoverable.)', ()=>{
     const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
     DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:'book', label:b.title+' — '+b.acc, data:b, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
-    DB.catalogue = DB.catalogue.filter(x=>x.acc!==acc);
-    logActivity('catalogue', 'delete', `Deleted "${b.title}" (${b.acc})`);
-    saveDB(); render(); toast('Title moved to Trash — restorable for 30 days');
+    DB.catalogue = DB.catalogue.filter(x=>x.acc!==acc); saveDB(); render(); toast('Title moved to Trash — restorable for 30 days');
   });
 }
 function bulkDeleteCatalogue(){
@@ -7806,7 +7605,6 @@ function bulkDeleteCatalogue(){
     });
     DB.catalogue = DB.catalogue.filter(x=>!accs.includes(x.acc));
     catalogueModuleState.selected.clear();
-    logActivity('catalogue', 'delete', `Deleted ${accs.length} title(s) in bulk`);
     saveDB(); render(); toast(`${accs.length} title(s) moved to Trash — restorable for 30 days`);
   });
 }
@@ -7912,13 +7710,6 @@ function pageUsers(){
   });
   return `<div id="mod_users"></div>`;
 }
-/* Stamps the date a member's status/class/eligibility last changed. Replaces the old
-   per-member history log — the fields themselves already show current state, and discipline
-   events are fully recorded in DB.consequenceLog, so a date is the only thing worth keeping. */
-function touchMemberStatusDate(user){
-  if(!user) return;
-  user.statusUpdated = todayISO();
-}
 function viewMember(id){
   const u = DB.users.find(x=>x.id===id);
   if(!u) return;
@@ -7935,7 +7726,6 @@ function viewMember(id){
     ['Discipline', u.discipline||'—'],
     ['Eligibility', u.eligibility||'—'],
     ['Status', u.status||'—'],
-    ['Status last updated', u.statusUpdated? fmtDate(u.statusUpdated) : '—'],
     ['Notes', u.notes||'—'],
   ];
   const wrap = document.createElement('div');
@@ -7987,21 +7777,8 @@ function openUserForm(id){
     onSave:(vals)=>{
       upperizeStrings(vals, ['id','name','notes']);
       vals.maxAllowed = +vals.maxAllowed || (vals.category==='STAFF' ? 3 : 2);
-      if(existing){
-        const statusChanged = vals.status!==existing.status;
-        const clsChanged = (vals.cls||'')!==(existing.cls||'');
-        const eligChanged = vals.eligibility!==existing.eligibility;
-        Object.assign(existing, vals);
-        if(statusChanged || clsChanged || eligChanged) touchMemberStatusDate(existing);
-        logActivity('members', 'edit', `Updated member "${existing.name}" (${existing.id})`);
-        toast('Member updated');
-      } else {
-        Object.assign(vals,{borrowed:0,overdue:0,totalBorrowed:0,strike:0,discipline:'CLEARED'});
-        DB.users.push(vals);
-        touchMemberStatusDate(vals);
-        logActivity('members', 'add', `Registered member "${vals.name}" (${vals.id})`);
-        toast('Member registered');
-      }
+      if(existing){ Object.assign(existing, vals); toast('Member updated'); }
+      else { Object.assign(vals,{borrowed:0,overdue:0,totalBorrowed:0,strike:0,discipline:'CLEARED'}); DB.users.push(vals); toast('Member registered'); }
       saveDB(); render();
     }
   });
@@ -8029,9 +7806,7 @@ function deleteUser(id){
   confirmDelete('Remove this member from the register? (It goes to Trash for 30 days, so this is recoverable.)', ()=>{
     const u = DB.users.find(x=>x.id===id); if(!u) return;
     DB.trash.push({id:'TRSH-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), type:'member', label:u.name+' — '+u.id, data:u, deletedAt:new Date().toISOString(), deletedBy:(SESSION&&SESSION.fullName)||''});
-    DB.users = DB.users.filter(x=>x.id!==id);
-    logActivity('members', 'delete', `Deleted member "${u.name}" (${u.id})`);
-    saveDB(); render(); toast('Member moved to Trash — restorable for 30 days');
+    DB.users = DB.users.filter(x=>x.id!==id); saveDB(); render(); toast('Member moved to Trash — restorable for 30 days');
   });
 }
 function bulkDeleteUsers(){
@@ -8045,7 +7820,6 @@ function bulkDeleteUsers(){
     });
     DB.users = DB.users.filter(x=>!ids.includes(x.id));
     usersModuleState.selected.clear();
-    logActivity('members', 'delete', `Deleted ${ids.length} member(s) in bulk`);
     saveDB(); render(); toast(`${ids.length} member(s) moved to Trash — restorable for 30 days`);
   });
 }
@@ -8406,7 +8180,6 @@ function pageCirculationTable(){
     rowActions:r=>`<button class="btn secondary small" onclick="viewTransaction('${esc(r.trxId)}')">View</button>
       ${!r.returnDate? `<button class="btn secondary small" onclick="renewLoan('${esc(r.trxId)}')">Renew</button>`:''}
       ${DB.setup.fineEnabled && fineStatus(r).outstanding>0? `<button class="btn secondary small" onclick="openFinePaymentModal('${esc(r.trxId)}')">Record fine payment</button>`:''}
-      <button class="btn secondary small" onclick="openTxnHistoryModal('${esc(r.trxId)}')">History</button>
       <button class="btn danger small" onclick="deleteTransaction('${esc(r.trxId)}')">Delete</button>`,
     extraActions:[
       {label:'🖨 Print transactions', onClick:openCirculationPrintModal},
@@ -8414,16 +8187,6 @@ function pageCirculationTable(){
     ],
   });
   return circulationModule.render();
-}
-/* Queue position for a WAITING/READY reservation: 1-based rank among all active (non-fulfilled,
-   non-cancelled) reservations on the same accession number, oldest request first. Used on the
-   staff Reservations table and on the member's self-service lockscreen loan check. */
-function reservationQueuePosition(r){
-  if(!DB || !r) return null;
-  const active = (DB.reservations||[]).filter(x=>x.acc===r.acc && (x.status==='WAITING'||x.status==='READY'))
-    .sort((a,b)=>(parseAnyDate(a.dateRequested)||0)-(parseAnyDate(b.dateRequested)||0));
-  const idx = active.findIndex(x=>x.id===r.id);
-  return idx===-1 ? null : idx+1;
 }
 let reservationsModule;
 let reservationsModuleState = {q:'', filters:{}};
@@ -8460,15 +8223,10 @@ function pageReservations(){
       {key:'name', label:'Member', render:r=>`${esc(r.name)}<div style="color:var(--muted);font-size:11px">${esc(r.userId)}</div>`},
       {key:'dateRequested', label:'Requested', render:r=>fmtDate(r.dateRequested)},
       {key:'status', label:'Status', render:r=>`<span class="badge ${r.status==='READY'?'green':r.status==='FULFILLED'?'grey':'gold'}">${esc(r.status)}</span>`},
-      {key:'queue', label:'Queue position', render:r=>{
-        const pos = reservationQueuePosition(r);
-        return pos ? `<span class="badge ${pos===1?'green':'gold'}">#${pos}</span>` : '—';
-      }},
     ],
     exportColumns:[
       {label:'Title', get:r=>r.title}, {label:'Acc. No', get:r=>r.acc}, {label:'Member', get:r=>r.name}, {label:'Member ID', get:r=>r.userId},
       {label:'Requested', get:r=>fmtDate(r.dateRequested)}, {label:'Status', get:r=>r.status},
-      {label:'Queue position', get:r=>reservationQueuePosition(r)||''},
     ],
     rowActions:r=>`
       ${r.status==='READY'? `<button class="btn secondary small" onclick="fulfillReservation('${esc(r.id)}')">Mark fulfilled</button>`:''}
@@ -8532,28 +8290,6 @@ function viewTransaction(trxId){
   wrap.querySelector('#mClose').onclick = close;
   wrap.querySelector('#mCancel').onclick = close;
 }
-function openTxnHistoryModal(trxId){
-  const trx = DB.circulation.find(x=>x.trxId===trxId); if(!trx) return;
-  const log = (Array.isArray(trx.history) && trx.history.length) ? trx.history
-    : [{date:trx.dateBorrowed, event:'ISSUED', detail:`Issued to ${trx.name} — due ${fmtDate(trx.dueDate)}`}];
-  const rows = log.map(h=>`<tr><td>${fmtDate(h.date)}</td><td><span class="badge grey">${esc(h.event||'—')}</span></td><td>${esc(h.detail||'')}</td></tr>`).join('');
-  const wrap = document.createElement('div');
-  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
-  wrap.innerHTML = `
-    <div class="modal wide">
-      <div class="modal-head"><h3>History — ${esc(trx.title)}</h3><button id="mClose">✕</button></div>
-      <div class="modal-body"><div class="table-wrap"><table class="datatable">
-        <thead><tr><th>Date</th><th>Event</th><th>Detail</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div></div>
-      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
-    </div>`;
-  document.body.appendChild(wrap);
-  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
-  wrap.onclick = e=>{ if(e.target===wrap) close(); };
-  wrap.querySelector('#mClose').onclick = close;
-  wrap.querySelector('#mCancel').onclick = close;
-}
 function deleteTransaction(trxId){
   if(!isAdmin()) return requireAdmin('delete transactions');
   const trx = DB.circulation.find(x=>x.trxId===trxId);
@@ -8566,7 +8302,6 @@ function deleteTransaction(trxId){
       if(user) user.borrowed = Math.max(0, user.borrowed-1);
     }
     DB.circulation = DB.circulation.filter(x=>x.trxId!==trxId);
-    logActivity('circulation', 'delete', `Deleted transaction — "${trx.title}" (${trx.name})`);
     saveDB(); render(); toast('Transaction deleted');
   });
 }
@@ -8595,13 +8330,9 @@ function doIssueOne(user, book, opts={}){
     category:user.category, cls:user.cls, dateBorrowed:now.toISOString().slice(0,10),
     dueDate: addDays(now,7).toISOString().slice(0,10), returnDate:null, condition:book.condition, note:''
   };
-  trx.history = [{date:trx.dateBorrowed, event:'ISSUED', detail:`Issued to ${user.name} — due ${fmtDate(trx.dueDate)}`}];
   DB.circulation.unshift(trx);
   book.available = 'ISSUED';
-  if(!Array.isArray(book.history)) book.history = [];
-  book.history.unshift({date:trx.dateBorrowed, condition:book.condition, shelf:book.shelf, available:'ISSUED', note:`Issued to ${user.name}`});
   user.borrowed += 1; user.totalBorrowed += 1;
-  logActivity('circulation', 'issue', `Issued "${book.title}" (${book.acc}) to ${user.name} (${user.id}) — due ${fmtDate(trx.dueDate)}`);
   sendScanWebhook('issue', {acc:book.acc, title:book.title, memberId:user.id, memberName:user.name, dueDate:trx.dueDate});
   if(!opts.quiet) sendTransactionReceiptIfEnabled(trx, 'BORROWED');
   return trx;
@@ -8692,7 +8423,6 @@ function applyReturnConsequences(user, trx, condition, wasOverdue){
   events.forEach(ev=>{
     user.discipline = ev.rule.consequence || user.discipline;
     if(ev.rule.suspend){ user.eligibility = 'NO'; if(user.status==='ACTIVE') user.status = 'SUSPENDED'; }
-    touchMemberStatusDate(user);
     if(!Array.isArray(DB.consequenceLog)) DB.consequenceLog = [];
     DB.consequenceLog.unshift({ id: uid('CSQ'), date: todayISO(), userId:user.id, userName:user.name, offense: ev.offense, detail: ev.detail, consequence: ev.rule.consequence });
     DB.registerLog.unshift({
@@ -8711,15 +8441,8 @@ function doReturnOne(trx, condition, opts={}){
   const isMissing = condition === 'MISSING';
   trx.returnDate = todayISO(); trx.condition = condition;
   trx.finalStatus = isMissing ? 'MISSING' : 'RETURNED';
-  if(!Array.isArray(trx.history)) trx.history = [];
-  trx.history.unshift({date:trx.returnDate, event: isMissing?'MISSING':'RETURNED', detail:`Condition: ${condition}${wasOverdue?' — was overdue':''}`});
-  if(book){
-    book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition;
-    if(!Array.isArray(book.history)) book.history = [];
-    book.history.unshift({date:trx.returnDate, condition, shelf:book.shelf, available:book.available, note: isMissing? 'Returned — recorded MISSING' : `Returned by ${trx.name}${wasOverdue?' (was overdue)':''}`});
-  }
+  if(book){ book.available = isMissing ? 'MISSING' : 'AVAILABLE'; book.condition = condition; }
   if(user){ user.borrowed = Math.max(0, user.borrowed-1); if(wasOverdue) user.strike = (user.strike||0)+1; }
-  logActivity('circulation', isMissing?'missing':'return', `${isMissing?'Recorded MISSING':'Returned'}: "${trx.title}" (${trx.acc}) by ${trx.name}${wasOverdue?' — was overdue':''}`);
   const consequences = applyReturnConsequences(user, trx, condition, wasOverdue);
   sendScanWebhook('return', {acc:trx.acc, title:trx.title, memberId:trx.userId, condition, wasOverdue});
   if(!opts.quiet && !isMissing) sendTransactionReceiptIfEnabled(trx, 'RETURNED');
@@ -8839,9 +8562,6 @@ function openFinePaymentModal(trxId){
     const amt = Math.max(0, Math.min(st.outstanding, +document.getElementById('finePayAmount').value || 0));
     if(amt<=0){ toast('Enter an amount greater than 0'); return; }
     t.finePaidAmount = (st.paidAmount + amt);
-    if(!Array.isArray(t.history)) t.history = [];
-    t.history.unshift({date:todayISO(), event:'FINE PAYMENT', detail:`${fmtCurrency(amt)} received — ${t.finePaidAmount>=st.amount?'fully paid':fmtCurrency(st.amount-t.finePaidAmount)+' still outstanding'}`});
-    logActivity('circulation', 'fine_payment', `${fmtCurrency(amt)} fine payment recorded — "${t.title}" (${t.name})`);
     saveDB(); render(); close();
     toast(t.finePaidAmount >= st.amount ? 'Fine paid in full' : `Payment of ${fmtCurrency(amt)} recorded — ${fmtCurrency(st.amount-t.finePaidAmount)} still outstanding`);
   };
@@ -8851,9 +8571,6 @@ function openFinePaymentModal(trxId){
     if(!reason){ toast('Enter a reason to waive this fine'); return; }
     const user = DB.users.find(u=>u.id===t.userId);
     t.fineWaived = true; t.fineWaiveReason = reason;
-    if(!Array.isArray(t.history)) t.history = [];
-    t.history.unshift({date:todayISO(), event:'FINE WAIVED', detail:`${fmtCurrency(st.outstanding)} waived — "${reason}"`});
-    logActivity('circulation', 'fine_waived', `${fmtCurrency(st.outstanding)} fine waived — "${t.title}" (${t.name}) — "${reason}"`);
     if(!Array.isArray(DB.registerLog)) DB.registerLog = [];
     DB.registerLog.unshift({
       entryId: uid('FWV'), source:'DESK', date: todayISO(), timeIn:'', timeOut:'', period:'',
@@ -9097,7 +8814,6 @@ function openLockSearchDetail(kind, id){
       <p style="margin:8px 0 4px"><strong>${esc(r.title)}</strong></p>
       <p class="field-hint" style="margin:0 0 8px">Reserved by: ${esc(r.name)}</p>
       <div class="activity-row"><div class="dot" style="background:#B8863E"></div><div style="flex:1">Status</div><span class="badge gold">${esc(r.status)}</span></div>
-      ${(()=>{ const pos = reservationQueuePosition(r); return pos ? `<div class="activity-row"><div class="dot" style="background:#B8863E"></div><div style="flex:1">Queue position</div><span class="badge ${pos===1?'green':'gold'}">#${pos}</span></div>` : ''; })()}
     ` : `<p style="margin:10px 0;color:var(--terracotta)">Reservation not found.</p>`;
   } else if(kind==='reminder'){
     const r = (DB.reminders||[]).find(x=>x.trxId===id);
@@ -9173,11 +8889,8 @@ function runSelfCheckLoans(rawId, resEl){
     ${loans.length? loans.map(l=>`<div class="activity-row"><div class="dot" style="background:${l.status==='OVERDUE'?'#A8452F':'#3E6B52'}"></div>
       <div style="flex:1"><em>${esc(l.title)}</em><div class="meta">due ${fmtDate(l.dueDate)}</div></div>
       <span class="badge ${l.status==='OVERDUE'?'red':'green'}">${esc(l.status)}</span></div>`).join('') : `<p class="field-hint">Nothing currently borrowed.</p>`}
-    ${holds.length? `<p style="margin:10px 0 4px;font-weight:600;font-size:12.5px">Reservations</p>` + holds.map(r=>{
-        const pos = reservationQueuePosition(r);
-        return `<div class="activity-row"><div class="dot" style="background:#B8863E"></div>
-      <div style="flex:1"><em>${esc(r.title)}</em>${pos? `<div class="meta">You're #${pos} in the queue</div>`:''}</div><span class="badge gold">${esc(r.status)}</span></div>`;
-      }).join('') : ''}
+    ${holds.length? `<p style="margin:10px 0 4px;font-weight:600;font-size:12.5px">Reservations</p>` + holds.map(r=>`<div class="activity-row"><div class="dot" style="background:#B8863E"></div>
+      <div style="flex:1"><em>${esc(r.title)}</em></div><span class="badge gold">${esc(r.status)}</span></div>`).join('') : ''}
   `;
 }
 
@@ -9211,21 +8924,17 @@ function requestReservation(acc, userId){
   if(DB.reservations.some(r=>r.acc===acc && r.userId===userId && (r.status==='WAITING'||r.status==='READY'))){ toast(`${user.name} already has a reservation on this title`); return; }
   DB.reservations.push({id:'RSV-'+Date.now(), acc, title:book.title, userId:user.id, name:user.name, cls:user.cls,
     dateRequested:todayISO(), status:'WAITING', notifiedAt:null});
-  logActivity('reservations', 'add', `Reservation placed for ${user.name} — "${book.title}" (${acc})`);
   saveDB(); render(); toast(`Reservation placed for ${user.name} — they'll be notified when it's returned`);
 }
 function cancelReservation(id){
   if(!isAdmin()) return requireAdmin('cancel a reservation');
-  const r = DB.reservations.find(x=>x.id===id);
   DB.reservations = DB.reservations.filter(r=>r.id!==id);
-  if(r) logActivity('reservations', 'delete', `Reservation cancelled — "${r.title}" for ${r.name}`);
   saveDB(); render(); toast('Reservation cancelled');
 }
 function fulfillReservation(id){
   if(!isAdmin()) return requireAdmin('fulfil a reservation');
   const r = DB.reservations.find(x=>x.id===id); if(!r) return;
   r.status = 'FULFILLED';
-  logActivity('reservations', 'edit', `Reservation fulfilled — "${r.title}" for ${r.name}`);
   saveDB(); render(); toast('Reservation marked fulfilled');
 }
 /* Called right after a book is marked AVAILABLE again — if someone's waiting for this exact
@@ -9257,9 +8966,6 @@ function renewLoan(trxId){
   due.setDate(due.getDate()+days);
   t.dueDate = due.toISOString().slice(0,10);
   t.renewCount = (t.renewCount||0)+1;
-  if(!Array.isArray(t.history)) t.history = [];
-  t.history.unshift({date:todayISO(), event:'RENEWED', detail:`Due date extended to ${fmtDate(t.dueDate)} (${t.renewCount}/${max} renewals used)`});
-  logActivity('circulation', 'renew', `Renewed "${t.title}" (${t.acc}) for ${t.name} — new due date ${fmtDate(t.dueDate)}`);
   saveDB(); render(); toast(`Renewed — new due date ${fmtDate(t.dueDate)} (${t.renewCount}/${max} renewals used)`);
 }
 
@@ -9318,11 +9024,11 @@ function buildGlobalSearchHTML(q){
     return `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>Search books, members, loans, reminders and reservations across the whole app</div>`;
   }
   let html = '';
-  if(m.books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + m.books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><span class="gs-ic">📘</span><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
-  if(m.members.length){ html += `<div class="gsearch-group-label">Members</div>` + m.members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><span class="gs-ic">👤</span><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
-  if(m.txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + m.txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><span class="gs-ic">🔄</span><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
-  if(m.reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + m.reservations.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reservation','${esc(r.id)}')"><span class="gs-ic">📌</span><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · ${esc(r.status)}</div></div></div>`).join(''); }
-  if(m.reminders.length){ html += `<div class="gsearch-group-label">Reminders</div>` + m.reminders.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reminder','${esc(r.trxId)}')"><span class="gs-ic">✉</span><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · sent ${esc(fmtDate(r.dateSent))}</div></div></div>`).join(''); }
+  if(m.books.length){ html += `<div class="gsearch-group-label">Catalogue</div>` + m.books.map(b=>`<div class="gsearch-row" onclick="globalSearchGoto('book','${esc(b.acc)}')"><div class="gs-main"><div class="ttl">${esc(b.title)}</div><div class="sub">${esc(b.acc)} · ${esc(b.available)}</div></div></div>`).join(''); }
+  if(m.members.length){ html += `<div class="gsearch-group-label">Members</div>` + m.members.map(u=>`<div class="gsearch-row" onclick="globalSearchGoto('member','${esc(u.id)}')"><div class="gs-main"><div class="ttl">${esc(u.name)}</div><div class="sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</div></div></div>`).join(''); }
+  if(m.txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + m.txns.map(t=>`<div class="gsearch-row" onclick="globalSearchGoto('txn','${esc(t.trxId)}')"><div class="gs-main"><div class="ttl">${esc(t.title)}</div><div class="sub">${esc(t.name)} · ${esc(txnStatus(t))}</div></div></div>`).join(''); }
+  if(m.reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + m.reservations.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reservation','${esc(r.id)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · ${esc(r.status)}</div></div></div>`).join(''); }
+  if(m.reminders.length){ html += `<div class="gsearch-group-label">Reminders</div>` + m.reminders.map(r=>`<div class="gsearch-row" onclick="globalSearchGoto('reminder','${esc(r.trxId)}')"><div class="gs-main"><div class="ttl">${esc(r.title)}</div><div class="sub">${esc(r.name)} · sent ${esc(fmtDate(r.dateSent))}</div></div></div>`).join(''); }
   return html || `<div class="empty" style="padding:20px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`;
 }
 function renderGlobalSearchResults(q){
@@ -9343,56 +9049,6 @@ function closeTopbarSearch(){
 document.addEventListener('click', e=>{
   const wrap = document.getElementById('topbarSearch');
   if(wrap && !wrap.contains(e.target)) closeTopbarSearch();
-});
-// Generic "⋯ More" dropdown used in page headers (panel-head-actions): clicking the trigger
-// toggles its menu; clicking anywhere else — including an item inside it — closes it again.
-document.addEventListener('click', e=>{
-  const trigger = e.target.closest('[data-dropdown-toggle]');
-  const triggerId = trigger ? trigger.getAttribute('data-dropdown-toggle') : null;
-  document.querySelectorAll('.dropdown-menu.open').forEach(m=>{
-    if(m.id !== triggerId) m.classList.remove('open');
-  });
-  if(trigger){
-    const menu = document.getElementById(triggerId);
-    if(menu) menu.classList.toggle('open');
-  }
-});
-/* Row-level "⋯ More" menu — same idea, but for table rows that have more actions than fit
-   comfortably (e.g. Edit/Delete stay visible, less-used actions collapse here). Populate
-   ROW_MORE_ITEMS[id] with that row's menu HTML right before rendering its row (see
-   rowMoreButton) — rowMoreButton itself returns nothing when there's nothing to show, so the
-   trigger never appears for a row with no secondary actions. */
-const ROW_MORE_ITEMS = {};
-function rowMoreButton(id, itemsHtml){
-  if(!itemsHtml || !itemsHtml.trim()) return '';
-  ROW_MORE_ITEMS[id] = itemsHtml;
-  return `<button type="button" class="btn secondary small" data-row-more="${esc(id)}">⋯ More</button>`;
-}
-function closeRowMoreMenu(){
-  const m = document.getElementById('rowMoreMenu');
-  if(m) m.classList.remove('open');
-}
-function openRowMoreMenu(id, anchorEl){
-  let menu = document.getElementById('rowMoreMenu');
-  if(!menu){ menu = document.createElement('div'); menu.id = 'rowMoreMenu'; menu.className = 'row-more-menu'; document.body.appendChild(menu); }
-  const wasOpenForThis = menu.classList.contains('open') && menu.dataset.rowId===id;
-  menu.classList.remove('open');
-  if(wasOpenForThis) return;
-  menu.innerHTML = ROW_MORE_ITEMS[id] || '';
-  menu.dataset.rowId = id;
-  menu.style.visibility = 'hidden'; menu.classList.add('open');
-  const rect = anchorEl.getBoundingClientRect();
-  const mw = menu.offsetWidth||190, mh = menu.offsetHeight||100;
-  let left = rect.right - mw; if(left<8) left = 8;
-  let top = rect.bottom + 4;
-  if(top+mh > window.innerHeight-8) top = Math.max(8, rect.top-mh-4);
-  menu.style.left = left+'px'; menu.style.top = top+'px'; menu.style.visibility = '';
-}
-document.addEventListener('click', e=>{
-  const trigger = e.target.closest('[data-row-more]');
-  const menu = document.getElementById('rowMoreMenu');
-  if(trigger){ e.stopPropagation(); openRowMoreMenu(trigger.getAttribute('data-row-more'), trigger); return; }
-  if(menu && !menu.contains(e.target)) menu.classList.remove('open');
 });
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
@@ -10671,7 +10327,7 @@ function pageEquipment(){
     selectable:true, rowKey:r=>r.id,
     columns:[
       {key:'category', label:'Category', render:r=>`<span class="badge grey">${esc(r.category||'—')}</span>`},
-      {key:'name', label:'Item', render:r=>`${esc(r.name)}${r.photo?` <span style="cursor:pointer" onclick="openEquipmentPhoto('${esc(r.id)}')" title="View photo">🖼️</span>`:''}${r.description?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px" title="${esc(r.description)}">${esc(r.description.length>70? r.description.slice(0,70)+'…' : r.description)}</div>`:''}`},
+      {key:'name', label:'Item'},
       {key:'tag', label:'Asset Tag', render:r=>esc(r.tag||'—')},
       {key:'quantity', label:'Qty', render:r=>`${+r.quantity||0} ${esc(r.unit||'')}`},
       {key:'condition', label:'Condition', render:r=>`<span class="badge ${equipmentCondBadgeClass(r.condition)}">${esc(r.condition||'—')}</span>`},
@@ -10688,7 +10344,6 @@ function pageEquipment(){
       {label:'Condition', get:r=>r.condition||''},
       {label:'Location', get:r=>r.location||''},
       {label:'Assigned to', get:r=>r.assignedTo||''},
-      {label:'Description', get:r=>r.description||''},
       {label:'Supplier', get:r=>r.supplier||''},
       {label:'Cost', get:r=>r.cost||''},
       {label:'Date added', get:r=>fmtDate(r.dateAdded)},
@@ -10701,21 +10356,15 @@ function pageEquipment(){
       {label:'🏷 Print asset tags', onClick:printAllEquipmentTags, alwaysShow:true},
       ...(isAdmin() ? [
         {label:'🏷 Manage categories', onClick:openEquipmentCategoriesModal},
-        {label:'🤖 AI description settings', onClick:openEquipmentAIDescSettingsModal},
         {label:'🗑 Delete selected', onClick:deleteSelectedEquipment, danger:true},
       ] : []),
     ],
-    rowActions:r=>{
-      const menuItems = [
-        `<a onclick="closeRowMoreMenu(); openEquipmentLogUpdateForm('${esc(r.id)}')">Log update</a>`,
-        `<a onclick="closeRowMoreMenu(); openEquipmentHistoryModal('${esc(r.id)}')">History</a>`,
-        `<a onclick="closeRowMoreMenu(); openEquipmentTagModal('${esc(r.id)}')">🏷 Tag</a>`,
-      ].join('');
-      return `
+    rowActions:r=>`
       <button class="btn secondary small" onclick="openEquipmentForm('${esc(r.id)}')">Edit</button>
-      ${rowMoreButton(r.id, menuItems)}
-      <button class="btn danger small" onclick="deleteEquipmentItem('${esc(r.id)}')">Delete</button>`;
-    },
+      <button class="btn secondary small" onclick="openEquipmentLogUpdateForm('${esc(r.id)}')">Log update</button>
+      <button class="btn secondary small" onclick="openEquipmentHistoryModal('${esc(r.id)}')">History</button>
+      <button class="btn secondary small" onclick="openEquipmentTagModal('${esc(r.id)}')">🏷 Tag</button>
+      <button class="btn danger small" onclick="deleteEquipmentItem('${esc(r.id)}')">Delete</button>`,
   });
   return `<div id="mod_equipment"></div>`;
 }
@@ -10723,12 +10372,10 @@ function openEquipmentForm(id){
   if(!isAdmin()) return requireAdmin('manage equipment');
   const existing = id ? DB.equipment.find(x=>x.id===id) : null;
   const categories = (DB.setup.equipmentCategories && DB.setup.equipmentCategories.length) ? DB.setup.equipmentCategories : DEFAULT_EQUIPMENT_CATEGORIES;
-  let pendingPhoto = existing ? (existing.photo||null) : null;
   openModal({
     title: existing ? 'Edit asset' : 'Add asset',
     wide:true,
     fields:[
-      {key:'photoWidget', type:'custom', html: equipmentPhotoFieldHtml(pendingPhoto)},
       {row:[
         {key:'category', label:'Category', type:'select', options:categories, required:true, default:existing?existing.category:''},
         {key:'name', label:'Item name', required:true, default:existing?existing.name:''},
@@ -10750,37 +10397,9 @@ function openEquipmentForm(id){
         {key:'supplier', label:'Supplier (optional)', default:existing?existing.supplier:''},
       ]},
       {key:'cost', label:'Cost (optional)', type:'number', default:existing?existing.cost:''},
-      {key:'description', label:'Description', type:'textarea', default:existing?existing.description:''},
       {key:'notes', label:'Notes', type:'textarea', default:existing?existing.notes:''},
     ],
-    postRender:(root)=>{
-      const preview = root.querySelector('#eqPhotoPreview');
-      const removeBtn = root.querySelector('#eqPhotoRemove');
-      const autoBtn = root.querySelector('#eqAutoDescribeBtn');
-      const hint = root.querySelector('#eqAutoDescribeHint');
-      const descArea = root.querySelector('#f_description');
-      const input = root.querySelector('#eqPhotoInput');
-      const updatePreview = ()=>{
-        if(pendingPhoto){
-          preview.style.backgroundImage = `url('${pendingPhoto}')`; preview.style.backgroundSize='cover'; preview.style.backgroundPosition='50% 50%'; preview.innerHTML='';
-          removeBtn.style.display = '';
-        } else {
-          preview.style.backgroundImage=''; preview.innerHTML='📦'; removeBtn.style.display='none';
-        }
-      };
-      if(input) input.onchange = (e)=>{
-        const file = e.target.files[0]; if(!file) return;
-        if(file.size > 2*1024*1024){ toast('Please choose an image under 2MB'); return; }
-        const reader = new FileReader();
-        reader.onload = ()=>{ pendingPhoto = reader.result; updatePreview(); };
-        reader.readAsDataURL(file);
-      };
-      if(preview) preview.onclick = ()=>{ if(pendingPhoto) openImageLightbox(pendingPhoto); };
-      if(removeBtn) removeBtn.onclick = ()=>{ pendingPhoto = null; updatePreview(); };
-      if(autoBtn) autoBtn.onclick = ()=> generateEquipmentDescription(pendingPhoto, {btn:autoBtn, hint, textarea:descArea});
-    },
     onSave:(vals)=>{
-      vals.photo = pendingPhoto;
       vals.quantity = Math.max(0, +vals.quantity||0);
       vals.cost = vals.cost!=='' ? +vals.cost : '';
       if(existing){
@@ -10794,113 +10413,12 @@ function openEquipmentForm(id){
           existing.history.unshift({date:todayISO(), condition:vals.condition, location:vals.location, assignedTo:vals.assignedTo, note:'Updated via edit'});
         }
         saveDB(); render(); toast('Asset updated');
-        logActivity('equipment', 'edit', `Updated asset "${existing.name}" (${existing.tag})`);
       } else {
         vals.id = uid('EQP');
         vals.tag = (vals.tag||'').trim() || vals.id;
         vals.history = [{date: vals.dateAdded||todayISO(), condition:vals.condition, location:vals.location, assignedTo:vals.assignedTo, note:'Added to inventory'}];
         DB.equipment.unshift(vals); saveDB(); render(); toast('Asset added to inventory');
-        logActivity('equipment', 'add', `Added asset "${vals.name}" (${vals.tag})`);
       }
-    }
-  });
-}
-/* The photo widget for the asset form — a small preview + camera-capture input (reusing the
-   same avatar-camera-badge styling as member/logo photos elsewhere), a remove button, and the
-   "auto-generate description" trigger. Rendered as raw HTML via the modal's 'custom' field type;
-   wiring happens in openEquipmentForm's postRender since this isn't a plain text/select input. */
-function equipmentPhotoFieldHtml(photo){
-  return `
-  <div class="field" style="margin-bottom:14px">
-    <label>Photo (optional)</label>
-    <div class="avatar-upload" style="align-items:flex-start">
-      <div class="avatar-preview-wrap">
-        <div class="avatar-preview" id="eqPhotoPreview" style="width:64px;height:64px;border-radius:8px;${photo?`background-image:url('${photo}');background-size:cover;background-position:50% 50%;`:''}">${photo?'':'📦'}</div>
-        <label class="avatar-camera-badge" title="Add photo">📷<input type="file" accept="image/*" capture="environment" id="eqPhotoInput" style="display:none"></label>
-      </div>
-      <div style="flex:1;min-width:220px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button type="button" class="btn secondary small" id="eqPhotoRemove" style="${photo?'':'display:none'}">Remove photo</button>
-          <button type="button" class="btn small" id="eqAutoDescribeBtn">✨ Auto-generate description from photo</button>
-        </div>
-        <p class="field-hint" id="eqAutoDescribeHint" style="margin-top:6px"></p>
-      </div>
-    </div>
-  </div>`;
-}
-/* Calls an OpenAI-compatible vision chat-completions endpoint (configured in "🤖 AI description
-   settings") with the item's photo, and drops the result straight into the Description field for
-   the librarian to review/edit before saving. Deliberately only touches Description — condition
-   is left to a human, since a snapshot can't reliably judge it. Requires the librarian's own API
-   key: this file runs as a standalone page in the browser, so the call goes directly from this
-   device to whichever endpoint is configured, the same way the GitHub sync token works. */
-async function generateEquipmentDescription(photoDataUrl, els){
-  const cfg = DB.setup.aiDescription;
-  if(!photoDataUrl){ toast('Add a photo first'); return; }
-  if(!cfg || !cfg.enabled || !cfg.apiKey){
-    toast('Set up an API key first: "🤖 AI description settings" on the Assets & Equipment page');
-    return;
-  }
-  els.btn.disabled = true; els.hint.textContent = 'Analyzing photo…';
-  try{
-    const endpoint = cfg.endpoint || 'https://api.openai.com/v1/chat/completions';
-    const res = await fetch(endpoint, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey},
-      body: JSON.stringify({
-        model: cfg.model || 'gpt-4o-mini',
-        max_tokens: 200,
-        messages:[{
-          role:'user',
-          content:[
-            {type:'text', text:'Look at this photo of a piece of library/school equipment or furniture. Write a short, plain, factual description (1-2 sentences) suitable for an asset register: what it is and any notable visible features. Do not guess a serial number, brand, or exact condition rating. Reply with the description only, no preamble.'},
-            {type:'image_url', image_url:{url: photoDataUrl}},
-          ],
-        }],
-      }),
-    });
-    if(!res.ok) throw new Error('API returned '+res.status);
-    const data = await res.json();
-    const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if(!text) throw new Error('No description returned');
-    els.textarea.value = text.trim();
-    els.hint.textContent = '';
-    toast('Description generated — review before saving');
-  }catch(e){
-    els.hint.textContent = `Could not generate a description (${e.message||'error'}) — check the API key/endpoint in "AI description settings", or just type one in.`;
-  }finally{
-    els.btn.disabled = false;
-  }
-}
-function openEquipmentPhoto(id){
-  const item = DB.equipment.find(x=>x.id===id);
-  if(item && item.photo) openImageLightbox(item.photo);
-}
-/* BYO-key settings for the auto-generate-description feature. Any OpenAI-compatible
-   chat-completions endpoint works (OpenAI itself, Azure OpenAI, OpenRouter, a local model
-   server, etc.) — the key is stored locally in this library's own data, same as the GitHub
-   sync token, and the call is made directly from the browser, so no separate backend is needed. */
-function openEquipmentAIDescSettingsModal(){
-  if(!isAdmin()) return requireAdmin('configure AI description settings');
-  if(!DB.setup.aiDescription) DB.setup.aiDescription = {enabled:false, endpoint:'https://api.openai.com/v1/chat/completions', model:'gpt-4o-mini', apiKey:''};
-  const cfg = DB.setup.aiDescription;
-  openModal({
-    title:'AI description settings',
-    wide:true,
-    fields:[
-      {key:'enabled', label:'Enable auto-generated descriptions', type:'select', options:['Yes','No'], default: cfg.enabled?'Yes':'No'},
-      {key:'endpoint', label:'API endpoint (OpenAI-compatible chat completions URL)', default: cfg.endpoint||'https://api.openai.com/v1/chat/completions'},
-      {key:'model', label:'Model name', default: cfg.model||'gpt-4o-mini'},
-      {key:'apiKey', label:'API key', type:'password', default: cfg.apiKey||'', subHint:'Stored locally in this library\'s data, never sent anywhere except the endpoint above.'},
-    ],
-    onSave:(vals)=>{
-      DB.setup.aiDescription = {
-        enabled: vals.enabled==='Yes',
-        endpoint: (vals.endpoint||'').trim() || 'https://api.openai.com/v1/chat/completions',
-        model: (vals.model||'').trim() || 'gpt-4o-mini',
-        apiKey: (vals.apiKey||'').trim(),
-      };
-      saveDB(); toast('AI description settings saved');
     }
   });
 }
@@ -10956,9 +10474,7 @@ function openEquipmentHistoryModal(id){
 function deleteEquipmentItem(id){
   if(!isAdmin()) return requireAdmin('delete equipment');
   confirmDelete('Delete this equipment record?', ()=>{
-    const item = DB.equipment.find(x=>x.id===id);
     DB.equipment = DB.equipment.filter(x=>x.id!==id);
-    if(item) logActivity('equipment', 'delete', `Deleted asset "${item.name}" (${item.tag})`);
     saveDB(); render(); toast('Equipment deleted');
   });
 }
@@ -10976,11 +10492,7 @@ function deleteSelectedEquipment(){
    the asset tag itself if one was recorded, falling back to the item's internal ID so every
    asset always has something scannable to print. */
 function equipmentCodeItems(rows){
-  return rows.map(r=>{
-    const subFallback = [r.category, r.location].filter(Boolean).join(' · ') || (r.tag||r.id);
-    const sub = r.description ? (r.description.length>60 ? r.description.slice(0,60)+'…' : r.description) : subFallback;
-    return { code: r.tag || r.id, title: r.name, sub };
-  });
+  return rows.map(r=>({ code: r.tag || r.id, title: r.name, sub: [r.category, r.location].filter(Boolean).join(' · ') || (r.tag||r.id) }));
 }
 function openEquipmentTagModal(id){
   const item = DB.equipment.find(x=>x.id===id); if(!item) return;
@@ -11147,17 +10659,6 @@ function pageSetup(){
       <p class="field-hint" style="margin-top:10px">Dewey main classes</p>
       <div>${DB.setup.mainClasses.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div>
     </div>
-  </div>
-  <div class="card panel">
-    <div class="panel-head"><h3>Shelf mapping by main class</h3><div class="hint">Which shelf codes belong to each Dewey main class — drives "Auto-group existing items" below and auto-shelf-assignment for new titles. Every shelf can only belong to one class at a time.</div></div>
-    <div id="shelfMapGrid">${renderShelfMapHtml()}</div>
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn secondary" onclick="proposeShelfMap()">🔎 Auto-propose from current collection sizes</button>
-      <button class="btn" onclick="saveShelfMap()">Save shelf mapping</button>
-    </div>
-    <p class="field-hint" style="margin-top:10px">Once saved, opening "+ Add title" auto-picks the least-full shelf in the chosen main class as soon as that class is set — always still yours to change before saving.</p>
-    <button class="btn secondary" style="margin-top:10px" onclick="autoGroupCatalogueIntoShelves()">📦 Auto-group existing catalogue items into these shelves</button>
-    <p class="field-hint" style="margin-top:6px">Re-shelves every title in the catalogue now, spreading each main class's items evenly across its assigned shelves. Uses the mapping as last saved — save any changes above first.</p>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Codes</h3><div class="hint">Used on member ID cards, catalogue cards and the scan/verify screen</div></div>
@@ -12601,122 +12102,6 @@ function renderDesignationsHtml(){
 function renderShelvesHtml(){
   return DB.setup.shelves.map(s=>`<span class="pill">${esc(s)} <a href="#" onclick="removeShelf('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('');
 }
-/* ================= Shelf mapping by main class =================
-   DB.setup.shelfMap: { "<main class>": ["<shelf code>", ...] }. Every real shelf (excluding
-   UNASSIGNED) should belong to at most one class — enforced in the UI by unchecking a shelf
-   from any other class the moment it's checked here. Drives both the bulk "auto-group existing
-   items" action and the per-title auto-shelf-assignment in openBookForm(). */
-function shelfCountsByShelf(){
-  const counts = {};
-  DB.catalogue.forEach(b=>{ if(b.shelf) counts[b.shelf] = (counts[b.shelf]||0)+1; });
-  return counts;
-}
-function renderShelfMapHtml(){
-  const map = DB.setup.shelfMap || {};
-  const realShelves = DB.setup.shelves.filter(s=>s!=='UNASSIGNED');
-  return DB.setup.mainClasses.map(c=>{
-    const chosen = map[c] || [];
-    return `<div style="margin-bottom:14px">
-      <p class="field-hint" style="margin-bottom:6px"><strong>${esc(c)}</strong></p>
-      <div class="subject-pill-grid">
-        ${realShelves.map(s=>`
-          <label class="subject-check"><input type="checkbox" class="shelfMapChk" data-cls="${esc(c)}" value="${esc(s)}" ${chosen.includes(s)?'checked':''} onchange="enforceShelfMapUnique(this)"> ${esc(s)}</label>
-        `).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-/* Keeps each shelf assigned to a single class: checking a shelf for one class immediately
-   unchecks it everywhere else in the grid (a physical shelf can't belong to two subjects). */
-function enforceShelfMapUnique(cb){
-  if(!cb.checked) return;
-  $$('.shelfMapChk').forEach(other=>{
-    if(other!==cb && other.value===cb.value) other.checked = false;
-  });
-}
-/* Proposes a shelf split proportional to how many items each main class already has in the
-   catalogue (largest-remainder rounding, minimum 1 shelf per class so empty classes still get
-   a home for future titles), then fills the checkboxes for review — nothing is saved until
-   "Save shelf mapping" is clicked. */
-function proposeShelfMap(){
-  const classes = DB.setup.mainClasses;
-  const shelves = DB.setup.shelves.filter(s=>s!=='UNASSIGNED');
-  if(!classes.length || !shelves.length){ toast('Set up main classes and shelves first'); return; }
-  const counts = classes.map(c=> DB.catalogue.filter(b=>b.mainClass===c).length);
-  const total = counts.reduce((a,b)=>a+b,0);
-  let alloc;
-  if(total===0){
-    // No items yet — split the shelf pool as evenly as possible across all classes.
-    alloc = classes.map(()=>Math.floor(shelves.length/classes.length));
-    let remainder = shelves.length - alloc.reduce((a,b)=>a+b,0);
-    for(let i=0;i<remainder;i++) alloc[i]++;
-  } else {
-    const minEach = 1;
-    const reserved = Math.min(classes.length*minEach, shelves.length);
-    const pool = shelves.length - reserved;
-    const raw = counts.map(c=> (c/total)*pool);
-    alloc = raw.map(x=>Math.floor(x) + minEach);
-    let used = alloc.reduce((a,b)=>a+b,0);
-    let remainder = shelves.length - used;
-    const fractions = raw.map((x,i)=>({i, frac:x-Math.floor(x)})).sort((a,b)=>b.frac-a.frac);
-    let fi = 0;
-    while(remainder>0 && fi<fractions.length){ alloc[fractions[fi].i]++; remainder--; fi++; }
-    while(remainder>0){ alloc[remainder % classes.length]++; remainder--; } // leftover safety net
-  }
-  const map = {};
-  let cursor = 0;
-  classes.forEach((c,i)=>{
-    map[c] = shelves.slice(cursor, cursor+alloc[i]);
-    cursor += alloc[i];
-  });
-  DB.setup.shelfMap = map;
-  refreshSetupSection('shelfMapGrid', renderShelfMapHtml);
-  toast('Proposed a split based on current collection sizes — review below, then Save');
-}
-function saveShelfMap(){
-  const map = {};
-  $$('.shelfMapChk').forEach(cb=>{
-    if(!cb.checked) return;
-    if(!map[cb.dataset.cls]) map[cb.dataset.cls] = [];
-    map[cb.dataset.cls].push(cb.value);
-  });
-  DB.setup.shelfMap = map;
-  saveDB();
-  toast('Shelf mapping saved');
-}
-/* The shelf with the fewest items currently assigned, among the shelves mapped to this main
-   class — keeps items spreading out evenly instead of piling onto the first shelf every time. */
-function leastFilledShelfFor(mainClass){
-  const shelves = (DB.setup.shelfMap||{})[mainClass] || [];
-  if(!shelves.length) return '';
-  const counts = shelfCountsByShelf();
-  let best = shelves[0], bestCount = Infinity;
-  shelves.forEach(s=>{ const c = counts[s]||0; if(c<bestCount){ bestCount=c; best=s; } });
-  return best;
-}
-function autoGroupCatalogueIntoShelves(){
-  if(!isAdmin()) return requireAdmin('re-shelve the catalogue');
-  const map = DB.setup.shelfMap || {};
-  if(!Object.keys(map).length){ toast('Save a shelf mapping first'); return; }
-  if(!confirm('Re-shelve every title in the catalogue now, based on the saved mapping? This overwrites the current Shelf field on every item (grouped items with no main class, or a class with no shelves assigned, move to UNASSIGNED).')) return;
-  // Round-robin within each class, walking items in title order, so each class's shelves fill
-  // up evenly rather than one shelf taking everything before the next is touched.
-  const byClass = {};
-  DB.setup.mainClasses.forEach(c=> byClass[c] = [...DB.catalogue].filter(b=>b.mainClass===c).sort((a,b)=>(a.title||'').localeCompare(b.title||'')));
-  let moved = 0;
-  Object.keys(byClass).forEach(c=>{
-    const shelves = map[c] || [];
-    const items = byClass[c];
-    if(!shelves.length){ items.forEach(b=>{ if(b.shelf!=='UNASSIGNED'){ b.shelf='UNASSIGNED'; moved++; } }); return; }
-    items.forEach((b,i)=>{ const s = shelves[i % shelves.length]; if(b.shelf!==s){ b.shelf = s; moved++; } });
-  });
-  const unmapped = DB.catalogue.filter(b=> !b.mainClass || !DB.setup.mainClasses.includes(b.mainClass));
-  unmapped.forEach(b=>{ if(b.shelf!=='UNASSIGNED'){ b.shelf='UNASSIGNED'; moved++; } });
-  logActivity('catalogue', 'edit', `Auto-grouped ${moved} title(s) into shelves by main class`);
-  saveDB(); render();
-  toast(`Re-shelved ${moved} title${moved===1?'':'s'}`);
-}
-
 function renderSubjectsHtml(){
   const names = DB.setup.subjectNames||{};
   return DB.setup.subjects.map(s=>`<span class="pill" title="${esc(names[s]||'')}">${esc(s)}${names[s]?` <span style="opacity:.65">– ${esc(names[s])}</span>`:''} <a href="#" onclick="removeSubject('${esc(s)}');return false;" style="color:#A8452F;text-decoration:none">✕</a></span>`).join('');
@@ -13139,59 +12524,6 @@ function changeAdminKey(){
   saveAdminKey(val);
   toast('Admin key updated');
 }
-/* ================= PAGE: ACTIVITY LOG ================= */
-let activityLogModule;
-let activityLogModuleState = {q:'', filters:{}, sort:''};
-const ACTIVITY_MODULE_LABELS = {catalogue:'Catalogue', members:'Members', circulation:'Circulation', reservations:'Reservations', equipment:'Assets & Equipment'};
-const ACTIVITY_ACTION_LABELS = {add:'Added', edit:'Edited', delete:'Deleted', issue:'Issued', return:'Returned', missing:'Missing', renew:'Renewed', fine_payment:'Fine payment', fine_waived:'Fine waived'};
-function activityActionBadgeClass(a){
-  return a==='delete' ? 'red' : a==='add' || a==='issue' ? 'green' : a==='missing' ? 'red' : a==='fine_waived' ? 'gold' : 'grey';
-}
-function pageActivityLog(){
-  if(!isAdmin()){
-    return `<div class="card panel"><div class="empty"><div class="big">🔒</div>The Activity Log is only available to admin accounts.</div></div>`;
-  }
-  activityLogModule = GenericModule({
-    state:activityLogModuleState, key:'activitylog', title:'Activity Log',
-    hint:'A running trail of every add, edit, delete, issue, return and other change made across the app — newest first',
-    cap:300,
-    data:()=>DB.activityLog||[],
-    searchKeys:['summary','by','module','action'],
-    filters:[
-      {key:'module', label:'Section', options:Object.keys(ACTIVITY_MODULE_LABELS)},
-      {key:'action', label:'Action', options:Object.keys(ACTIVITY_ACTION_LABELS)},
-    ],
-    sortOptions:[
-      {key:'newest', label:'Newest first', compare:(a,b)=>new Date(b.ts)-new Date(a.ts)},
-      {key:'oldest', label:'Oldest first', compare:(a,b)=>new Date(a.ts)-new Date(b.ts)},
-    ],
-    columns:[
-      {key:'ts', label:'When', render:r=>new Date(r.ts).toLocaleString('en-GB')},
-      {key:'module', label:'Section', render:r=>`<span class="badge grey">${esc(ACTIVITY_MODULE_LABELS[r.module]||r.module)}</span>`},
-      {key:'action', label:'Action', render:r=>`<span class="badge ${activityActionBadgeClass(r.action)}">${esc(ACTIVITY_ACTION_LABELS[r.action]||r.action)}</span>`},
-      {key:'summary', label:'Details'},
-      {key:'by', label:'By'},
-    ],
-    exportColumns:[
-      {label:'When', get:r=>new Date(r.ts).toLocaleString('en-GB')},
-      {label:'Section', get:r=>ACTIVITY_MODULE_LABELS[r.module]||r.module},
-      {label:'Action', get:r=>ACTIVITY_ACTION_LABELS[r.action]||r.action},
-      {label:'Details', get:r=>r.summary},
-      {label:'By', get:r=>r.by},
-    ],
-    extraActions:[
-      {label:'🗑 Clear log', onClick:clearActivityLog, danger:true},
-    ],
-  });
-  return activityLogModule.render();
-}
-function clearActivityLog(){
-  if(!isAdmin()) return requireAdmin('clear the activity log');
-  confirmDelete('Clear the entire activity log? This cannot be undone.', ()=>{
-    DB.activityLog = [];
-    saveDB(); render(); toast('Activity log cleared');
-  });
-}
 function pageSecurity(){
   if(!isAdmin()){
     return `<div class="card panel"><div class="empty"><div class="big">🔒</div>Privacy &amp; Security is only available to admin accounts.</div></div>`;
@@ -13217,6 +12549,10 @@ function pageSecurity(){
     <div class="field"><label>Lock after (minutes)</label><input type="number" id="setIdleLockMinutes" min="2" max="120" value="${idleMins}" style="max-width:120px"></div>
     <p class="field-hint">A 60-second warning with a countdown appears one minute before the lock, so there's a chance to stay signed in.</p>
     <button class="btn secondary" onclick="saveIdleLockSettings()">Save</button>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h3>Notifications &amp; alerts</h3><div class="hint">Notification types, pop-up alert timing, and WhatsApp receipts have moved to Setup</div></div>
+    <p class="field-hint">Which alerts fire, how often they recheck and re-show, and WhatsApp transaction receipts are now configured together in <strong>Setup → Notifications &amp; alerts</strong>.</p>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Account creation</h3><div class="hint">Controls who can create new accounts from the sign-in screen</div></div>
@@ -13534,7 +12870,6 @@ function render(){
     case 'about': html = pageAbout(); break;
     case 'account': html = pageAccount(); break;
     case 'security': html = pageSecurity(); break;
-    case 'activitylog': html = pageActivityLog(); break;
     default: html = pageHome();
   }
   const __scrollSnapshot = snapshotScrollPositions(el);
@@ -13542,7 +12877,6 @@ function render(){
 
   if(route==='catalogue' && catalogueModule){ $('#mod_catalogue').innerHTML = catalogueModule.render(); MODULE_CONTAINERS.catalogue={host:{render:()=>{ $('#mod_catalogue').innerHTML=catalogueModule.render(); catalogueModule.bind(); }}}; catalogueModule.bind(); }
   if(route==='circulation' && circulationModule){ circulationModule.bind(); }
-  if(route==='activitylog' && activityLogModule){ activityLogModule.bind(); }
   if(route==='reservations' && reservationsModule){ reservationsModule.bind(); }
   if(route==='users' && usersModule){ $('#mod_users').innerHTML = usersModule.render(); MODULE_CONTAINERS.users={host:{render:()=>{ $('#mod_users').innerHTML=usersModule.render(); usersModule.bind(); }}}; usersModule.bind(); }
   if(route==='equipment' && equipmentModule){ $('#mod_equipment').innerHTML = equipmentModule.render(); MODULE_CONTAINERS.equipment={host:{render:()=>{ $('#mod_equipment').innerHTML=equipmentModule.render(); equipmentModule.bind(); }}}; equipmentModule.bind(); }
@@ -13591,15 +12925,8 @@ async function enterApp(){
   tickClocks();
   await loadPrefs();
   tickClocks();
-  // absolute failsafe: no matter what happens above, force the splash away after 8s. (Mobile
-  // networks can be slow, so this is longer than the desktop-tuned 4s originally used here —
-  // that was firing before slow connections finished loading, which read as "stuck on splash".)
-  const failsafe = setTimeout(()=>{
-    $('#splash').classList.add('hide');
-    if(!$('#authScreen').classList.contains('show') && !$('#app').classList.contains('show')){
-      try{ showAuthScreen(); }catch(e){ alcmsShowFatalError('Timed out starting the app', e && e.stack || String(e)); }
-    }
-  }, 8000);
+  // absolute failsafe: no matter what happens above, force the splash away after 4s
+  const failsafe = setTimeout(()=>{ $('#splash').classList.add('hide'); if(!$('#authScreen').classList.contains('show') && !$('#app').classList.contains('show')) showAuthScreen(); }, 4000);
   try{
     ACCOUNTS = await loadAccounts();
     await loadAdminKey();
@@ -13628,15 +12955,7 @@ async function enterApp(){
     showAuthScreen();
   }
 })();
-window.addEventListener('error', e=>{
-  console.error('Runtime error:', e.error||e.message);
-  // Only escalate to the full-screen fatal overlay if the app never actually finished starting —
-  // once the app or auth screen is showing, a later error is handled inline (toast/console) so a
-  // single click-handler bug doesn't nuke an otherwise-working session.
-  var app = $('#app'), auth = $('#authScreen');
-  var appUp = (app && app.classList.contains('show')) || (auth && auth.classList.contains('show'));
-  if(!appUp && typeof alcmsShowFatalError==='function') alcmsShowFatalError(e.message||'Runtime error', (e.error&&e.error.stack)||'');
-});
+window.addEventListener('error', e=> console.error('Runtime error:', e.error||e.message));
 
 </script>
 </body>
