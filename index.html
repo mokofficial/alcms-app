@@ -2567,7 +2567,7 @@ body[data-lockscreen-decor-style="none"] .auth-decor{ display:none;}
 .lock-loan-search input::placeholder{ color:rgba(255,255,255,.55);}
 .lock-loan-search .icon-btn{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); color:#F3EEDD; width:26px; height:26px; padding:0; flex:none;}
 .lock-loan-search .icon-btn:hover{ border-color:var(--brass-light);}
-.lock-loan-search .scan-suggest{ left:0; right:auto; top:calc(100% + 6px); width:320px; max-width:88vw; max-height:340px; color:#111;}
+.lock-loan-search .scan-suggest{ width:320px; max-width:88vw; max-height:340px; color:#111;}
 @media (max-width:640px){ .lock-loan-search{ max-width:100%;} }
 /* Tips / Getting started / bell sit directly under the dots now (not a floating absolute
    overlay), so this is plain flow layout — it renders the same way on a real phone as it does
@@ -2883,8 +2883,8 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 .home-alert-dismiss .ic{ font-size:12px;}
 .dropdown-wrap{ position:relative; display:inline-block;}
 .dropdown-menu{
-  position:absolute; top:calc(100% + 4px); right:0; min-width:180px; background:var(--card); border:1px solid var(--line);
-  border-radius:8px; box-shadow:var(--shadow); z-index:40; overflow:hidden; display:none;
+  position:fixed; min-width:180px; background:var(--card); border:1px solid var(--line);
+  border-radius:8px; box-shadow:var(--shadow); z-index:1200; overflow:hidden; display:none;
 }
 .dropdown-menu.open{ display:block;}
 .dropdown-menu a,.dropdown-menu button{
@@ -3022,7 +3022,7 @@ body[data-transition="bounce"] .modal-backdrop.closing .modal{ animation:modalSc
 .barcode-label-title{ font-size:11px; font-weight:600; color:#111; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;}
 .barcode-svg{ width:100%; max-width:160px; height:46px;}
 .barcode-label-sub{ font-size:10px; color:#333; letter-spacing:.5px;}
-.scan-suggest{ display:none; position:absolute; left:0; right:0; top:100%; z-index:12; margin-top:2px; max-height:220px; overflow:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:0 14px 34px rgba(0,0,0,.22);}
+.scan-suggest{ display:none; position:fixed; z-index:1200; max-height:220px; overflow:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:0 14px 34px rgba(0,0,0,.22);}
 .scan-suggest.open{ display:block;}
 .scan-suggest-row{ display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--line);}
 .scan-suggest-row:last-child{ border-bottom:none;}
@@ -3211,8 +3211,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 
 .quickpick{ position:relative;}
 .quickpick input{ width:100%;}
-.quickpick .suggestions{ position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:8px;
-  max-height:220px; overflow-y:auto; box-shadow:var(--shadow); z-index:20; display:none;}
+.quickpick .suggestions{ position:fixed; background:#fff; border:1px solid var(--line); border-radius:8px;
+  max-height:220px; overflow-y:auto; box-shadow:var(--shadow); z-index:1200; display:none;}
 .quickpick .suggestions.show{ display:block;}
 .quickpick .sugg-item{ padding:8px 12px; font-size:12.5px; border-bottom:1px solid #f1ead4; cursor:pointer;}
 .quickpick .sugg-item:hover{ background:var(--parchment-dim);}
@@ -5884,9 +5884,10 @@ function bindQuickPicker(id, {items, formatSuggestion, formatPicked, onPick}){
     else{
       matches = items.filter(it=> it.id.toLowerCase().includes(q) || it.label.toLowerCase().includes(q)).slice(0,25);
     }
-    if(!matches.length){ sugg.innerHTML = `<div class="sugg-item" style="color:var(--muted)">No match for "${esc(input.value)}"</div>`; sugg.classList.add('show'); return; }
+    if(!matches.length){ sugg.innerHTML = `<div class="sugg-item" style="color:var(--muted)">No match for "${esc(input.value)}"</div>`; sugg.classList.add('show'); positionFloatingPanel(sugg, input, {matchWidth:true}); return; }
     sugg.innerHTML = matches.map(it=>`<div class="sugg-item" data-id="${esc(it.id)}"><b>${esc(it.id)}</b> — ${esc(it.label)}</div>`).join('');
     sugg.classList.add('show');
+    positionFloatingPanel(sugg, input, {matchWidth:true});
     if(exact && matches.length===1) pick(exact);
   }, 120);
   function pick(it){
@@ -8953,9 +8954,10 @@ function renderLockLoanSuggest(){
   if(m.txns.length){ html += `<div class="gsearch-group-label">Circulation</div>` + m.txns.map(t=>`<div class="scan-suggest-row" data-kind="txn" data-id="${esc(t.trxId)}"><span class="ss-ic">🔄</span><span class="ss-main"><strong>${esc(t.title)}</strong><span class="ss-sub">${esc(t.name)} · ${esc(txnStatus(t))}</span></span></div>`).join(''); }
   if(m.reservations.length){ html += `<div class="gsearch-group-label">Reservations</div>` + m.reservations.map(r=>`<div class="scan-suggest-row" data-kind="reservation" data-id="${esc(r.id)}"><span class="ss-ic">📌</span><span class="ss-main"><strong>${esc(r.title)}</strong><span class="ss-sub">${esc(r.name)} · ${esc(r.status)}</span></span></div>`).join(''); }
   if(m.reminders.length){ html += `<div class="gsearch-group-label">Reminders</div>` + m.reminders.map(r=>`<div class="scan-suggest-row" data-kind="reminder" data-id="${esc(r.trxId)}"><span class="ss-ic">✉</span><span class="ss-main"><strong>${esc(r.title)}</strong><span class="ss-sub">${esc(r.name)} · sent ${esc(fmtDate(r.dateSent))}</span></span></div>`).join(''); }
-  if(!html){ box.classList.remove('open'); box.innerHTML=`<div class="empty" style="padding:16px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`; box.classList.add('open'); return; }
+  if(!html){ box.classList.remove('open'); box.innerHTML=`<div class="empty" style="padding:16px 10px"><div class="big">🔎</div>No matches for "${esc(q)}"</div>`; box.classList.add('open'); positionFloatingPanel(box, input); return; }
   box.innerHTML = html;
   box.classList.add('open');
+  positionFloatingPanel(box, input);
   box.querySelectorAll('.scan-suggest-row').forEach(row=>{
     row.onclick = ()=>{ box.classList.remove('open'); box.innerHTML=''; input.value=''; lockSearchGoto(row.dataset.kind, row.dataset.id); };
   });
@@ -9275,7 +9277,11 @@ document.addEventListener('click', e=>{
   });
   if(trigger){
     const menu = document.getElementById(triggerId);
-    if(menu) menu.classList.toggle('open');
+    if(menu){
+      const willOpen = !menu.classList.contains('open');
+      menu.classList.toggle('open', willOpen);
+      if(willOpen) positionFloatingPanel(menu, trigger, {align:'right'});
+    }
   }
 });
 /* Row-level "⋯ More" menu — same idea, but for table rows that have more actions than fit
@@ -9292,6 +9298,26 @@ function rowMoreButton(id, itemsHtml){
 function closeRowMoreMenu(){
   const m = document.getElementById('rowMoreMenu');
   if(m) m.classList.remove('open');
+}
+/* Shared by every dropdown/suggestion popover that can appear inside a scrolling container
+   (.content, .modal, .auth-form-side on mobile, etc.) — position:fixed + coordinates computed
+   from the anchor's own getBoundingClientRect() means the popover is never clipped by an
+   ancestor's overflow, on any screen size. Flips above the anchor if there's no room below,
+   and clamps horizontally so it never runs off a narrow mobile viewport. */
+function positionFloatingPanel(panel, anchor, {matchWidth=false, align='left'}={}){
+  if(!panel || !anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  const pw = matchWidth ? rect.width : (panel.offsetWidth || 220);
+  let left = align==='right' ? rect.right - pw : rect.left;
+  if(left < 8) left = 8;
+  if(left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - pw);
+  let top = rect.bottom + 4;
+  const ph = panel.offsetHeight || 160;
+  if(top + ph > window.innerHeight - 8) top = Math.max(8, rect.top - ph - 4);
+  panel.style.position = 'fixed';
+  panel.style.left = left+'px';
+  panel.style.top = top+'px';
+  if(matchWidth) panel.style.width = rect.width+'px';
 }
 function openRowMoreMenu(id, anchorEl){
   let menu = document.getElementById('rowMoreMenu');
@@ -9761,6 +9787,7 @@ function openScanModal(mode){
       ...userMatches.map(u=>`<div class="scan-suggest-row" data-code="${esc(u.id)}"><span class="ss-ic">👤</span><span class="ss-main"><strong>${esc(u.name)}</strong><span class="ss-sub">${esc(u.id)} · ${esc(u.cls||u.category||'')}</span></span></div>`)
     ].join('');
     suggestEl.classList.add('open');
+    positionFloatingPanel(suggestEl, input, {matchWidth:true});
     suggestEl.querySelectorAll('.scan-suggest-row').forEach(row=>{
       row.onclick = ()=>{ closeSuggest(); handle(row.dataset.code); };
     });
