@@ -2862,17 +2862,14 @@ html[data-theme="dark"] .kpi .val{ color:var(--brass-light);}
 
 .panel{ padding:18px 20px; margin-bottom:18px;}
 .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
-/* Common actions (Print/Export/Add) stay visible; less-used ones (Import, extra admin
-   actions) collapse into a single "⋯ More" dropdown. Even so, the visible row stays on one
-   line — if it ever runs out of room it scrolls horizontally instead of wrapping onto
-   several messy lines. */
+/* Only the primary action (+ Add) and the "⋯ More" trigger stay visible in the header row;
+   everything else (Print, Export, Import, extra admin actions) lives inside the "⋯ More"
+   dropdown. That keeps the row short and fixed-height on every screen size — it never needs
+   to scroll horizontally, and it never needs to wrap onto extra lines either. */
 .panel-head-actions{
-  display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto;
-  -webkit-overflow-scrolling:touch; padding-bottom:2px; max-width:100%;
+  display:flex; gap:8px; flex-wrap:nowrap; align-items:center; max-width:100%;
 }
 .panel-head-actions button{ flex:none; white-space:nowrap;}
-.panel-head-actions::-webkit-scrollbar{ height:5px;}
-.panel-head-actions::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px;}
 @media (max-width:820px){
   .panel-head{ flex-wrap:nowrap; align-items:center;}
 }
@@ -5945,11 +5942,12 @@ function GenericModule(cfg){
         <div class="panel-head" data-mod="${cfg.key}">
           <div><h3>${esc(cfg.title)}</h3><div class="hint">${esc(cfg.hint||'')}</div></div>
           <div class="panel-head-actions">
-            ${cfg.exportColumns? `
-            <button class="btn secondary small" data-act="print-${cfg.key}">🖶 Print</button>
-            <button class="btn secondary small" data-act="export-${cfg.key}">⭳ Export</button>`:''}
             ${(()=>{
               const items = [];
+              if(cfg.exportColumns){
+                items.push(`<a data-act="print-${cfg.key}">🖶 Print</a>`);
+                items.push(`<a data-act="export-${cfg.key}">⭳ Export</a>`);
+              }
               if(cfg.onImport && isAdmin()) items.push(`<a data-act="import-${cfg.key}">⭱ Import</a>`);
               (cfg.extraActions||[]).forEach((a,i)=>{
                 if(a.alwaysShow||isAdmin()) items.push(`<a data-act="extra${i}-${cfg.key}" ${a.danger?'class="danger-text"':''}>${esc(a.label)}</a>`);
@@ -8338,6 +8336,16 @@ function pageCirculationTable(){
   });
   return circulationModule.render();
 }
+/* Queue position for a WAITING/READY reservation: 1-based rank among all active (non-fulfilled,
+   non-cancelled) reservations on the same accession number, oldest request first. Used on the
+   staff Reservations table and on the member's self-service lockscreen loan check. */
+function reservationQueuePosition(r){
+  if(!DB || !r) return null;
+  const active = (DB.reservations||[]).filter(x=>x.acc===r.acc && (x.status==='WAITING'||x.status==='READY'))
+    .sort((a,b)=>(parseAnyDate(a.dateRequested)||0)-(parseAnyDate(b.dateRequested)||0));
+  const idx = active.findIndex(x=>x.id===r.id);
+  return idx===-1 ? null : idx+1;
+}
 let reservationsModule;
 let reservationsModuleState = {q:'', filters:{}};
 let reserveUserPicker, reserveBookPicker;
@@ -8373,10 +8381,15 @@ function pageReservations(){
       {key:'name', label:'Member', render:r=>`${esc(r.name)}<div style="color:var(--muted);font-size:11px">${esc(r.userId)}</div>`},
       {key:'dateRequested', label:'Requested', render:r=>fmtDate(r.dateRequested)},
       {key:'status', label:'Status', render:r=>`<span class="badge ${r.status==='READY'?'green':r.status==='FULFILLED'?'grey':'gold'}">${esc(r.status)}</span>`},
+      {key:'queue', label:'Queue position', render:r=>{
+        const pos = reservationQueuePosition(r);
+        return pos ? `<span class="badge ${pos===1?'green':'gold'}">#${pos}</span>` : '—';
+      }},
     ],
     exportColumns:[
       {label:'Title', get:r=>r.title}, {label:'Acc. No', get:r=>r.acc}, {label:'Member', get:r=>r.name}, {label:'Member ID', get:r=>r.userId},
       {label:'Requested', get:r=>fmtDate(r.dateRequested)}, {label:'Status', get:r=>r.status},
+      {label:'Queue position', get:r=>reservationQueuePosition(r)||''},
     ],
     rowActions:r=>`
       ${r.status==='READY'? `<button class="btn secondary small" onclick="fulfillReservation('${esc(r.id)}')">Mark fulfilled</button>`:''}
@@ -9005,6 +9018,7 @@ function openLockSearchDetail(kind, id){
       <p style="margin:8px 0 4px"><strong>${esc(r.title)}</strong></p>
       <p class="field-hint" style="margin:0 0 8px">Reserved by: ${esc(r.name)}</p>
       <div class="activity-row"><div class="dot" style="background:#B8863E"></div><div style="flex:1">Status</div><span class="badge gold">${esc(r.status)}</span></div>
+      ${(()=>{ const pos = reservationQueuePosition(r); return pos ? `<div class="activity-row"><div class="dot" style="background:#B8863E"></div><div style="flex:1">Queue position</div><span class="badge ${pos===1?'green':'gold'}">#${pos}</span></div>` : ''; })()}
     ` : `<p style="margin:10px 0;color:var(--terracotta)">Reservation not found.</p>`;
   } else if(kind==='reminder'){
     const r = (DB.reminders||[]).find(x=>x.trxId===id);
@@ -9080,8 +9094,11 @@ function runSelfCheckLoans(rawId, resEl){
     ${loans.length? loans.map(l=>`<div class="activity-row"><div class="dot" style="background:${l.status==='OVERDUE'?'#A8452F':'#3E6B52'}"></div>
       <div style="flex:1"><em>${esc(l.title)}</em><div class="meta">due ${fmtDate(l.dueDate)}</div></div>
       <span class="badge ${l.status==='OVERDUE'?'red':'green'}">${esc(l.status)}</span></div>`).join('') : `<p class="field-hint">Nothing currently borrowed.</p>`}
-    ${holds.length? `<p style="margin:10px 0 4px;font-weight:600;font-size:12.5px">Reservations</p>` + holds.map(r=>`<div class="activity-row"><div class="dot" style="background:#B8863E"></div>
-      <div style="flex:1"><em>${esc(r.title)}</em></div><span class="badge gold">${esc(r.status)}</span></div>`).join('') : ''}
+    ${holds.length? `<p style="margin:10px 0 4px;font-weight:600;font-size:12.5px">Reservations</p>` + holds.map(r=>{
+        const pos = reservationQueuePosition(r);
+        return `<div class="activity-row"><div class="dot" style="background:#B8863E"></div>
+      <div style="flex:1"><em>${esc(r.title)}</em>${pos? `<div class="meta">You're #${pos} in the queue</div>`:''}</div><span class="badge gold">${esc(r.status)}</span></div>`;
+      }).join('') : ''}
   `;
 }
 
