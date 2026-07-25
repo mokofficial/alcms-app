@@ -3053,12 +3053,17 @@ body[data-transition="bounce"] .modal-backdrop.closing .modal{ animation:modalSc
 .id-card-code.qr-code-box svg{ width:100%; height:100%; display:block; shape-rendering:crispEdges;}
 .id-card-codeval{ font-size:9px; letter-spacing:1px; color:#333; margin-top:2px;}
 .print-id-card-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px;}
-/* 10-up A4 export: 2 columns x 5 rows, sized close to a standard CR80 card */
-.a4-card-page .print-page-body{ display:flex; align-items:stretch;}
-.id-card-a4-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(5,1fr); gap:5mm 6mm; width:100%; height:261mm;}
-.id-card-a4-grid .id-card{ height:100%; display:flex; flex-direction:column;}
-.id-card-a4-grid .id-card-body{ flex:1;}
-@media print{ .id-card{ box-shadow:none;} }
+@media print{
+  .id-card{ box-shadow:none;}
+  /* Printed/exported cards drop the colored header background entirely: browsers commonly
+     omit background colors on print by default (unless "background graphics" is explicitly
+     enabled), which left the header's light text invisible against plain white paper. A plain
+     white header with dark text and a border prints reliably every time, in any browser, with
+     no reliance on print settings, and uses no ink for a background fill. */
+  .id-card-head{ background:none !important; color:#111 !important; border-bottom:1px solid #111;}
+  .id-card-type{ opacity:1; color:#555;}
+  .id-card-photo{ background:none !important; border:1px solid #999;}
+}
 @media print{
   .print-barcode-grid{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
   .print-barcode-grid .barcode-label{ break-inside:avoid; }
@@ -3224,7 +3229,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 
 /* ===== print ===== */
 #printArea{ display:none; background:#fff; color:#111;}
-.print-page{ display:flex; flex-direction:column; min-height:261mm; box-sizing:border-box;}
+.print-page{ display:flex; flex-direction:column; box-sizing:border-box;}
 .print-page-body{ flex:1 0 auto;}
 .print-header{ margin:0 0 20px; display:flex; align-items:flex-start; gap:14px; border-bottom:2px solid var(--brass-light); padding-bottom:12px;}
 .print-header .print-logo{ width:52px; height:52px; object-fit:contain; flex:none; margin:0;}
@@ -3247,7 +3252,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .print-chart-pair-table{ flex:1 1 45%; min-width:0;}
 .print-chart-pair-table table{ font-size:9.5px;}
 .print-chart-pair-table th, .print-chart-pair-table td{ padding:3px 5px;}
-.print-footer{ margin-top:auto; padding-top:8px; border-top:1px solid #ccc; display:flex; justify-content:space-between; gap:12px; font-size:9.5px; color:#555; page-break-inside:avoid;}
+.print-footer{ margin-top:16px; padding-top:8px; border-top:1px solid #ccc; display:flex; justify-content:space-between; gap:12px; font-size:9.5px; color:#555; page-break-inside:avoid;}
 @media print{
   html, body.printing{ background:#fff !important; }
   body.printing #app, body.printing #authScreen, body.printing #splash, body.printing #modalRoot, body.printing .toast{ display:none !important; }
@@ -3387,7 +3392,7 @@ html, body{ overflow-x:hidden;}
 
 
 <div id="splash">
-  <div class="splash-badge" id="splashBadge">AL</div>
+  <div class="splash-badge" id="splashBadge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%"><rect width="64" height="64" rx="12" fill="#1F3A2E"/><path d="M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z" fill="#F6F1E2"/><path d="M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z" fill="#F6F1E2"/><path d="M32 18v30" stroke="#B8863E" stroke-width="2"/><circle cx="32" cy="12" r="4" fill="#D9A94F"/></svg></div>
   <div class="splash-title stamp-font" id="splashTitle">ALCMS</div>
   <div class="splash-sub">Access Library · Circulation Desk</div>
   <div class="splash-bar"></div>
@@ -3399,7 +3404,7 @@ html, body{ overflow-x:hidden;}
     <div class="auth-decor-layer" id="authDecorLayer"><span class="auth-decor" onclick="cycleLockscreenDecorStyle()" title="Click to change the decoration style"></span></div>
     <div class="auth-info">
       <div class="auth-brand">
-        <div class="stamp-badge" id="authBrandBadge">AL</div>
+        <div class="stamp-badge" id="authBrandBadge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%"><rect width="64" height="64" rx="12" fill="#1F3A2E"/><path d="M14 18c6-4 14-4 18 0v30c-4-4-12-4-18 0V18z" fill="#F6F1E2"/><path d="M50 18c-6-4-14-4-18 0v30c4-4 12-4 18 0V18z" fill="#F6F1E2"/><path d="M32 18v30" stroke="#B8863E" stroke-width="2"/><circle cx="32" cy="12" r="4" fill="#D9A94F"/></svg></div>
         <h1 id="authBrandTitle">ALCMS</h1>
       </div>
       <div class="auth-clock" id="authClock" onclick="cycleAuthClockStyle()" title="Click to change the clock style"></div>
@@ -5442,21 +5447,42 @@ function saveAppBackground(){
   if(file){
     if(file.size > 1.5*1024*1024){ toast('Please choose an image under 1.5MB'); return; }
     const reader = new FileReader();
-    reader.onload = ()=>{ DB.setup.appBackgroundImage = reader.result; saveDB(); applyAppBackground(); render(); toast('Background saved'); };
+    reader.onload = ()=>{ DB.setup.appBackgroundImage = reader.result; appBackgroundDraftImage=null; appBackgroundPreviewDirty=false; saveDB(); applyAppBackground(); render(); toast('Background saved'); };
     reader.readAsDataURL(file);
   } else {
-    saveDB(); applyAppBackground(); toast('Background saved');
+    appBackgroundDraftImage=null; appBackgroundPreviewDirty=false; saveDB(); applyAppBackground(); toast('Background saved');
   }
 }
 function clearAppBackground(){
-  DB.setup.appBackgroundImage = null; saveDB(); applyAppBackground(); render(); toast('Background removed');
+  appBackgroundDraftImage=null; appBackgroundPreviewDirty=false; DB.setup.appBackgroundImage = null; saveDB(); applyAppBackground(); render(); toast('Background removed');
+}
+// Live preview: reads the picked file (if any) into a draft data-URL and/or the opacity slider,
+// and paints it straight onto the real background — nothing is written to DB until Save is clicked.
+let appBackgroundDraftImage = null;
+let appBackgroundPreviewDirty = false;
+function previewAppBackground(){
+  appearancePreviewDirty = true; appBackgroundPreviewDirty = true;
+  const opacityEl = document.getElementById('appBgOpacity');
+  if(opacityEl && opacityEl.previousElementSibling) opacityEl.previousElementSibling.textContent = 'Opacity ('+opacityEl.value+'%)';
+  const file = document.getElementById('appBgInput')?.files?.[0];
+  if(file){
+    if(file.size > 1.5*1024*1024){ toast('Please choose an image under 1.5MB'); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{ appBackgroundDraftImage = reader.result; applyAppBackground(); };
+    reader.readAsDataURL(file);
+  } else {
+    applyAppBackground();
+  }
 }
 function applyAppBackground(){
   const el = document.querySelector('.content'); if(!el || !DB || !DB.setup) return;
-  if(DB.setup.appBackgroundImage){
-    el.style.backgroundImage = `linear-gradient(rgba(255,255,255,${1-(DB.setup.appBackgroundOpacity??15)/100}),rgba(255,255,255,${1-(DB.setup.appBackgroundOpacity??15)/100})), url('${DB.setup.appBackgroundImage}')`;
+  const opacityDraftEl = document.getElementById('appBgOpacity');
+  const opacity = appBackgroundPreviewDirty && opacityDraftEl ? (+opacityDraftEl.value||0) : (DB.setup.appBackgroundOpacity??15);
+  const image = appBackgroundDraftImage || DB.setup.appBackgroundImage;
+  if(image){
+    el.style.backgroundImage = `linear-gradient(rgba(255,255,255,${1-opacity/100}),rgba(255,255,255,${1-opacity/100})), url('${image}')`;
     el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center'; el.style.backgroundAttachment = 'fixed';
-    document.documentElement.style.setProperty('--section-bg-image', `url('${DB.setup.appBackgroundImage}')`);
+    document.documentElement.style.setProperty('--section-bg-image', `url('${image}')`);
   } else {
     el.style.backgroundImage = '';
     document.documentElement.style.setProperty('--section-bg-image', 'none');
@@ -5466,11 +5492,28 @@ function saveAuthBackground(){
   const opEl = document.getElementById('authBgOpacity');
   if(opEl) DB.setup.authBackgroundOpacity = +opEl.value;
   const file = document.getElementById('authBgInput').files[0];
-  if(!file){ saveDB(); applyAuthBackground(); toast('Sign-in background saved'); return; }
+  if(!file){ authBackgroundDraftImage=null; authBackgroundPreviewDirty=false; saveDB(); applyAuthBackground(); toast('Sign-in background saved'); return; }
   if(file.size > 1.5*1024*1024){ toast('Please choose an image under 1.5MB'); return; }
   const reader = new FileReader();
-  reader.onload = ()=>{ DB.setup.authBackgroundImage = reader.result; saveDB(); applyAuthBackground(); render(); toast('Sign-in background saved'); };
+  reader.onload = ()=>{ DB.setup.authBackgroundImage = reader.result; authBackgroundDraftImage=null; authBackgroundPreviewDirty=false; saveDB(); applyAuthBackground(); render(); toast('Sign-in background saved'); };
   reader.readAsDataURL(file);
+}
+// Live preview: paints straight onto the real (currently hidden, since we're logged in) sign-in
+// background layer — same "preview on the real, currently-hidden element" pattern used for the
+// lockscreen element toggles above. Nothing is written to DB until Save is clicked.
+let authBackgroundDraftImage = null;
+let authBackgroundPreviewDirty = false;
+function previewAuthBackground(){
+  appearancePreviewDirty = true; authBackgroundPreviewDirty = true;
+  const file = document.getElementById('authBgInput')?.files?.[0];
+  if(file){
+    if(file.size > 1.5*1024*1024){ toast('Please choose an image under 1.5MB'); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{ authBackgroundDraftImage = reader.result; applyAuthBackground(); };
+    reader.readAsDataURL(file);
+  } else {
+    applyAuthBackground();
+  }
 }
 const LOCKSCREEN_RIBBON_ITEMS = [
   {key:'circles', ic:'◯', label:'Decoration'},
@@ -5522,9 +5565,12 @@ function saveAuthBoxOpacity(){
 }
 function applyAuthBackground(){
   const el = document.getElementById('authBgImageLayer'); if(!el || !DB || !DB.setup) return;
-  if(DB.setup.authBackgroundImage){
-    const dim = 1-(DB.setup.authBackgroundOpacity??45)/100;
-    el.style.backgroundImage = `linear-gradient(rgba(19,32,25,${dim}),rgba(19,32,25,${dim})), url('${DB.setup.authBackgroundImage}')`;
+  const opOverride = document.getElementById('authBgOpacity');
+  const opacity = authBackgroundPreviewDirty && opOverride ? (+opOverride.value||45) : (DB.setup.authBackgroundOpacity??45);
+  const image = authBackgroundDraftImage || DB.setup.authBackgroundImage;
+  if(image){
+    const dim = 1-opacity/100;
+    el.style.backgroundImage = `linear-gradient(rgba(19,32,25,${dim}),rgba(19,32,25,${dim})), url('${image}')`;
   } else {
     el.style.backgroundImage = '';
   }
@@ -5620,6 +5666,38 @@ function savePersonalizationExtras(){
   document.body.setAttribute('data-transition', PREFS.transitionStyle);
   savePrefs(); applyIconPack(); render();
   toast('Preferences saved');
+}
+// Live preview for Clock format / Date format / Sign-in clock style. These three are read by
+// tickClocks() every second, so — unlike a one-shot preview — we can't apply-then-immediately-revert
+// PREFS or the very next tick would undo it. Instead we stash the pre-edit values once, apply the
+// drafted values straight into PREFS so the (real, currently-visible-or-hidden) clocks update on the
+// next tick, and only clear the stash for good when Save is clicked. If the admin navigates away from
+// Settings without saving, render()'s route-change check restores the stashed originals.
+let clockPrefsPreviewOriginal = null;
+function previewClockDatePrefs(){
+  if(!clockPrefsPreviewOriginal){
+    clockPrefsPreviewOriginal = {clockFormat: PREFS.clockFormat, dateFormat: PREFS.dateFormat, authClockStyle: PREFS.authClockStyle};
+  }
+  appearancePreviewDirty = true;
+  const cf = document.getElementById('setClockFormat')?.value; if(cf) PREFS.clockFormat = cf;
+  const df = document.getElementById('setDateFormat')?.value; if(df) PREFS.dateFormat = df;
+  const acs = document.getElementById('setAuthClockStyle')?.value; if(acs) PREFS.authClockStyle = acs;
+  tickClocks();
+}
+// Live preview for Weather ambience. renderWeatherAmbience() only actually appears on the Home
+// page, so — same idea as the lockscreen draft — we preview it into a small live-preview box right
+// here on the Settings panel rather than a page that isn't currently on screen.
+let weatherPrefsPreviewOriginal = null;
+function previewWeatherAmbiencePrefs(){
+  if(!weatherPrefsPreviewOriginal){
+    weatherPrefsPreviewOriginal = {weatherAmbience: PREFS.weatherAmbience, weatherAmbienceStyle: PREFS.weatherAmbienceStyle, weatherAmbienceSet: PREFS.weatherAmbienceSet};
+  }
+  appearancePreviewDirty = true;
+  PREFS.weatherAmbience = document.getElementById('setWeatherAmbience')?.checked ?? PREFS.weatherAmbience;
+  PREFS.weatherAmbienceStyle = document.getElementById('setWeatherStyle')?.value || PREFS.weatherAmbienceStyle;
+  PREFS.weatherAmbienceSet = document.getElementById('setWeatherSet')?.value || PREFS.weatherAmbienceSet;
+  const box = document.getElementById('weatherAmbiencePreviewBox');
+  if(box) box.innerHTML = PREFS.weatherAmbience ? renderWeatherAmbience() : '<p class="field-hint">Ambience is off — nothing will show on the Home greeting.</p>';
 }
 const PAGE_META = {
   home:['Home','Welcome to the Access Library circulation desk'],
@@ -5947,6 +6025,7 @@ function GenericModule(cfg){
               const items = [];
               if(cfg.exportColumns){
                 items.push(`<a data-act="print-${cfg.key}">🖶 Print</a>`);
+                items.push(`<a data-act="pdf-${cfg.key}">⭳ Download PDF</a>`);
                 items.push(`<a data-act="export-${cfg.key}">⭳ Export</a>`);
               }
               if(cfg.onImport && isAdmin()) items.push(`<a data-act="import-${cfg.key}">⭱ Import</a>`);
@@ -6040,6 +6119,17 @@ function GenericModule(cfg){
         if(!rows.length) return toast('No records match the current search/filters');
         const usingSelection = cfg.selectable && state.selected.size>0;
         printReport(cfg.title, `${rows.length} record(s) ${usingSelection? 'selected' : 'matching current search/filters'}`, cfg.exportColumns, rows);
+      };
+      // "Download PDF" bypasses the browser print dialog entirely: it reuses the same jsPDF +
+      // AutoTable pipeline as Export → PDF, which paginates by real measured row height instead
+      // of the browser's print engine — so it never leaves the underfilled pages / footer-pushed-
+      // down-by-blank-space problem that native window.print() can produce.
+      const pdfBtn = document.querySelector(`[data-act="pdf-${cfg.key}"]`);
+      if(pdfBtn) pdfBtn.onclick = ()=>{
+        const rows = rowsForAction();
+        if(!rows.length) return toast('No records match the current search/filters');
+        exportPDF(filenameWithPeriod(cfg.key+'_'+todayISO()), cfg.title, cfg.exportColumns, rows);
+        toast('PDF downloaded');
       };
       function bindRowSelection(){
         if(!cfg.selectable) return;
@@ -6156,9 +6246,11 @@ function printHeaderHtml(title, subtitle){
 /* ---- paginated print engine ----
    Native browser print has no reliable way to report "which page am I on", so accurate
    "Page X of Y" numbering (and avoiding a stray trailing blank page) means paginating the
-   report ourselves: chunk the content into fixed-height page containers sized to the @page
-   content box, each with page-break-after except the last, with its own footer pinned to the
-   bottom via flexbox.
+   report ourselves: chunk the content into page containers sized to the @page content box,
+   each with page-break-after except the last. Each page's footer sits directly beneath that
+   page's own content (not pinned to the bottom of a forced full-page-height container) — that
+   used to leave a stretch of blank space on any page that didn't fill exactly, with the footer
+   shoved down to the physical page edge below it.
    Rather than guess how tall each heading/row/image/footer will render, we measure it for
    real: a hidden probe element (same width and CSS classes as the actual print page) renders
    each piece once and its true offsetHeight is read back. That lets pages pack right up to the
@@ -6187,7 +6279,7 @@ function printSetOrientation(orientation){
   PRINT_CTX.contentWidthPx = Math.round(d.widthMM * 96/25.4);
   let style = document.getElementById('printOrientationStyle');
   if(!style){ style = document.createElement('style'); style.id = 'printOrientationStyle'; document.head.appendChild(style); }
-  style.textContent = `@page{ size:${d.pageCss}; margin:18mm 16mm; } .print-page{ min-height:${d.pageMM}mm; }`;
+  style.textContent = `@page{ size:${d.pageCss}; margin:18mm 16mm; }`;
 }
 /* Decides portrait vs landscape from the actual shape of what's being printed: wide tables
    (many columns) and side-by-side chart+data-table sections both need the extra horizontal
@@ -7820,7 +7912,7 @@ function pageUsers(){
           if(existingIds.has(id)){ skipped++; return; }
           existingIds.add(id);
           DB.users.push({
-            id, name:String(r.name||'').toUpperCase(), gender:(r.gender||'').toUpperCase()||'MALE', category, cls:String(r.cls||'').toUpperCase(),
+            id, name:String(r.name||'').toUpperCase(), gender:(r.gender||'').toUpperCase()||guessGenderFromName(r.name)||'UNSPECIFIED', category, cls:String(r.cls||'').toUpperCase(),
             teacher: category==='STAFF' ? (r.phone||'') : '',
             maxAllowed: category==='STAFF' ? 3 : 2, borrowed:0, overdue:0, totalBorrowed:0, strike:0,
             reset:'', discipline:'CLEARED', eligibility:'YES', status:'ACTIVE', notes:''
@@ -7878,10 +7970,19 @@ function viewMember(id){
   wrap.querySelector('#mClose').onclick = close;
   wrap.querySelector('#mCancel').onclick = close;
 }
+/* Auto-detect gender from an honorific prefix on the name (e.g. "MR. BALOGUN MAYOWA",
+   "MS. NNAMDI ANGEL"). Returns '' when no recognisable prefix is present, so callers can
+   fall back to a default without clobbering names that simply don't carry a title. */
+function guessGenderFromName(name){
+  const n = String(name||'').trim().toUpperCase();
+  if(/^(MR|MASTER|MSTR)\.?\s/.test(n)) return 'MALE';
+  if(/^(MRS|MS|MISS|MADAM|MDM)\.?\s/.test(n)) return 'FEMALE';
+  return '';
+}
 function userFields(u={}){
   const isStaff = (u.category||'STUDENT')==='STAFF';
   return [
-    {row:[{key:'id',label:'Member ID',required:true, default:u.id||nextSequentialId('ACL', DB.users.map(x=>x.id))},{key:'gender',label:'Gender', type:'select', options:['MALE','FEMALE'], default:u.gender||'MALE'}]},
+    {row:[{key:'id',label:'Member ID',required:true, default:u.id||nextSequentialId('ACL', DB.users.map(x=>x.id))},{key:'gender',label:'Gender', type:'select', options:['UNSPECIFIED','MALE','FEMALE'], default:u.gender||'UNSPECIFIED'}]},
     {key:'name', label:'Full name', required:true, default:u.name},
     {row:[
       {key:'category',label:'Category', type:'select', options:DB.setup.userCategories, default:u.category||'STUDENT'},
@@ -7927,6 +8028,16 @@ function openUserForm(id){
       saveDB(); render();
     }
   });
+  const nameEl = document.getElementById('f_name'), genderSel = document.getElementById('f_gender');
+  if(nameEl && genderSel){
+    let genderTouched = false;
+    genderSel.addEventListener('change', ()=>{ genderTouched = true; });
+    nameEl.addEventListener('input', ()=>{
+      if(genderTouched) return;
+      const g = guessGenderFromName(nameEl.value);
+      if(g) genderSel.value = g;
+    });
+  }
   const catSel = document.getElementById('f_category'), clsSel = document.getElementById('f_cls');
   const maxEl = document.getElementById('f_maxAllowed');
   if(catSel && clsSel){
@@ -9564,7 +9675,7 @@ function openCardModal(title, items){
       <div class="modal-foot">
         <button class="btn secondary" id="mCancel">Close</button>
         <button class="btn secondary" id="cardPrintBtn">🖶 Print</button>
-        ${items.length>1? `<button class="btn" id="cardExportBtn">📄 Export all (A4, 10-up)</button>` : ''}
+        ${items.length>1? `<button class="btn" id="cardExportBtn">📄 Export all (A4)</button>` : ''}
       </div>
     </div>`;
   document.body.appendChild(wrap);
@@ -9575,45 +9686,215 @@ function openCardModal(title, items){
   drawCodeGraphicsInto(items, wrap, 'idcode_');
   wrap.querySelector('#cardPrintBtn').onclick = ()=> printCards(title, items);
   const expBtn = wrap.querySelector('#cardExportBtn');
-  if(expBtn) expBtn.onclick = ()=> printCardsA4(title, items);
+  if(expBtn) expBtn.onclick = ()=> exportCardsPdf(title, items);
 }
+/* Loads an <img> from a data/blob URL and resolves once it's actually decoded — needed because
+   drawing the on-screen SVG icon onto a canvas (so it can be embedded in a PDF) has to wait for
+   the image to load first. */
+function loadImageAsync(src){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+/* Rasterizes the exact same avatar shown in the on-screen card preview (the person outline from
+   cardPhotoIcon(), or the 📖 book glyph) onto a high-res canvas with the same cream background
+   and rounded corners as .id-card-photo, so printed/exported cards use the identical icon
+   instead of a simplified stand-in vector drawing. Results are cached per kind (member/book) by
+   the caller since every card of that kind reuses the same image. */
+async function cardPhotoIconDataUrl(kind){
+  const box = 240;
+  const canvas = document.createElement('canvas');
+  canvas.width = box; canvas.height = box;
+  const ctx = canvas.getContext('2d');
+  const r = box*0.19;
+  ctx.fillStyle = '#F2EEDD';
+  ctx.beginPath();
+  ctx.moveTo(r,0); ctx.arcTo(box,0,box,box,r); ctx.arcTo(box,box,0,box,r); ctx.arcTo(0,box,0,0,r); ctx.arcTo(0,0,box,0,r);
+  ctx.closePath(); ctx.fill();
+  const iconSize = box*0.5, offset = (box-iconSize)/2;
+  if(kind==='book'){
+    ctx.font = Math.round(box*0.46)+'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    try{ ctx.fillText('📖', box/2, box/2+box*0.03); }catch(e){ /* emoji glyph unsupported — cream box alone is a fine fallback */ }
+  } else {
+    const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>`;
+    const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+    try{ const img = await loadImageAsync(svgUrl); ctx.drawImage(img, offset, offset, iconSize, iconSize); }
+    catch(e){ console.warn('Could not rasterize member icon', e); }
+  }
+  return canvas.toDataURL('image/png');
+}
+/* Renders a CODE128 barcode straight onto an offscreen canvas (JsBarcode can draw directly to
+   canvas — no SVG/rasterization step needed) at a generous pixel size, so the PNG stays crisp
+   once jsPDF scales it down to the card's printed dimensions. */
+function barcodeCanvasDataUrl(code){
+  const canvas = document.createElement('canvas');
+  window.JsBarcode(canvas, String(code), {format:'CODE128', displayValue:false, margin:6, height:110, width:3});
+  return canvas.toDataURL('image/png');
+}
+/* Draws the same offline QR encoder used on-screen straight onto a canvas as filled squares,
+   instead of building an SVG string and rasterizing it — one less conversion step. */
+function qrCanvasDataUrl(text, sizePx){
+  sizePx = sizePx || 260;
+  const canvas = document.createElement('canvas');
+  canvas.width = sizePx; canvas.height = sizePx;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,sizePx,sizePx);
+  if(window.QRCodeGen){
+    const qr = window.QRCodeGen(0,'M');
+    qr.addData(String(text));
+    qr.make();
+    const count = qr.getModuleCount();
+    const cell = sizePx / count;
+    ctx.fillStyle = '#000';
+    for(let r=0;r<count;r++){
+      for(let c=0;c<count;c++){
+        if(qr.isDark(r,c)) ctx.fillRect(Math.round(c*cell), Math.round(r*cell), Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+  return canvas.toDataURL('image/png');
+}
+/* Draws one member/catalogue card at (x,y), sized (w,h) — all in mm — directly onto a jsPDF
+   document. Shared by both the "Print" and "Export all" buttons (see buildCardsPdfDoc) so a
+   printed card and an exported one are pixel-for-pixel the same layout. */
+function drawIdCardPdf(doc, it, x, y, w, h, opts){
+  const { orgName, forestRGB, codeType, iconCache } = opts;
+  doc.setDrawColor(200); doc.setLineWidth(0.25);
+  doc.rect(x, y, w, h);
+
+  const headH = 6.5;
+  doc.setFillColor(forestRGB[0], forestRGB[1], forestRGB[2]);
+  doc.rect(x, y, w, headH, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont(undefined,'bold');
+  const orgFit = fitPdfTextSingleLine(doc, orgName, w*0.6, 7, 5.5);
+  doc.text(orgFit.text, x+3, y+headH/2+1.2);
+  doc.setFont(undefined,'normal'); doc.setFontSize(5.8);
+  doc.text(it.kind==='book' ? 'CATALOGUE CARD' : 'MEMBER CARD', x+w-3, y+headH/2+1.1, {align:'right'});
+  doc.setTextColor(0,0,0);
+
+  const avX = x+3, avY = y+headH+2, avSize = 10;
+  const iconKind = it.kind==='book' ? 'book' : 'member';
+  const iconUrl = iconCache && iconCache[iconKind];
+  if(iconUrl){
+    try{ doc.addImage(iconUrl, 'PNG', avX, avY, avSize, avSize); }catch(e){ console.warn('Icon embed failed', e); }
+  } else {
+    doc.setDrawColor(150); doc.setLineWidth(0.25);
+    doc.roundedRect(avX, avY, avSize, avSize, 1.2, 1.2);
+  }
+
+  const infoX = avX+avSize+3.5;
+  const infoMaxW = Math.max(10, x+w-3-infoX);
+  const nameFit = fitPdfTextSingleLine(doc, it.title||'', infoMaxW, 7.5, 6);
+  doc.setFont(undefined,'bold'); doc.setTextColor(20,20,20);
+  doc.text(nameFit.text, infoX, avY+3.2);
+  doc.setFont(undefined,'normal'); doc.setTextColor(90,90,90);
+  let ly = avY+6.6;
+  (it.lines||[]).filter(Boolean).slice(0,3).forEach(line=>{
+    const fit = fitPdfTextSingleLine(doc, line, infoMaxW, 6.2, 5);
+    doc.text(fit.text, infoX, ly);
+    ly += 3.3;
+  });
+  doc.setTextColor(0,0,0);
+
+  const isQr = codeType==='qr';
+  const codeBlockH = isQr ? 18 : 13;
+  const codeAreaTop = y+h-2-codeBlockH;
+  doc.setDrawColor(215); doc.setLineWidth(0.2);
+  doc.line(x+3, codeAreaTop-1.5, x+w-3, codeAreaTop-1.5);
+  doc.setFontSize(6); doc.setTextColor(70,70,70);
+  if(isQr){
+    const qrSize = 13;
+    try{ doc.addImage(qrCanvasDataUrl(it.code), 'PNG', x+(w-qrSize)/2, codeAreaTop, qrSize, qrSize); }catch(e){ console.warn('QR render failed for', it.code, e); }
+    doc.text(String(it.code), x+w/2, codeAreaTop+qrSize+3, {align:'center'});
+  } else {
+    const bw = w-16, bh = 9;
+    try{ doc.addImage(barcodeCanvasDataUrl(it.code), 'PNG', x+(w-bw)/2, codeAreaTop, bw, bh); }catch(e){ console.warn('Barcode render failed for', it.code, e); }
+    doc.text(String(it.code), x+w/2, codeAreaTop+bh+3, {align:'center'});
+  }
+  doc.setTextColor(0,0,0);
+}
+/* Builds the full multi-page jsPDF document for a set of cards — the single source of truth for
+   card layout, used by both printCards() and exportCardsPdf() so what prints and what exports
+   are always identical. Returns null (after toasting the reason) if the PDF library, barcode
+   library, or icon rasterization can't be readied. */
+async function buildCardsPdfDoc(items){
+  if(typeof window.jspdf==='undefined'){
+    toast('⚠ PDF export library failed to load — check your connection and reload the page.');
+    return null;
+  }
+  const codeType = DB.setup.codeType || 'barcode';
+  if(codeType!=='qr'){
+    try{ await loadBarcodeLibScript(); }
+    catch(e){ toast('Could not load the barcode library — check your connection'); return null; }
+  }
+  const iconCache = {};
+  const neededKinds = new Set(items.map(it=> it.kind==='book' ? 'book' : 'member'));
+  for(const k of neededKinds){ iconCache[k] = await cardPhotoIconDataUrl(k); }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 12, marginY = 12;
+  const cardW = 88, cardH = 49, gapX = 6, gapY = 5;
+  const cols = 2;
+  const rows = Math.max(1, Math.floor((pageH - 2*marginY + gapY) / (cardH + gapY)));
+  const perPage = cols*rows;
+  const opts = { orgName: DB.setup.institutionName||'ALCMS', forestRGB: cssVarRGB('--forest','#1F3A2E'), codeType, iconCache };
+
+  items.forEach((it,i)=>{
+    const posInPage = i % perPage;
+    if(i>0 && posInPage===0) doc.addPage();
+    const col = posInPage % cols;
+    const row = Math.floor(posInPage/cols);
+    const x = marginX + col*(cardW+gapX);
+    const y = marginY + row*(cardH+gapY);
+    drawIdCardPdf(doc, it, x, y, cardW, cardH, opts);
+  });
+  return doc;
+}
+/* "Print" — opens the exact same PDF that "Export all" saves, in a new tab, with autoPrint() so
+   the browser's native PDF print dialog comes up automatically. This is what makes print and
+   export match exactly: both go through buildCardsPdfDoc(), so there's no separate HTML/CSS
+   print path left to drift out of sync or get reflowed differently by the print pipeline.
+   The tab is opened synchronously (before the async PDF build) so pop-up blockers see it as a
+   direct result of the click, not a background pop-up. */
 async function printCards(title, items){
   if(!items.length) return toast('Nothing to print');
-  $('#printArea').innerHTML = `
-    <div class="print-page">
-      <div class="print-page-body">
-        ${printHeaderHtml(title, `${items.length} card(s)`)}
-        <div class="id-card-grid print-id-card-grid">${idCardGridHtml(items)}</div>
-      </div>
-      ${printFooterHtml(1,1)}
-    </div>`;
-  const ok = await drawCodeGraphicsInto(items, $('#printArea'), 'idcode_');
-  if(!ok) return;
-  document.body.classList.add('printing');
-  setTimeout(()=>{ window.print(); }, 120);
+  const win = window.open('', '_blank');
+  const doc = await buildCardsPdfDoc(items);
+  if(!doc){ if(win && !win.closed) win.close(); return; }
+  doc.autoPrint();
+  const blobUrl = doc.output('bloburl');
+  if(win && !win.closed){
+    win.location = blobUrl;
+  } else {
+    toast('Pop-up blocked — saving the PDF instead so you can print it manually');
+    doc.save(slugify(title)+'.pdf');
+  }
 }
-/* Global export: every card laid out 10-up (2 columns × 5 rows) on A4 pages, ready to cut. */
-async function printCardsA4(title, items){
+/* "Export all" — saves the same PDF straight to disk instead of opening it. */
+async function exportCardsPdf(title, items){
   if(!items.length) return toast('Nothing to export');
-  const perPage = 10;
-  const pages = [];
-  for(let i=0;i<items.length;i+=perPage) pages.push(items.slice(i,i+perPage));
-  $('#printArea').innerHTML = pages.map((pageItems,pi)=>`
-    <div class="print-page a4-card-page">
-      <div class="print-page-body">
-        <div class="id-card-a4-grid">${pageItems.map((it,j)=> idCardHtml(it, pi*perPage+j)).join('')}</div>
-      </div>
-    </div>`).join('');
-  const ok = await drawCodeGraphicsInto(items, $('#printArea'), 'idcode_');
-  if(!ok) return;
-  document.body.classList.add('printing');
-  setTimeout(()=>{ window.print(); }, 150);
+  const doc = await buildCardsPdfDoc(items);
+  if(!doc) return;
+  doc.save(slugify(title)+'.pdf');
+  toast(`📄 Saved ${items.length} card(s) to PDF`);
 }
 function openMemberCardModal(id){
   const u = DB.users.find(x=>x.id===id); if(!u) return;
   openCardModal('Member ID card — '+u.name, memberCardItems([u]));
 }
-function openAllMemberCardsModal(){ openCardModal('Member ID cards', memberCardItems(DB.users)); }
+function openAllMemberCardsModal(){
+  const eligible = DB.users.filter(u=>u.status!=='INACTIVE');
+  const skipped = DB.users.length - eligible.length;
+  if(skipped) toast(`⛔ ${skipped} inactive member(s) exempted from card generation — ${eligible.length} card(s) prepared`);
+  openCardModal('Member ID cards', memberCardItems(eligible));
+}
 function openBookCardModal(acc){
   const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
   openCardModal('Catalogue card — '+b.title, bookCardItems([b]));
@@ -9734,23 +10015,24 @@ async function startCameraScan(wrap, onDetect){
   }
 }
 function openScanModal(mode){
-  // mode: 'issue' | 'return' | 'lookup' | 'isbn' | 'batch' | 'selfcheck'
+  // mode: 'issue' | 'return' | 'lookup' | 'isbn' | 'batch' | 'selfcheck' | 'equipment'
   const isIsbnMode = mode==='isbn';
+  const isEquipmentMode = mode==='equipment';
   const wrap = document.createElement('div');
   wrap.className = 'modal-backdrop'; wrap.id = 'mb';
   const cameraOk = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   wrap.innerHTML = `
     <div class="modal">
-      <div class="modal-head"><h3>📷 ${isIsbnMode? 'Scan an ISBN barcode' : 'Scan a barcode'}</h3><button id="mClose">✕</button></div>
+      <div class="modal-head"><h3>📷 ${isIsbnMode? 'Scan an ISBN barcode' : isEquipmentMode? 'Scan an asset tag / QR code' : 'Scan a barcode'}</h3><button id="mClose">✕</button></div>
       <div class="modal-body">
         <div id="scanCamBox" class="scan-cam-box" style="${cameraOk?'':'display:none'}">
           <video id="scanVideo" playsinline muted></video>
           <div class="scan-cam-frame"></div>
         </div>
-        <p class="field-hint" id="scanCamStatus">${cameraOk? (isIsbnMode? 'Starting the camera — point it at the barcode on the back cover…' : 'Starting the camera — allow camera access if your browser asks…') : "This browser doesn't support camera access (no getUserMedia API). A mobile camera / code scanner device, or typing the code below, still works."}</p>
+        <p class="field-hint" id="scanCamStatus">${cameraOk? (isIsbnMode? 'Starting the camera — point it at the barcode on the back cover…' : isEquipmentMode? 'Starting the camera — point it at the asset label\'s barcode or QR code…' : 'Starting the camera — allow camera access if your browser asks…') : "This browser doesn't support camera access (no getUserMedia API). A mobile camera / code scanner device, or typing the code below, still works."}</p>
         <div class="field" style="position:relative">
-          <label>${isIsbnMode? 'Or type / scan the ISBN' : 'Or type / scan with a mobile camera or code scanner device'}</label>
-          <input type="text" id="scanCodeInput" placeholder="${isIsbnMode? 'Type or scan the ISBN…' : 'Type a name or code, or scan…'}" autocomplete="off">
+          <label>${isIsbnMode? 'Or type / scan the ISBN' : isEquipmentMode? 'Or type / scan the asset tag' : 'Or type / scan with a mobile camera or code scanner device'}</label>
+          <input type="text" id="scanCodeInput" placeholder="${isIsbnMode? 'Type or scan the ISBN…' : isEquipmentMode? 'Type or scan the asset tag / serial no.…' : 'Type a name or code, or scan…'}" autocomplete="off">
           <div id="scanSuggest" class="scan-suggest"></div>
         </div>
         <div id="scanVerifiedRow" class="scan-verified-row" style="display:none">
@@ -9811,6 +10093,17 @@ function openScanModal(mode){
       resEl.innerHTML = `<p style="margin:8px 0"><strong>Captured ISBN:</strong> ${esc(digits)}</p>`;
       close();
       if(isbnEl) lookupBookByIsbn();
+      return;
+    }
+    if(isEquipmentMode){
+      paused = true;
+      const tagEl = document.getElementById('f_tag');
+      if(tagEl) tagEl.value = code;
+      const clash = DB.equipment.find(x=> String(x.tag||'').toLowerCase()===code.toLowerCase());
+      resEl.innerHTML = clash
+        ? `<p style="margin:8px 0"><strong>Captured tag:</strong> ${esc(code)}</p>` + statusLineHtml(false, `Already in use by "${clash.name}" — pick a different tag or edit that asset instead`)
+        : `<p style="margin:8px 0"><strong>Captured tag:</strong> ${esc(code)}</p>`;
+      setTimeout(close, clash?1400:400);
       return;
     }
     const book = DB.catalogue.find(b=>b.acc.toLowerCase()===code.toLowerCase());
@@ -10682,7 +10975,7 @@ function openEquipmentForm(id){
         {key:'name', label:'Item name', required:true, default:existing?existing.name:''},
       ]},
       {row:[
-        {key:'tag', label:'Asset tag / Serial no. (optional — auto-generated if left blank)', default:existing?existing.tag:''},
+        {key:'tag', label:'Asset tag / Serial no. (optional — auto-generated if left blank)', default:existing?existing.tag:'', extra:`<button type="button" class="btn secondary small" style="flex:none" onclick="openScanModal('equipment')" title="Scan a barcode/QR code label with your camera">📷 Scan</button>`},
         {key:'location', label:'Location / Shelf', default:existing?existing.location:''},
       ]},
       {row:[
@@ -11534,9 +11827,10 @@ function pageSettings(){
     <div class="panel-head"><h3>Backgrounds</h3><div class="hint">The in-app background image, and section, modal &amp; title bar background styles — all in one place</div></div>
     <div class="panel-head" style="margin-top:0"><h4 style="font-size:13px">In-app background image</h4><div class="hint">A subtle image behind the app content — cards stay readable on top of it</div></div>
     <div class="field-row">
-      <div class="field"><label>Background image</label><input type="file" accept="image/*" id="appBgInput"></div>
-      <div class="field"><label>Opacity (${DB.setup.appBackgroundOpacity??15}%)</label><input type="range" id="appBgOpacity" min="0" max="60" value="${DB.setup.appBackgroundOpacity??15}" oninput="this.previousElementSibling.textContent=this.value;"></div>
+      <div class="field"><label>Background image</label><input type="file" accept="image/*" id="appBgInput" onchange="previewAppBackground()"></div>
+      <div class="field"><label>Opacity (${DB.setup.appBackgroundOpacity??15}%)</label><input type="range" id="appBgOpacity" min="0" max="60" value="${DB.setup.appBackgroundOpacity??15}" oninput="previewAppBackground()"></div>
     </div>
+    <p class="field-hint" style="margin:-6px 0 8px">Previewing live — click "Save background" below to keep it, or leave this page without saving to discard.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <button class="btn secondary" onclick="saveAppBackground()">Save background</button>
       ${DB.setup.appBackgroundImage? `<button class="btn danger" onclick="clearAppBackground()">Remove background</button>`:''}
@@ -11578,8 +11872,8 @@ function pageSettings(){
   <div class="card panel">
     <div class="panel-head"><h3>Clock &amp; date</h3><div class="hint">How the clock and date display across the app</div></div>
     <div class="field-row">
-      <div class="field"><label>Clock format</label><select id="setClockFormat"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
-      <div class="field"><label>Date format</label><select id="setDateFormat">
+      <div class="field"><label>Clock format</label><select id="setClockFormat" onchange="previewClockDatePrefs()"><option value="24h" ${DB.setup.clockFormat==='24h'?'selected':''}>24-hour</option><option value="12h" ${DB.setup.clockFormat==='12h'?'selected':''}>12-hour (AM/PM)</option></select></div>
+      <div class="field"><label>Date format</label><select id="setDateFormat" onchange="previewClockDatePrefs()">
         ${['DD MMM YYYY','MM-DD-YYYY','DD-MM-YYYY','YYYY-MM-DD','Weekday, DD MMMM YYYY','Wkday, DD MMM YYYY'].map(f=>`<option ${DB.setup.dateFormat===f?'selected':''}>${f}</option>`).join('')}
       </select></div>
     </div>
@@ -11587,19 +11881,20 @@ function pageSettings(){
       <div class="field"><label>Clock font</label><select id="setClockFont" onchange="applyClockFont(this.value)">${Object.entries(CLOCK_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.clockFont||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
       <div class="field"><label>Date font</label><select id="setDateFontDisplay" onchange="applyDateFont(this.value)">${Object.entries(DATE_FONTS).map(([k,v])=>`<option value="${k}" ${(PREFS.dateFont||'default')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
     </div>
+    <p class="field-hint" style="margin:4px 0 8px">Previewing live — click "Save" below to keep it, or leave this page without saving to discard.</p>
     <button class="btn secondary" onclick="saveClockPrefs()">Save</button>
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Lockscreen (sign-in screen)</h3><div class="hint">Background image, its opacity, the login box appearance, the clock style, decoration and quotes shown in the carousel</div></div>
     <div class="field-row field-row-3">
-      <div class="field"><label>Sign-in background image</label><input type="file" accept="image/*" id="authBgInput"></div>
-      <div class="field"><label>Background opacity (${DB.setup.authBackgroundOpacity??45}%)</label><input type="range" id="authBgOpacity" min="10" max="90" value="${DB.setup.authBackgroundOpacity??45}" oninput="this.previousElementSibling.textContent=this.previousElementSibling.textContent.replace(/\\d+/,this.value);"></div>
+      <div class="field"><label>Sign-in background image</label><input type="file" accept="image/*" id="authBgInput" onchange="previewAuthBackground()"></div>
+      <div class="field"><label>Background opacity (${DB.setup.authBackgroundOpacity??45}%)</label><input type="range" id="authBgOpacity" min="10" max="90" value="${DB.setup.authBackgroundOpacity??45}" oninput="this.previousElementSibling.textContent=this.previousElementSibling.textContent.replace(/\\d+/,this.value); previewAuthBackground();"></div>
       <div class="field"><label>Login box opacity (<span id="authBoxOpacityVal">${PREFS.authBoxOpacity??90}</span>%)</label><input type="range" id="setAuthBoxOpacity" min="30" max="100" value="${PREFS.authBoxOpacity??90}" oninput="document.getElementById('authBoxOpacityVal').textContent=this.value; document.documentElement.style.setProperty('--auth-box-opacity', this.value/100);"></div>
     </div>
-    <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background. Its colour is set above, in Backgrounds → Login container colour.</p>
+    <p class="field-hint">Login box opacity controls how see-through the frosted glass sign-in form container is over the background. Its colour is set above, in Backgrounds → Login container colour. The background image and opacity above preview live on the (currently hidden) sign-in screen — click "Save lockscreen appearance" below to keep it, or leave this page without saving to discard.</p>
     <div class="panel-head" style="margin-top:4px"><h4 style="font-size:13px">Sign-in screen clock &amp; decoration style</h4><div class="hint">Clock style, and the corner flourish behind the sign-in form</div></div>
     <div class="field-row">
-      <div class="field"><label>Clock style</label><select id="setAuthClockStyle">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Clock style</label><select id="setAuthClockStyle" onchange="previewClockDatePrefs()">${Object.entries(AUTH_CLOCK_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.authClockStyle||'digital')===k?'selected':''}>${v.label}</option>`).join('')}</select></div>
       <div class="field"><label>Decoration style</label><select id="setLockscreenDecorStyle" onchange="previewLockscreenDecorStyle(this.value)">${Object.entries(LOCKSCREEN_DECOR_STYLES).map(([k,v])=>`<option value="${k}" ${(PREFS.lockscreenDecorStyle||'circle')===k?'selected':''}>${v}</option>`).join('')}</select></div>
     </div>
     <p class="field-hint" style="margin:4px 0 10px">Tip: clicking the clock on the sign-in screen also cycles through the decoration styles.</p>
@@ -11628,12 +11923,15 @@ function pageSettings(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Weather ambience</h3><div class="hint">A soft touch on the Home greeting — 10 times of day (late night, dawn, sunrise, morning, noon, afternoon, golden hour, sunset, evening, night), each with its own look</div></div>
-    <div class="field"><label><input type="checkbox" id="setWeatherAmbience" ${PREFS.weatherAmbience?'checked':''}> Show weather ambience on the Home greeting</label></div>
+    <div class="field"><label><input type="checkbox" id="setWeatherAmbience" ${PREFS.weatherAmbience?'checked':''} onchange="previewWeatherAmbiencePrefs()"> Show weather ambience on the Home greeting</label></div>
     <div class="field-row">
-      <div class="field"><label>Scene</label><select id="setWeatherSet">${Object.entries(WEATHER_SETS).map(([k,v])=>`<option value="${k}" ${(PREFS.weatherAmbienceSet||'hills')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
-      <div class="field"><label>Intensity</label><select id="setWeatherStyle"><option value="soft" ${PREFS.weatherAmbienceStyle==='soft'?'selected':''}>Soft (subtle)</option><option value="vivid" ${PREFS.weatherAmbienceStyle==='vivid'?'selected':''}>Vivid (more visible)</option></select></div>
+      <div class="field"><label>Scene</label><select id="setWeatherSet" onchange="previewWeatherAmbiencePrefs()">${Object.entries(WEATHER_SETS).map(([k,v])=>`<option value="${k}" ${(PREFS.weatherAmbienceSet||'hills')===k?'selected':''}>${esc(v.label)}</option>`).join('')}</select></div>
+      <div class="field"><label>Intensity</label><select id="setWeatherStyle" onchange="previewWeatherAmbiencePrefs()"><option value="soft" ${PREFS.weatherAmbienceStyle==='soft'?'selected':''}>Soft (subtle)</option><option value="vivid" ${PREFS.weatherAmbienceStyle==='vivid'?'selected':''}>Vivid (more visible)</option></select></div>
     </div>
     <p class="field-hint">Pick the scene that's drawn behind the greeting — the colours still change automatically with the time of day.</p>
+    <p class="field-hint" style="margin:6px 0 4px">Live preview — how this will look on the Home greeting:</p>
+    <div class="quote-live-preview" id="weatherAmbiencePreviewBox">${PREFS.weatherAmbience ? renderWeatherAmbience() : '<p class="field-hint">Ambience is off — nothing will show on the Home greeting.</p>'}</div>
+    <p class="field-hint" style="margin:8px 0">Previewing live — click "Save" below to keep it, or leave this page without saving to discard.</p>
     <button class="btn secondary" onclick="saveWeatherAmbiencePrefs()">Save</button>
   </div>`;
 }
@@ -11799,10 +12097,72 @@ function pageBackup(){
     <button class="btn secondary" onclick="saveToGoogleDrive()">📁 Download backup &amp; open Google Drive</button>
   </div>
   <div class="card panel">
-    <div class="panel-head"><h3>Write data into the app itself</h3><div class="hint">Bakes everything currently here into a fresh copy of ALCMS</div></div>
-    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">A file on its own can't rewrite itself while it's running — but this generates an updated starting file with all of today's catalogue, members, circulation and settings baked in as its default data. Use it to hand off an up-to-date copy, or to replace this file with one that opens straight into today's state.</p>
-    <button class="btn secondary" onclick="downloadUpdatedApp()">⭳ Download updated starting data</button>
+    <div class="panel-head"><h3>Data portal — export/import by category</h3><div class="hint">Independent JSON files, one per data type</div></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Unlike the combined data backup above, each row here is its own self-contained JSON file — download just the catalogue, just members, just Assets &amp; Equipment, and so on. Import an individual file to overwrite <em>only</em> that one category, leaving everything else untouched. Useful for editing one dataset offline (e.g. in a spreadsheet-to-JSON tool) and pushing just that piece back in.</p>
+    <div class="table-wrap" style="margin-top:10px">
+      <table class="datatable"><thead><tr><th>Category</th><th>Records</th><th></th></tr></thead>
+      <tbody>${DATA_PORTAL_CATEGORIES.map(c=>{
+        const val = DB[c.key];
+        const count = Array.isArray(val) ? val.length : (val && typeof val==='object' ? Object.keys(val).length : 0);
+        return `<tr>
+          <td><strong>${esc(c.label)}</strong><div class="field-hint" style="margin-top:2px">${esc(c.hint)}</div></td>
+          <td>${count}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn secondary small" onclick="downloadCategoryJSON('${c.key}')">⭳ Export</button>
+            <label class="btn secondary small" style="cursor:pointer">⭱ Import
+              <input type="file" accept="application/json" onchange="importCategoryJSON('${c.key}', this.files[0]); this.value='';" style="display:none">
+            </label>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+      </table>
+    </div>
+    <p class="field-hint" style="margin-top:6px">Importing replaces that category's data immediately (after a confirmation) — it doesn't merge with what's already there. Export the current version first if you might want to undo.</p>
   </div>`;
+}
+/* Independent per-category export/import — each entry names a top-level DB key, a display
+   label, and a short note on what shape the JSON is (array of records vs a single settings
+   object), so restoring one category never touches any other. */
+const DATA_PORTAL_CATEGORIES = [
+  {key:'catalogue', label:'Catalogue (titles)', hint:'Array of book/title records'},
+  {key:'users', label:'Members', hint:'Array of member records'},
+  {key:'equipment', label:'Assets & Equipment', hint:'Array of asset/equipment records'},
+  {key:'circulation', label:'Circulation transactions', hint:'Array of issue/return records'},
+  {key:'feedback', label:'Feedback', hint:'Array of feedback entries'},
+  {key:'registerLog', label:'Register / visit log', hint:'Array of desk sign-in & class period visit entries'},
+  {key:'reservations', label:'Reservations', hint:'Array of reservation records'},
+  {key:'notifications', label:'Notifications', hint:'Array of notification records'},
+  {key:'consequenceLog', label:'Consequence log', hint:'Array of discipline/consequence records'},
+  {key:'scheduleDays', label:'Schedule — days', hint:'Array of schedule day rows'},
+  {key:'scheduleRoster', label:'Schedule — roster', hint:'Array of roster rows'},
+  {key:'scheduleSubjects', label:'Schedule — subjects', hint:'Array of subject codes'},
+  {key:'setup', label:'Setup & settings', hint:'Single settings object (Dewey lists, classes, fines, codes, etc.)'},
+];
+function downloadCategoryJSON(key){
+  const cat = DATA_PORTAL_CATEGORIES.find(c=>c.key===key);
+  const val = DB[key];
+  downloadBlob('alcms_'+key+'_'+todayISO()+'.json', new Blob([JSON.stringify(val, null, 2)], {type:'application/json'}));
+  toast((cat?cat.label:key)+' exported');
+}
+function importCategoryJSON(key, file){
+  if(!file) return;
+  if(!isAdmin()) return requireAdmin('import data');
+  const cat = DATA_PORTAL_CATEGORIES.find(c=>c.key===key);
+  const label = cat ? cat.label : key;
+  const expectArray = key!=='setup';
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let parsed;
+    try{ parsed = JSON.parse(reader.result); }
+    catch(e){ toast('Could not read that file: not valid JSON'); return; }
+    if(expectArray && !Array.isArray(parsed)){ toast(label+' expects a JSON array — that file is not one'); return; }
+    if(!expectArray && (!parsed || typeof parsed!=='object' || Array.isArray(parsed))){ toast(label+' expects a single JSON object — that file is not one'); return; }
+    if(!confirm(`Overwrite "${label}" with this file's ${expectArray? parsed.length+' record(s)' : 'settings'}? This replaces that category only — everything else is untouched. This can't be undone unless you exported a copy first.`)) return;
+    DB[key] = parsed;
+    if(key==='setup') migrateNewFeatureData(DB); // re-apply defaults for any settings the imported file omits
+    saveDB(); render(); toast(label+' imported');
+  };
+  reader.readAsText(file);
 }
 function refreshLogoPreviewDOM(){
   const el = document.getElementById('logoPreview');
@@ -11822,7 +12182,7 @@ function refreshLogoPreviewDOM(){
       rmBtn = document.createElement('button');
       rmBtn.className='btn danger small'; rmBtn.id='logoRemove'; rmBtn.style.marginLeft='6px'; rmBtn.textContent='Remove';
       rmBtn.onclick = ()=>{
-        DB.setup.institutionLogo=null; DB.setup.institutionLogoPos=null; saveDB(); refreshLogoPreviewDOM(); renderNav(); toast('Logo removed');
+        DB.setup.institutionLogo=null; DB.setup.institutionLogoPos=null; saveDB(); refreshLogoPreviewDOM(); applyAuthBranding(); renderNav(); toast('Logo removed');
         if(PREFS.palette==='from_logo'){ PREFS.palette='forest'; PREFS.paletteAuto=true; applyPalette('forest'); savePrefs(); render(); }
       };
       const uploadLabel = uploadRow.querySelector('label.btn'); if(uploadLabel) uploadLabel.after(rmBtn);
@@ -11836,7 +12196,7 @@ function bindSettingsUploaders(){
     if(file.size > 800*1024){ toast('Please choose an image under 800KB'); return; }
     const reader = new FileReader();
     reader.onload = ()=>{
-      DB.setup.institutionLogo = reader.result; DB.setup.institutionLogoPos = {x:50,y:50}; saveDB(); refreshLogoPreviewDOM(); toast('Logo updated');
+      DB.setup.institutionLogo = reader.result; DB.setup.institutionLogoPos = {x:50,y:50}; saveDB(); refreshLogoPreviewDOM(); applyAuthBranding(); toast('Logo updated');
       generatePaletteFromLogo(reader.result);
     };
     reader.readAsDataURL(file);
@@ -11849,7 +12209,7 @@ function bindSettingsUploaders(){
   if(logoPreviewEl) logoPreviewEl.onclick = ()=>{ if(DB.setup.institutionLogo) openImageLightbox(DB.setup.institutionLogo); };
   const logoRemove = document.getElementById('logoRemove');
   if(logoRemove) logoRemove.onclick = ()=>{
-    DB.setup.institutionLogo = null; DB.setup.institutionLogoPos = null; saveDB(); refreshLogoPreviewDOM(); toast('Logo removed');
+    DB.setup.institutionLogo = null; DB.setup.institutionLogoPos = null; saveDB(); refreshLogoPreviewDOM(); applyAuthBranding(); toast('Logo removed');
     if(PREFS.palette==='from_logo'){ PREFS.palette='forest'; PREFS.paletteAuto=true; applyPalette('forest'); savePrefs(); render(); }
   };
   const posX = document.getElementById('logoPosX'), posY = document.getElementById('logoPosY');
@@ -12728,11 +13088,12 @@ function saveClockPrefs(){
   document.documentElement.style.setProperty('--clock-font', (CLOCK_FONTS[PREFS.clockFont]||CLOCK_FONTS.digital).stack);
   document.documentElement.style.setProperty('--date-font', (DATE_FONTS[PREFS.dateFont]||DATE_FONTS.default).stack);
   appearancePreviewDirty = false;
+  clockPrefsPreviewOriginal = null;
   savePrefs(); saveDB(); render(); toast('Preferences saved');
 }
 function saveInstitution(){
   DB.setup.institutionName = $('#setInstitution').value.trim();
-  saveDB(); render(); renderNav(); toast('Institution name saved');
+  saveDB(); render(); renderNav(); applyAuthBranding(); toast('Institution name saved');
 }
 /* ================= write current data back into a downloadable copy of the app itself ================= */
 function catalogueToRows(){ return DB.catalogue.map(b=>[b.acc,b.title,b.info,b.edition,b.vol,b.cls,b.author,b.publisher,b.year,b.category,b.division,b.mainClass,b.shelf,b.dateAdded,b.condition,b.available]); }
@@ -13272,6 +13633,7 @@ function saveWeatherAmbiencePrefs(){
   if($('#setWeatherAmbience')) PREFS.weatherAmbience = $('#setWeatherAmbience').checked;
   if($('#setWeatherStyle')) PREFS.weatherAmbienceStyle = $('#setWeatherStyle').value;
   if($('#setWeatherSet')) PREFS.weatherAmbienceSet = $('#setWeatherSet').value;
+  weatherPrefsPreviewOriginal = null;
   savePrefs(); render(); toast('Preferences saved');
 }
 function toggleWhatsAppReceipts(on){
@@ -13451,6 +13813,24 @@ function render(){
   }
   if(lockscreenElementsDraft && route!=='settings'){
     applyLockscreenElements(PREFS.lockscreenElements); lockscreenElementsDraft = null;
+  }
+  if(clockPrefsPreviewOriginal && route!=='settings'){
+    PREFS.clockFormat = clockPrefsPreviewOriginal.clockFormat;
+    PREFS.dateFormat = clockPrefsPreviewOriginal.dateFormat;
+    PREFS.authClockStyle = clockPrefsPreviewOriginal.authClockStyle;
+    clockPrefsPreviewOriginal = null; tickClocks();
+  }
+  if(weatherPrefsPreviewOriginal && route!=='settings'){
+    PREFS.weatherAmbience = weatherPrefsPreviewOriginal.weatherAmbience;
+    PREFS.weatherAmbienceStyle = weatherPrefsPreviewOriginal.weatherAmbienceStyle;
+    PREFS.weatherAmbienceSet = weatherPrefsPreviewOriginal.weatherAmbienceSet;
+    weatherPrefsPreviewOriginal = null;
+  }
+  if(appBackgroundPreviewDirty && route!=='settings'){
+    appBackgroundDraftImage = null; appBackgroundPreviewDirty = false; applyAppBackground();
+  }
+  if(authBackgroundPreviewDirty && route!=='settings'){
+    authBackgroundDraftImage = null; authBackgroundPreviewDirty = false; applyAuthBackground();
   }
   if(route !== lastRenderedRoute){
     // Every page should open at the top rather than keeping the previous page's scroll position.
