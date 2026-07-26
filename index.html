@@ -8486,7 +8486,10 @@ function pageMemberProfile(){
   let tabBody = '';
   if(activeTab==='loans'){
     tabBody = `
-      <h4 style="margin:0 0 6px">Current (${active.length})</h4>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+        <h4 style="margin:0">Current (${active.length})</h4>
+        ${active.length && isAdmin() ? `<button class="btn secondary small" onclick="sendBulkReminderViaWhatsApp('${esc(u.id)}')">📱 WhatsApp reminder — all borrowed</button>` : ''}
+      </div>
       ${active.length? `<table class="datatable"><thead><tr><th>Title</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>
         ${active.map(t=>`<tr><td>${esc(t.title)}</td><td>${fmtDate(t.dueDate)}</td><td><span class="badge ${txnStatus(t)==='OVERDUE'?'red':'gold'}">${txnStatus(t)}</span></td>
           <td><button class="btn secondary small" onclick="renewLoan('${esc(t.trxId)}')">Renew</button></td></tr>`).join('')}
@@ -9566,8 +9569,8 @@ function fulfillReservationsForReturn(acc, book){
   const user = DB.users.find(u=>u.id===next.userId);
   const recipient = userRecipient(user);
   if(recipient && book){
-    const msg = `Hi — good news, the title "${next.title}" reserved for ${next.name} is now back and available for pickup at the library.`;
-    window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+    const html = waReservationReadyCardHtml({name:next.name, title:next.title, acc});
+    openWaCardModal({html, filenameBase:`reservation-ready-${acc}`, phone:recipient.phone});
   }
 }
 
@@ -10618,8 +10621,308 @@ function formatLibraryWhatsAppMessage({kind, name, title, acc, dateBorrowed, due
   lines.push('Librarian');
   return lines.join('\n');
 }
-function sendReminder(trxId, opts={}){
-  if(!isAdmin()) return requireAdmin('log reminders');
+/* ================= WhatsApp: styled card receipts/reminders (image/PDF, not plain text) =================
+   Every receipt, reminder and notification that goes out over WhatsApp is rendered as an actual
+   designed card — portrait, receipt-shaped, in the institution's own theme colours and typography
+   (light/dark, Personalization fonts, everything) — and shared as an image, or a PDF for anyone who
+   prefers a file, instead of a plain wa.me text message. wa.me has no way to attach a file via URL,
+   so the real "send" paths, in order of preference, are: the Web Share API with the image file
+   (native share sheet, jumps straight into WhatsApp — works well on mobile); copying the image to
+   the clipboard so it can be pasted straight into an already-open WhatsApp Web/Desktop chat; or,
+   as a last resort, downloading the file to attach by hand. The modal offers whichever of these the
+   browser actually supports. */
+/* Snapshots the *live* theme — current light/dark palette plus whatever fonts Personalization has
+   picked — as concrete values. html2canvas can't reliably resolve CSS custom properties or track
+   font-family inheritance when rasterizing (see the note above finishPrintOutput), so every card
+   is built from these resolved values rather than var(--x) references. */
+function waResolveTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => { const val = (cs.getPropertyValue(name)||'').trim(); return val || fallback; };
+  const bodyFont = (APP_FONTS[PREFS.appFont]||APP_FONTS.default).stack;
+  const headFont = (HEADING_FONTS[PREFS.headingFont]||HEADING_FONTS.default).stack;
+  const bodyWeight = PREFS.bodyWeight==='default' ? '400' : (FONT_WEIGHTS[PREFS.bodyWeight]||FONT_WEIGHTS.normal).value;
+  const headWeight = PREFS.headingWeight==='default' ? '700' : (FONT_WEIGHTS[PREFS.headingWeight]||FONT_WEIGHTS.bold).value;
+  return {
+    ink: v('--ink','#132019'), forest: v('--forest','#1F3A2E'), forestDark: v('--forest-dark','#122419'),
+    parchment: v('--parchment','#F6F1E2'), parchmentDim: v('--parchment-dim','#EDE5CE'), card: v('--card','#FFFDF6'),
+    brass: v('--brass','#B8863E'), brassLight: v('--brass-light','#D9A94F'), terracotta: v('--terracotta','#A8452F'),
+    line: v('--line','#DDD3B4'), ok: v('--ok','#2F6B44'), warn: v('--warn','#A8452F'),
+    muted: v('--muted','#5F6E62'), mutedLabel: v('--muted-label','#7A6A45'),
+    bodyFont, headFont, bodyWeight, headWeight,
+  };
+}
+function waCardStatusMeta(T, kind, daysOverdue){
+  if(kind==='reminder' || kind==='bulkReminder') return (daysOverdue>0)
+    ? {label:`OVERDUE · ${daysOverdue} DAY${daysOverdue===1?'':'S'}`, bg:T.terracotta, fg:T.card}
+    : {label:'DUE SOON', bg:T.brass, fg:T.card};
+  if(kind==='returned') return {label:'RETURNED', bg:T.ok, fg:T.card};
+  if(kind==='ready') return {label:'READY FOR PICKUP', bg:T.ok, fg:T.card};
+  return {label:'BORROWED', bg:T.forest, fg:T.card}; // kind==='borrowed'
+}
+function waCardTitleFor(kind){
+  return kind==='reminder' ? 'Library Reminder'
+       : kind==='bulkReminder' ? 'Library Reminder'
+       : kind==='returned' ? 'Library Return Receipt'
+       : kind==='ready' ? 'Reservation Ready'
+       : 'Library Borrow Receipt';
+}
+/* Header banner + gold divider, shared by every card. Portrait: centred, stacked, not a wide
+   left-to-right banner — reads like the top of a till receipt rather than a letterhead. */
+function waCardHeader(T, kind, daysOverdue){
+  const org = (DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS Library';
+  const logo = DB.setup && DB.setup.institutionLogo;
+  const pos = (DB.setup && DB.setup.institutionLogoPos) || {x:50,y:50};
+  const status = waCardStatusMeta(T, kind, daysOverdue||0);
+  return `
+    <div style="background:${T.forest};padding:24px 22px 20px;text-align:center;">
+      ${logo ? `<img src="${logo}" crossorigin="anonymous" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:${pos.x}% ${pos.y}%;border:2px solid ${T.brass};margin:0 auto 10px;display:block;">` : `<div style="width:52px;height:52px;border-radius:50%;background:${T.brass};display:flex;align-items:center;justify-content:center;font-size:22px;color:${T.forest};font-weight:700;margin:0 auto 10px;">📚</div>`}
+      <div style="color:${T.parchment};font-size:11.5px;letter-spacing:.09em;font-weight:600;opacity:.9;">${esc(org.toUpperCase())}</div>
+      <div style="color:${T.card};font-size:19px;font-weight:${T.headWeight};font-family:${T.headFont};margin-top:3px;">${esc(waCardTitleFor(kind))}</div>
+      <div style="display:inline-block;margin-top:10px;background:${status.bg};color:${status.fg};font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 14px;border-radius:999px;white-space:nowrap;">${status.label}</div>
+    </div>
+    <div style="height:4px;background:linear-gradient(90deg,${T.brass},${T.brassLight},${T.brass});"></div>`;
+}
+function waCardFooter(T){
+  return `
+    <div style="border-top:1px dashed ${T.line};margin:4px 24px 0;"></div>
+    <div style="padding:12px 24px 18px;text-align:center;">
+      <div style="font-size:10.5px;color:${T.muted};">Generated ${new Date().toLocaleDateString('en-GB')} ${new Date().toTimeString().slice(0,5)}</div>
+      <div style="font-size:10.5px;color:${T.muted};letter-spacing:.06em;margin-top:2px;">ALCMS</div>
+    </div>`;
+}
+/* Single-item card shell — one transaction, itemized as vertically-stacked label/value rows
+   (receipt style) rather than a two-column table, so it reads naturally in a portrait frame. */
+function waCardShell({kind, name, rows, closingLine, daysOverdue}){
+  const T = waResolveTheme();
+  const rowsHtml = rows.map(r=>`
+    <div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed ${T.line};">
+      <span style="font-size:11px;color:${T.mutedLabel};font-weight:600;letter-spacing:.03em;white-space:nowrap;">${esc(r.label).toUpperCase()}</span>
+      <span style="font-size:13.5px;font-weight:700;color:${T.ink};text-align:right;">${esc(r.value)}</span>
+    </div>`).join('');
+  return `
+  <div style="width:380px;background:${T.card};font-family:${T.bodyFont};font-weight:${T.bodyWeight};color:${T.ink};border-radius:18px;overflow:hidden;border:1px solid ${T.line};">
+    ${waCardHeader(T, kind, daysOverdue)}
+    <div style="padding:22px 24px 4px;">
+      <div style="font-size:15px;font-weight:${T.headWeight};font-family:${T.headFont};margin-bottom:6px;">Dear ${esc(String(name||'').toUpperCase())},</div>
+      <div>${rowsHtml}</div>
+    </div>
+    <div style="padding:16px 24px 6px;">
+      <div style="font-size:13px;line-height:1.6;color:${T.ink};">${esc(closingLine)}</div>
+      <div style="margin-top:14px;font-size:13px;">Best Regards,<br><b>Librarian</b></div>
+    </div>
+    ${waCardFooter(T)}
+  </div>`;
+}
+function waReminderCardHtml({name, title, acc, dateBorrowed, dueDate, daysOverdue}){
+  const rows = [
+    {label:'Title', value:title}, {label:'Accession No', value:acc},
+    {label:'Date Borrowed', value:dateBorrowed}, {label:'Due Date', value:dueDate},
+  ];
+  const closing = daysOverdue>0
+    ? `This title is now overdue by ${daysOverdue} day(s). Kindly return it to the library at your earliest convenience.`
+    : `This title is due back soon. Kindly return it to the library by the due date.`;
+  return waCardShell({kind:'reminder', name, rows, closingLine:closing, daysOverdue});
+}
+function waBorrowCardHtml({name, title, acc, dateBorrowed, dueDate}){
+  const rows = [
+    {label:'Title', value:title}, {label:'Accession No', value:acc},
+    {label:'Date Borrowed', value:dateBorrowed}, {label:'Due Date', value:dueDate},
+  ];
+  return waCardShell({kind:'borrowed', name, rows, closingLine:'Kindly return this title to the library by the due date.'});
+}
+function waReturnCardHtml({name, title, acc, dateBorrowed, dateReturned}){
+  const rows = [
+    {label:'Title', value:title}, {label:'Accession No', value:acc},
+    {label:'Date Borrowed', value:dateBorrowed}, {label:'Date Returned', value:dateReturned},
+  ];
+  return waCardShell({kind:'returned', name, rows, closingLine:'Thank you for returning this title to the library.'});
+}
+function waReservationReadyCardHtml({name, title, acc}){
+  const rows = [{label:'Title', value:title}].concat(acc?[{label:'Accession No', value:acc}]:[]);
+  return waCardShell({kind:'ready', name, rows, closingLine:'Kindly come by the library to pick up your reserved title.'});
+}
+/* Bulk reminder card — every currently-borrowed title for one member on a single receipt, each
+   itemized with its own status pill, rather than one card per loan. Used by the "WhatsApp
+   reminder — all borrowed" action on a member's profile. */
+function waBulkReminderCardHtml({name, loans}){
+  const T = waResolveTheme();
+  const overdueCount = loans.filter(l=>l.overdue).length;
+  const itemsHtml = loans.map(l=>{
+    const pill = l.overdue
+      ? {label:`OVERDUE · ${l.daysOverdue}D`, bg:T.terracotta}
+      : {label:'DUE SOON', bg:T.brass};
+    return `
+    <div style="padding:10px 0;border-bottom:1px dashed ${T.line};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="font-size:13.5px;font-weight:700;color:${T.ink};flex:1;">${esc(l.title)}</div>
+        <span style="background:${pill.bg};color:${T.card};font-size:9.5px;font-weight:700;letter-spacing:.03em;padding:4px 8px;border-radius:999px;white-space:nowrap;flex:none;">${pill.label}</span>
+      </div>
+      <div style="font-size:11px;color:${T.muted};margin-top:3px;">Acc: ${esc(l.acc)} · Borrowed ${esc(l.dateBorrowed)} · Due ${esc(l.dueDate)}</div>
+    </div>`;
+  }).join('');
+  const closing = overdueCount>0
+    ? `You currently have ${loans.length} title(s) on loan, ${overdueCount} of them overdue. Kindly return the overdue title(s) to the library at your earliest convenience, and the rest by their due dates.`
+    : `You currently have ${loans.length} title(s) on loan. Kindly return each by its due date.`;
+  return `
+  <div style="width:380px;background:${T.card};font-family:${T.bodyFont};font-weight:${T.bodyWeight};color:${T.ink};border-radius:18px;overflow:hidden;border:1px solid ${T.line};">
+    ${waCardHeader(T, 'bulkReminder', overdueCount>0?1:0)}
+    <div style="padding:22px 24px 4px;">
+      <div style="font-size:15px;font-weight:${T.headWeight};font-family:${T.headFont};margin-bottom:2px;">Dear ${esc(String(name||'').toUpperCase())},</div>
+      <div style="font-size:12px;color:${T.muted};margin-bottom:8px;">This is a reminder covering all titles currently on loan to you:</div>
+      <div>${itemsHtml}</div>
+    </div>
+    <div style="padding:16px 24px 6px;">
+      <div style="font-size:13px;line-height:1.6;color:${T.ink};">${esc(closing)}</div>
+      <div style="margin-top:14px;font-size:13px;">Best Regards,<br><b>Librarian</b></div>
+    </div>
+    ${waCardFooter(T)}
+  </div>`;
+}
+/* Equipment summary card — same branding, grouped-by-category itemized list instead of a single
+   record's details. Mirrors the grouping/cap logic of formatEquipmentSummaryText, rendered visually. */
+function waEquipmentCardHtml(rows){
+  const T = waResolveTheme();
+  const org = (DB.setup && DB.setup.institutionName) ? DB.setup.institutionName : 'ALCMS Library';
+  const logo = DB.setup && DB.setup.institutionLogo;
+  const pos = (DB.setup && DB.setup.institutionLogoPos) || {x:50,y:50};
+  const grouped = {};
+  rows.forEach(r=>{ const cat = r.category||'Uncategorized'; (grouped[cat] = grouped[cat]||[]).push(r); });
+  const CAP = 40; let shown = 0, truncated = false;
+  const sections = Object.keys(grouped).map(cat=>{
+    if(truncated) return '';
+    const items = grouped[cat].map(r=>{
+      if(shown>=CAP){ truncated = true; return ''; }
+      shown++;
+      return `<div style="padding:7px 0;border-bottom:1px dashed ${T.line};">
+        <div style="font-size:13px;font-weight:600;color:${T.ink};">${esc(r.name)}${r.tag?` <span style="color:${T.muted};font-weight:400;">(${esc(r.tag)})</span>`:''}</div>
+        <div style="font-size:11px;color:${T.muted};margin-top:2px;">Qty ${+r.quantity||0}${r.unit?' '+esc(r.unit):''} · ${esc(r.condition||'—')}${r.location?' · '+esc(r.location):''}</div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.05em;color:${T.brass};">${esc(cat.toUpperCase())}</div>${items}`;
+  }).join('');
+  return `
+  <div style="width:380px;background:${T.card};font-family:${T.bodyFont};font-weight:${T.bodyWeight};color:${T.ink};border-radius:18px;overflow:hidden;border:1px solid ${T.line};">
+    <div style="background:${T.forest};padding:24px 22px 20px;text-align:center;">
+      ${logo ? `<img src="${logo}" crossorigin="anonymous" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:${pos.x}% ${pos.y}%;border:2px solid ${T.brass};margin:0 auto 10px;display:block;">` : `<div style="width:52px;height:52px;border-radius:50%;background:${T.brass};display:flex;align-items:center;justify-content:center;font-size:22px;color:${T.forest};font-weight:700;margin:0 auto 10px;">📦</div>`}
+      <div style="color:${T.parchment};font-size:11.5px;letter-spacing:.09em;font-weight:600;opacity:.9;">${esc(org.toUpperCase())}</div>
+      <div style="color:${T.card};font-size:19px;font-weight:${T.headWeight};font-family:${T.headFont};margin-top:3px;">Assets &amp; Equipment</div>
+    </div>
+    <div style="height:4px;background:linear-gradient(90deg,${T.brass},${T.brassLight},${T.brass});"></div>
+    <div style="padding:18px 24px 4px;">
+      <div style="font-size:11px;color:${T.muted};">Generated ${new Date().toLocaleDateString('en-GB')} · ${rows.length} item(s)${truncated?' · showing first '+CAP:''}</div>
+      ${sections || `<div style="padding:16px 0;color:${T.muted};">No equipment records match the current view.</div>`}
+    </div>
+    ${waCardFooter(T)}
+  </div>`;
+}
+/* Rasterize a card: wait for its images (e.g. an institution logo) to actually load, then
+   html2canvas it off-screen — same off-screen-render trick finishPrintOutput uses, so an on-screen
+   modal/toast can never bleed into the capture. */
+function waWaitForCardImages(container){
+  const imgs = Array.from(container.querySelectorAll('img'));
+  return Promise.all(imgs.map(img=> img.complete ? Promise.resolve() : new Promise(res=>{ img.onload=res; img.onerror=res; })));
+}
+async function waRenderCardCanvas(html){
+  if(typeof html2canvas==='undefined') throw new Error('html2canvas not loaded');
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-99999px;top:0;';
+  holder.innerHTML = html;
+  document.body.appendChild(holder);
+  try{
+    await waWaitForCardImages(holder);
+    return await html2canvas(holder.firstElementChild, {scale:2, backgroundColor:'#FFFDF6', useCORS:true});
+  } finally {
+    holder.remove();
+  }
+}
+function waCanvasToBlob(canvas){
+  return new Promise(res=> canvas.toBlob(res, 'image/png', 0.98));
+}
+function waDownloadCanvasAsPdf(canvas, filename){
+  if(typeof window.jspdf==='undefined'){ toast('⚠ PDF library failed to load — try Image instead.'); return; }
+  const { jsPDF } = window.jspdf;
+  const wMm = 130, hMm = wMm * canvas.height/canvas.width;
+  const doc = new jsPDF({orientation: hMm>wMm?'portrait':'landscape', unit:'mm', format:[wMm+24, hMm+24]});
+  doc.addImage(canvas.toDataURL('image/jpeg',0.95), 'JPEG', 12, 12, wMm, hMm);
+  doc.save(filename+'.pdf');
+  toast('PDF downloaded');
+}
+/* The share modal itself: renders the card, previews it, then offers whichever real "send to
+   WhatsApp" mechanism the browser supports (see file-level comment above), plus Image/PDF
+   downloads that always work regardless of browser support. */
+function openWaCardModal({html, filenameBase, phone, caption}){
+  if($('#waCardBackdrop')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'waCardBackdrop';
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:660px;">
+      <div class="modal-head"><h3>📎 Share on WhatsApp</h3><button id="waCardClose" aria-label="Close">✕</button></div>
+      <div class="modal-body">
+        <p class="field-hint">This goes out as a designed image (or PDF) — not a plain-text message.</p>
+        <div id="waCardPreviewWrap" style="display:flex;justify-content:center;align-items:center;min-height:160px;background:var(--parchment-dim);border-radius:10px;padding:16px;overflow:auto;">
+          <span class="field-hint">Rendering card…</span>
+        </div>
+      </div>
+      <div class="modal-foot" style="flex-wrap:wrap;gap:8px;">
+        <button class="btn" id="waCardShareBtn" disabled>📤 Share to WhatsApp</button>
+        <button class="btn secondary" id="waCardCopyBtn" disabled>📋 Copy image</button>
+        <button class="btn secondary" id="waCardDlImgBtn" disabled>⬇ Image</button>
+        <button class="btn secondary" id="waCardDlPdfBtn" disabled>⬇ PDF</button>
+        ${phone? `<button class="btn secondary" id="waCardOpenChatBtn">Open chat</button>` : ''}
+        <button class="btn secondary" id="waCardCloseBtn">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  $('#waCardClose').onclick = close;
+  $('#waCardCloseBtn').onclick = close;
+  if(phone) $('#waCardOpenChatBtn').onclick = ()=> window.open(whatsAppLink(phone, caption||''), '_blank', 'noopener');
+
+  waRenderCardCanvas(html).then(canvas=>{
+    const previewWrap = $('#waCardPreviewWrap');
+    if(previewWrap) previewWrap.innerHTML = `<img src="${canvas.toDataURL('image/png')}" style="max-width:100%;border-radius:8px;box-shadow:var(--shadow);">`;
+    const dlImgBtn = $('#waCardDlImgBtn'), dlPdfBtn = $('#waCardDlPdfBtn');
+    const shareBtn = $('#waCardShareBtn'), copyBtn = $('#waCardCopyBtn');
+    if(dlImgBtn){
+      dlImgBtn.disabled = false;
+      dlImgBtn.onclick = ()=>{ const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download=filenameBase+'.png'; a.click(); };
+    }
+    if(dlPdfBtn){
+      dlPdfBtn.disabled = (typeof window.jspdf==='undefined');
+      dlPdfBtn.onclick = ()=> waDownloadCanvasAsPdf(canvas, filenameBase);
+    }
+    waCanvasToBlob(canvas).then(blob=>{
+      if(!blob) return;
+      const file = new File([blob], filenameBase+'.png', {type:'image/png'});
+      const canShareFiles = !!(navigator.canShare && navigator.share && navigator.canShare({files:[file]}));
+      if(canShareFiles && shareBtn){
+        shareBtn.disabled = false;
+        shareBtn.onclick = async ()=>{
+          try{ await navigator.share({files:[file], title: filenameBase}); toast('Shared'); close(); }
+          catch(e){ if(e && e.name!=='AbortError') toast('Could not open the share sheet — try Copy image or Download instead.'); }
+        };
+      } else if(shareBtn){ shareBtn.remove(); }
+      const canCopy = !!(navigator.clipboard && window.ClipboardItem);
+      if(canCopy && copyBtn){
+        copyBtn.disabled = false;
+        copyBtn.onclick = async ()=>{
+          try{
+            await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+            toast('Image copied — open the WhatsApp chat and paste it in (Ctrl/Cmd+V)');
+            if(phone) window.open(whatsAppLink(phone, ''), '_blank', 'noopener');
+          }catch(e){ toast('Could not copy the image — try Download instead.'); }
+        };
+      } else if(copyBtn){ copyBtn.remove(); }
+    });
+  }).catch(e=>{
+    console.warn('WhatsApp card render failed', e);
+    const previewWrap = $('#waCardPreviewWrap');
+    if(previewWrap) previewWrap.innerHTML = `<span class="field-hint">⚠ Could not render the card — check your connection and try again.</span>`;
+  });
+}
+function logReminderEntry(trxId, opts={}){
   const trx = DB.circulation.find(x=>x.trxId===trxId);
   const recipient = trx ? reminderRecipient(trx) : null;
   DB.reminders.unshift({
@@ -10631,6 +10934,10 @@ function sendReminder(trxId, opts={}){
     daysOverdue: trx? daysBetween(parseAnyDate(trx.dueDate), new Date()) : '',
     recipientPhone: recipient? recipient.phone : '', recipientLabel: recipient? recipient.label : '',
   });
+}
+function sendReminder(trxId, opts={}){
+  if(!isAdmin()) return requireAdmin('log reminders');
+  logReminderEntry(trxId, opts);
   saveDB(); render(); toast('Reminder logged');
 }
 function sendReminderViaWhatsApp(trxId, kind){
@@ -10639,13 +10946,33 @@ function sendReminderViaWhatsApp(trxId, kind){
   if(!trx) return toast('Transaction not found');
   const recipient = reminderRecipient(trx);
   if(!recipient) return toast('No phone number on file for this reminder');
-  const msg = formatLibraryWhatsAppMessage({
-    kind:'reminder', name:trx.name, title:trx.title, acc:trx.acc,
-    dateBorrowed:fmtDate(trx.dateBorrowed), dueDate:fmtDate(trx.dueDate),
-    daysOverdue: Math.max(0, daysBetween(parseAnyDate(trx.dueDate), new Date())),
+  const daysOverdue = Math.max(0, daysBetween(parseAnyDate(trx.dueDate), new Date()));
+  const html = waReminderCardHtml({
+    name:trx.name, title:trx.title, acc:trx.acc,
+    dateBorrowed:fmtDate(trx.dateBorrowed), dueDate:fmtDate(trx.dueDate), daysOverdue,
   });
-  window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+  openWaCardModal({html, filenameBase:`reminder-${trx.acc||trx.trxId}`, phone:recipient.phone});
   sendReminder(trxId, {channel:'WHATSAPP'});
+}
+/* Bulk reminder — every currently-borrowed title for one member on a single card, sent from their
+   Profile page (Loans tab) rather than one WhatsApp send per loan. Logs one reminder-history entry
+   per active loan, same as the per-transaction path, just without a toast/re-render for each. */
+function sendBulkReminderViaWhatsApp(userId){
+  if(!isAdmin()) return requireAdmin('log reminders');
+  const u = DB.users.find(x=>x.id===userId);
+  if(!u) return toast('Member not found');
+  const active = DB.circulation.filter(t=>t.userId===userId && !t.returnDate);
+  if(!active.length) return toast('No active loans for this member');
+  const recipient = reminderRecipient({userId});
+  if(!recipient) return toast('No phone number on file for this reminder');
+  const loans = active.map(t=>{
+    const daysOverdue = Math.max(0, daysBetween(parseAnyDate(t.dueDate), new Date()));
+    return {trxId:t.trxId, title:t.title, acc:t.acc, dateBorrowed:fmtDate(t.dateBorrowed), dueDate:fmtDate(t.dueDate), daysOverdue, overdue: txnStatus(t)==='OVERDUE'};
+  });
+  const html = waBulkReminderCardHtml({name:u.name, loans});
+  openWaCardModal({html, filenameBase:`reminders-${u.id}`, phone:recipient.phone});
+  active.forEach(t=> logReminderEntry(t.trxId, {channel:'WHATSAPP'}));
+  saveDB(); render(); toast(`Reminder logged for ${active.length} loan(s)`);
 }
 
 /* ================= PAGE: REGISTER (desk + class visits, consolidated) ================= */
@@ -11589,7 +11916,8 @@ function formatEquipmentSummaryText(rows){
 }
 function shareEquipmentViaWhatsApp(){
   const rows = equipmentRowsForSharing();
-  window.open(whatsAppLink('', formatEquipmentSummaryText(rows)), '_blank', 'noopener');
+  const html = waEquipmentCardHtml(rows);
+  openWaCardModal({html, filenameBase:'assets-equipment-summary'});
 }
 function shareEquipmentViaEmail(){
   const rows = equipmentRowsForSharing();
@@ -13053,7 +13381,7 @@ const GUIDE_SECTIONS = [
   {h:'Catalogue', ic:'book', b:'Search and browse every title. Click "Details" on any title to see its full record plus its complete transaction history, and to generate its catalogue card (barcode or QR, per Setup → Codes). Admins can add, edit, delete, export the current view as CSV/Excel/PDF, and generate every catalogue card at once — "🪪 Catalogue cards" — with a one-click 10-up A4 export ready to print and cut.'},
   {h:'Members', ic:'person', b:'Every student and staff member. A member\'s Profile page is now tabbed — Loans, Subjects, Visits, and (where relevant) Fines and Reservations — plus buttons to generate that member\'s ID card or print their full profile and loan history. From the Members list, "🪪 Member ID cards" generates every member\'s card at once, exportable 10-up on A4.'},
   {h:'Circulation', ic:'swap', b:'Issue and return titles. Type a member ID or accession number — or a partial number/name — and pick from the filtered suggestions; no need to type a code exactly, and no more waiting for an exact match. Scanning with a mobile camera, a dedicated code scanner, or typing all work the same way, and a successful match shows a ✓ Verified badge with a running scan counter. Returning a title as "Missing" marks both the book and the loan as Missing, not Available or Returned. Print a report for one member, one item, a date range, or everything. "Clear all" wipes the circulation log for a fresh session (admin only).'},
-  {h:'Reminder Log', ic:'bell', b:'Every loan currently overdue, with a one-click "Log reminder" and — where a phone number is on file — a WhatsApp reminder button that opens a pre-filled message to the borrower (staff) or the class teacher (students).'},
+  {h:'Reminder Log', ic:'bell', b:'Every loan currently overdue, with a one-click "Log reminder" and — where a phone number is on file — a WhatsApp reminder button that renders a clean designed image (or PDF) of the reminder and shares it to the borrower (staff) or the class teacher (students).'},
   {h:'Register', ic:'checklist', b:'Desk sign-ins and class period visits together. Use "Batch check-in" to stage several students (by ID or a whole class) before submitting them all at once with a shared note; "Batch check-out" lists everyone currently signed in so you can check them out together. Edit any entry to add discipline notes and consequences.'},
   {h:'Schedule', ic:'calendar', b:'The weekly library timetable and each student\'s subject combination. Admins can add, edit or delete periods, with a period dropdown, a native time picker, and Library, Free, or Other note types.'},
   {h:'Feedback', ic:'chat', b:'Suggestions, complaints and requests from members and staff, with a status workflow (New, In review, Resolved).'},
@@ -13852,7 +14180,7 @@ function pageSecurity(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Data &amp; privacy</h3><div class="hint">What this app stores, and where</div></div>
-    <p style="font-size:12.5px;color:var(--muted);line-height:1.7">Everything — catalogue, members, loans, accounts, preferences — is stored only in this browser (or wherever you explicitly sync it: GitHub, a downloaded backup, or Google Drive). Nothing is sent to Claude or any third party automatically. WhatsApp receipts and reminders, when enabled, open WhatsApp directly on your device — the message text isn't stored or sent anywhere by this app itself.</p>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.7">Everything — catalogue, members, loans, accounts, preferences — is stored only in this browser (or wherever you explicitly sync it: GitHub, a downloaded backup, or Google Drive). Nothing is sent to Claude or any third party automatically. WhatsApp receipts and reminders, when enabled, render a designed image (or PDF) card on your device and share it via WhatsApp, your clipboard, or a download — the card itself isn't stored or sent anywhere by this app besides that.</p>
   </div>`;
 }
 function saveSignupSecurity(){
@@ -13961,12 +14289,11 @@ function sendTransactionReceiptIfEnabled(trx, kind){
   if(!DB.setup.whatsappReceipts) return;
   const recipient = reminderRecipient(trx);
   if(!recipient) return; // no phone on file — nothing to send
-  const msg = formatLibraryWhatsAppMessage({
-    kind: kind==='RETURNED' ? 'returned' : 'borrowed',
-    name:trx.name, title:trx.title, acc:trx.acc,
-    dateBorrowed:fmtDate(trx.dateBorrowed), dueDate: kind==='RETURNED' ? fmtDate(todayISO()) : fmtDate(trx.dueDate),
-  });
-  window.open(whatsAppLink(recipient.phone, msg), '_blank', 'noopener');
+  const isReturn = kind==='RETURNED';
+  const html = isReturn
+    ? waReturnCardHtml({name:trx.name, title:trx.title, acc:trx.acc, dateBorrowed:fmtDate(trx.dateBorrowed), dateReturned:fmtDate(todayISO())})
+    : waBorrowCardHtml({name:trx.name, title:trx.title, acc:trx.acc, dateBorrowed:fmtDate(trx.dateBorrowed), dueDate:fmtDate(trx.dueDate)});
+  openWaCardModal({html, filenameBase:`${isReturn?'return':'borrow'}-receipt-${trx.acc||''}`, phone:recipient.phone});
 }
 function saveAcademicPeriod(){
   const scheme = document.getElementById('setTermScheme').value;
