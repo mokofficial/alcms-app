@@ -2976,6 +2976,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .badge.red{ background:#F4E1DC; color:var(--warn);}
 .badge.gold{ background:#F3E6C9; color:var(--brass);}
 .badge.grey{ background:#e9e5da; color:var(--muted);}
+.badge.blue{ background:#DCE6EA; color:#3E6B7A;}
 
 .stamp{
   display:inline-flex; align-items:center; justify-content:center; border:2px solid currentColor;
@@ -3347,15 +3348,34 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
 .color-swatch:hover{ transform:scale(1.1);}
 .color-swatch.active{ border-color:var(--forest); box-shadow:0 0 0 2px var(--forest), 0 1px 3px rgba(0,0,0,.15);}
 
+/* ===== mobile bottom navigation ===== */
+.bottom-nav{
+  display:none; position:fixed; left:0; right:0; bottom:0; z-index:45;
+  background:var(--sidebar-bg); border-top:1px solid rgba(255,255,255,.12);
+  box-shadow:0 -6px 20px rgba(0,0,0,.18);
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+.bottom-nav-inner{ display:flex; align-items:stretch; justify-content:space-around; }
+.bottom-nav button{
+  flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; padding:8px 4px 7px; background:transparent; border:none; cursor:pointer;
+  color:rgba(255,255,255,.62); font-size:10.5px; font-family:var(--app-font); letter-spacing:.2px;
+  transition:color .15s; position:relative;
+}
+.bottom-nav button .ico{ font-size:19px; line-height:1;}
+.bottom-nav button.active{ color:#fff;}
+.bottom-nav button.active .ico{ color:var(--brass-light);}
+.bottom-nav button .nav-badge{ position:absolute; top:2px; right:calc(50% - 20px);}
+
 @media (max-width:900px){
-  .hamburger{ display:inline-block;}
-  .sidebar{ position:fixed; left:0; top:0; z-index:40; transform:translateX(-100%); transition:transform .25s ease; width:250px; box-shadow:0 0 40px rgba(0,0,0,.3);}
-  .sidebar.open{ transform:translateX(0);}
-  .sidebar-close{ display:block;}
+  .hamburger{ display:none;}
+  .sidebar{ display:none;}
+  .sidebar-overlay{ display:none !important;}
+  .bottom-nav{ display:block;}
   .main{ width:100%;}
   .topbar{ padding:12px 14px; flex-wrap:wrap; gap:8px;}
   .topbar .titles h2{ font-size:17px;}
-  .content{ padding:14px 12px 50px;}
+  .content{ padding:14px 12px 84px;}
   .grid.kpis{ grid-template-columns:repeat(2,1fr); gap:10px;}
   .kpi{ padding:12px 12px;}
   .kpi .val{ font-size:22px;}
@@ -3391,7 +3411,7 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .chart-data-table{ border-left:none; border-top:1px solid var(--line); padding-left:0; padding-top:10px; max-height:160px;}
 }
 @media (max-width:480px){
-  .content{ padding:12px 10px 46px;}
+  .content{ padding:12px 10px 80px;}
   .kpi{ padding:10px;}
   .grid.kpis{ grid-template-columns:repeat(2,1fr); gap:8px;}
   .quicklinks{ grid-template-columns:1fr 1fr;}
@@ -3525,6 +3545,9 @@ html, body{ overflow-x:hidden;}
     </div>
     <div class="content" id="content"></div>
   </div>
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-inner" id="bottomNavInner"></div>
+  </nav>
 </div>
 <div id="modalRoot"></div>
 <div id="toast" class="toast"></div>
@@ -4328,6 +4351,14 @@ function requireAdmin(actionLabel){
   if(!isAdmin()){ toast(`Guests can't ${actionLabel||'do that'} — sign in as an admin`); return false; }
   return true;
 }
+// STAFF sits between GUEST and ADMIN: day-to-day desk work (issue/return/renew, reminders,
+// reservations, check-ins, fine payments, feedback status) without access to Setup, Security,
+// Backup, Activity Log, or structural catalogue/member edits — those stay isAdmin()-only.
+function isStaff(){ return SESSION && (SESSION.role === 'ADMIN' || SESSION.role === 'STAFF'); }
+function requireStaff(actionLabel){
+  if(!isStaff()){ toast(`Guests can't ${actionLabel||'do that'} — sign in as staff or an admin`); return false; }
+  return true;
+}
 
 /* ---- auth carousel content ---- */
 const LOAN_PERIOD_DAYS = 7;
@@ -4523,6 +4554,7 @@ function renderAuthForm(){
           <label>Access level</label>
           <div class="role-choice">
             <div class="role-opt compact ${signupRole==='GUEST'?'selected':''}" id="roleOptGuest" onclick="setSignupRole('GUEST')"><span class="ic">👁</span>Guest<br><span style="color:var(--muted)">View only</span></div>
+            <div class="role-opt compact ${signupRole==='STAFF'?'selected':''}" id="roleOptStaff" onclick="setSignupRole('STAFF')"><span class="ic">🎫</span>Staff<br><span style="color:var(--muted)">Desk duties</span></div>
             <div class="role-opt compact ${signupRole==='ADMIN'?'selected':''}" id="roleOptAdmin" onclick="setSignupRole('ADMIN')"><span class="ic">🔑</span>Admin<br><span style="color:var(--muted)">Full access</span></div>
           </div>
         </div>
@@ -4537,11 +4569,12 @@ function renderAuthForm(){
 }
 function setSignupRole(role){
   signupRole = role;
-  const guestOpt = document.getElementById('roleOptGuest'), adminOpt = document.getElementById('roleOptAdmin');
+  const guestOpt = document.getElementById('roleOptGuest'), staffOpt = document.getElementById('roleOptStaff'), adminOpt = document.getElementById('roleOptAdmin');
   if(guestOpt) guestOpt.classList.toggle('selected', role==='GUEST');
+  if(staffOpt) staffOpt.classList.toggle('selected', role==='STAFF');
   if(adminOpt) adminOpt.classList.toggle('selected', role==='ADMIN');
   const keyWrap = document.getElementById('suAdminKeyWrap');
-  if(keyWrap) keyWrap.style.display = (role==='ADMIN' || (DB&&DB.setup&&DB.setup.requireKeyForAllSignups)) ? '' : 'none';
+  if(keyWrap) keyWrap.style.display = (role==='ADMIN' || role==='STAFF' || (DB&&DB.setup&&DB.setup.requireKeyForAllSignups)) ? '' : 'none';
 }
 let failedLoginAttempts = 0;
 function showAuthError(msg){ const e=$('#authError'); e.textContent=msg; e.classList.add('show'); }
@@ -4667,7 +4700,7 @@ async function doSignup(){
   const securityQuestion = $('#suSecQ').value, securityAnswer = $('#suSecA').value.trim();
   if(!fullName || !username || !password || !securityAnswer){ showAuthError('Fill in every required field to continue (name, username, password, security answer).'); return; }
   if(ACCOUNTS.some(a=>a.username.toLowerCase()===username)){ showAuthError('That username is already taken.'); return; }
-  const keyRequired = signupRole==='ADMIN' || (DB && DB.setup && DB.setup.requireKeyForAllSignups);
+  const keyRequired = signupRole==='ADMIN' || signupRole==='STAFF' || (DB && DB.setup && DB.setup.requireKeyForAllSignups);
   if(keyRequired){
     const key = $('#suAdminKey') ? $('#suAdminKey').value : '';
     if(key !== ADMIN_KEY){ showAuthError('That admin key is incorrect. Ask an existing admin for it.'); return; }
@@ -4864,8 +4897,8 @@ function pageAccount(){
   <div class="card panel">
     <div class="panel-head"><h3>Access level</h3></div>
     <div class="field-row">
-      <div class="field"><label>Access level</label><select id="acctRole">${['GUEST','ADMIN'].map(r=>`<option ${SESSION.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
-      <div class="field"><label>Admin key (only needed if changing to Admin)</label>${pwFieldHtml('acctAdminKeyInput','')}</div>
+      <div class="field"><label>Access level</label><select id="acctRole">${['GUEST','STAFF','ADMIN'].map(r=>`<option ${SESSION.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+      <div class="field"><label>Admin key (only needed if changing to Staff or Admin)</label>${pwFieldHtml('acctAdminKeyInput','')}</div>
     </div>
     <button class="btn secondary" onclick="saveAccountRole()">Save access level</button>
   </div>
@@ -4978,7 +5011,7 @@ function saveAccountRole(){
   const acc = ACCOUNTS.find(a=>a.username===SESSION.username); if(!acc) return;
   const role = document.getElementById('acctRole')?.value;
   const key = document.getElementById('acctAdminKeyInput')?.value || '';
-  if(role==='ADMIN' && acc.role!=='ADMIN' && key!==ADMIN_KEY){ toast('Incorrect admin key — access level left unchanged'); return; }
+  if((role==='ADMIN'||role==='STAFF') && acc.role!==role && key!==ADMIN_KEY){ toast('Incorrect admin key — access level left unchanged'); return; }
   acc.role = role;
   saveAccounts(ACCOUNTS);
   SESSION.role = acc.role; persistSession(SESSION); renderAccountChip(); render();
@@ -5406,39 +5439,62 @@ const NAV = [
     {id:'account', label:'My Account', ico:'👤', action:'openAccountPanel'},
   ]},
 ];
+// Mobile bottom navigation — replaces the sidebar on small screens. Every other page is reached
+// from the Home quicklinks grid, so only these four anchor destinations live in the bar itself.
+const BOTTOM_NAV = [
+  {id:'home', label:'Home', ico:'⌂'},
+  {id:'dashboard', label:'Dashboard', ico:'▤'},
+  {id:'analytics', label:'Analytics', ico:'◔'},
+  {id:'account', label:'Account', ico:'👤', action:'openAccountPanel'},
+];
+function renderBottomNav(){
+  const el = $('#bottomNavInner'); if(!el) return;
+  el.innerHTML = '';
+  const reminderCount = (DB && DB.circulation) ? reminderNeedsCount() : 0;
+  BOTTOM_NAV.forEach(it=>{
+    const b = document.createElement('button');
+    const count = it.id==='reminders' ? reminderCount : 0;
+    const badge = count>0 ? `<span class="nav-badge">${count>99?'99+':count}</span>` : '';
+    b.innerHTML = `<span class="ico">${navIcon(it.id, it.ico)}</span><span>${it.label}</span>${badge}`;
+    // "My Account" is reached via the account route too, so it lights up like any other tab.
+    b.className = (it.id===route || (it.id==='account' && route==='account')) ? 'active' : '';
+    b.onclick = it.action ? ()=>{ window[it.action](); } : ()=>{ route=it.id; render(); };
+    el.appendChild(b);
+  });
+}
 const ICON_PACKS = {
   minimal: {label:'Minimal (default)', icons:{
     // Every glyph here is a plain geometric/symbol character (no emoji mixed in), so the pack
     // reads as one consistent style throughout the app.
-    home:'⌂',analytics:'◔',dashboard:'▤',catalogue:'▥',users:'⚇',circulation:'⇄',reminders:'✉',register:'✎',schedule:'▦',feedback:'✎',setup:'⚙',settings:'◐',security:'⛨',backup:'⟲',guide:'❖',about:'ⓘ',account:'◯',
+    home:'⌂',analytics:'◔',dashboard:'▤',catalogue:'▥',users:'⚇',equipment:'▧',circulation:'⇄',reservations:'⚑',reminders:'✉',register:'✎',schedule:'▦',feedback:'✎',setup:'⚙',settings:'◐',security:'⛨',activitylog:'▨',backup:'⟲',guide:'❖',about:'ⓘ',account:'◯',
     email:'✉',whatsapp:'◉',call:'☏',query:'✎',camera:'▢',theme:'◑',lock:'⚿',save:'⎙',close:'✕',menu:'☰',
   }},
   emoji: {label:'Emoji', icons:{
-    home:'🏠',analytics:'📈',dashboard:'📊',catalogue:'📚',users:'👥',circulation:'🔄',reminders:'📨',register:'📝',schedule:'🗓️',feedback:'💬',setup:'🛠️',settings:'🎨',security:'🔐',backup:'☁️',guide:'📖',about:'ℹ️',account:'👤',
+    home:'🏠',analytics:'📈',dashboard:'📊',catalogue:'📚',users:'👥',equipment:'🧰',circulation:'🔄',reservations:'🔖',reminders:'📨',register:'📝',schedule:'🗓️',feedback:'💬',setup:'🛠️',settings:'🎨',security:'🔐',activitylog:'📜',backup:'☁️',guide:'📖',about:'ℹ️',account:'👤',
     email:'📧',whatsapp:'💚',call:'☎️',query:'📮',camera:'📸',theme:'🌗',lock:'🔐',save:'💾',close:'❌',menu:'📋',
   }},
   outline: {label:'Outline', icons:{
-    home:'⌖',analytics:'△',dashboard:'▢',catalogue:'▭',users:'⚇',circulation:'↺',reminders:'✎',register:'▤',schedule:'▦',feedback:'◫',setup:'✦',settings:'✧',security:'◈',backup:'↻',guide:'▣',about:'○',account:'◯',
+    home:'⌖',analytics:'△',dashboard:'▢',catalogue:'▭',users:'⚇',equipment:'▧',circulation:'↺',reservations:'◇',reminders:'✎',register:'▤',schedule:'▦',feedback:'◫',setup:'✦',settings:'✧',security:'◈',activitylog:'▥',backup:'↻',guide:'▣',about:'○',account:'◯',
     email:'▷',whatsapp:'◉',call:'◐',query:'✎',camera:'▢',theme:'◑',lock:'▲',save:'▽',close:'✕',menu:'☰',
   }},
   bold: {label:'Bold', icons:{
-    home:'🏡',analytics:'📶',dashboard:'📌',catalogue:'📕',users:'🧑‍🤝‍🧑',circulation:'🔁',reminders:'⏰',register:'🖊️',schedule:'📅',feedback:'🗯️',setup:'🔧',settings:'⚡',security:'🛡️',backup:'💽',guide:'📔',about:'❗',account:'🧑',
+    home:'🏡',analytics:'📶',dashboard:'📌',catalogue:'📕',users:'🧑‍🤝‍🧑',equipment:'🧰',circulation:'🔁',reservations:'📌',reminders:'⏰',register:'🖊️',schedule:'📅',feedback:'🗯️',setup:'🔧',settings:'⚡',security:'🛡️',activitylog:'📰',backup:'💽',guide:'📔',about:'❗',account:'🧑',
     email:'✉️',whatsapp:'📲',call:'📱',query:'🗒️',camera:'🎥',theme:'💡',lock:'🔏',save:'📥',close:'⛔',menu:'🗃️',
   }},
   classic: {label:'Classic', icons:{
-    home:'⛪',analytics:'✚',dashboard:'☰',catalogue:'❦',users:'ⱴ',circulation:'∞',reminders:'✍',register:'✎',schedule:'☷',feedback:'✒',setup:'⚒',settings:'☸',security:'♜',backup:'☂',guide:'☘',about:'✦',account:'☺',
+    home:'⛪',analytics:'✚',dashboard:'☰',catalogue:'❦',users:'ⱴ',equipment:'❊',circulation:'∞',reservations:'❀',reminders:'✍',register:'✎',schedule:'☷',feedback:'✒',setup:'⚒',settings:'☸',security:'♜',activitylog:'❁',backup:'☂',guide:'☘',about:'✦',account:'☺',
     email:'✎',whatsapp:'☏',call:'☏',query:'❧',camera:'◎',theme:'☼',lock:'⚷',save:'✔',close:'✗',menu:'≡',
   }},
   duotone: {label:'Duotone squares', icons:{
-    home:'◧',analytics:'◨',dashboard:'▦',catalogue:'▤',users:'▥',circulation:'◫',reminders:'▧',register:'▨',schedule:'▩',feedback:'◪',setup:'◩',settings:'◭',security:'◮',backup:'◱',guide:'◳',about:'◲',account:'◰',
+    home:'◧',analytics:'◨',dashboard:'▦',catalogue:'▤',users:'▥',equipment:'⬒',circulation:'◫',reservations:'⬓',reminders:'▧',register:'▨',schedule:'▩',feedback:'◪',setup:'◩',settings:'◭',security:'◮',activitylog:'⬔',backup:'◱',guide:'◳',about:'◲',account:'◰',
     email:'▧',whatsapp:'◨',call:'◧',query:'▨',camera:'▦',theme:'◫',lock:'◩',save:'◪',close:'✕',menu:'☰',
   }},
   nature: {label:'Nature', icons:{
-    home:'🌳',analytics:'🌱',dashboard:'🍃',catalogue:'🌿',users:'🐿️',circulation:'🍂',reminders:'🌾',register:'🪶',schedule:'🌤️',feedback:'🦋',setup:'🌲',security:'🦉',backup:'🌦️',guide:'🍄',about:'🌻',account:'🐦',
+    home:'🌳',analytics:'🌱',dashboard:'🍃',catalogue:'🌿',users:'🐿️',equipment:'🪵',circulation:'🍂',reservations:'🌰',reminders:'🌾',register:'🪶',schedule:'🌤️',feedback:'🦋',setup:'🌲',security:'🦉',activitylog:'🌼',backup:'🌦️',guide:'🍄',about:'🌻',account:'🐦',
     email:'🍁',whatsapp:'🐝',call:'🐦',query:'🌾',camera:'📷',theme:'🌙',lock:'🔒',save:'💧',close:'🍂',menu:'🌳',
   }},
   vintage: {label:'Vintage', icons:{
-    home:'⌘',analytics:'❧',dashboard:'✥',catalogue:'❦',users:'ⵁ',circulation:'∞',reminders:'✒',register:'✎',schedule:'⌛',feedback:'❝',setup:'⚙',settings:'✺',security:'♜',backup:'☔',guide:'☙',about:'✦',account:'☺',
+    home:'⌘',analytics:'❧',dashboard:'✥',catalogue:'❦',users:'ⵁ',equipment:'⚒',circulation:'∞',reservations:'❃',reminders:'✒',register:'✎',schedule:'⌛',feedback:'❝',setup:'⚙',settings:'✺',security:'♜',activitylog:'❡',backup:'☔',guide:'☙',about:'✦',account:'☺',
     email:'✎',whatsapp:'☏',call:'☏',query:'❧',camera:'◎',theme:'☼',lock:'⚷',save:'✔',close:'✗',menu:'≡',
   }},
 };
@@ -5691,8 +5747,9 @@ function previewPersonalizationExtras(){
   const transitionStyle = document.getElementById('setTransitionStyle')?.value || PREFS.transitionStyle || 'scale';
   document.body.setAttribute('data-transition', transitionStyle);
   const prevIconPack = PREFS.iconPack;
-  PREFS.iconPack = iconPack; // applyIconPack() reads from PREFS, so set it briefly to preview…
+  PREFS.iconPack = iconPack; // applyIconPack()/renderNav() read from PREFS, so set it briefly to preview…
   applyIconPack();
+  renderNav(); // sidebar icons switch immediately as the pack is chosen, not just after Save
   PREFS.iconPack = prevIconPack; // …then restore, since this hasn't been saved yet.
 }
 function savePersonalizationExtras(){
@@ -7446,7 +7503,15 @@ function pageHome(){
     ${qlink(navIcon('feedback','💬'),'Feedback', DB.feedback.filter(f=>f.status==='NEW').length+' new items','feedback')}
     ${qlink(navIcon('analytics','◔'),'Analytics', 'Trends & reports','analytics')}
     ${qlink(navIcon('schedule','▦'),'Schedule', 'Weekly timetable','schedule')}
+    ${qlink(navIcon('equipment','🧰'),'Assets & Equipment', 'Non-book inventory','equipment')}
+    ${qlink(navIcon('reservations','🔖'),'Reservations', DB.reservations.filter(r=>r.status==='READY').length+' ready for pickup','reservations')}
     ${qlink(navIcon('setup','⚙'),'Setup', isAdmin()? 'Configure the system':'Admin only','setup')}
+    ${qlink(navIcon('settings','◐'),'Personalization', 'Appearance & fonts','settings')}
+    ${qlink(navIcon('security','⛨'),'Privacy & Security', 'Admin key & lockout','security')}
+    ${qlink(navIcon('activitylog','📜'),'Activity Log', 'Recent changes','activitylog')}
+    ${qlink(navIcon('backup','⟲'),'Backup & Restore', 'Sync & checkpoints','backup')}
+    ${qlink(navIcon('guide','❖'),'User guide', 'How the desk works','guide')}
+    ${qlink(navIcon('about','ⓘ'),'About', 'ALCMS version info','about')}
   </div>
   `;
 }
@@ -8564,8 +8629,8 @@ function pageMemberProfile(){
 function pageCirculation(){
   const t = DB.circulation.map(x=>({...x, status:txnStatus(x)}));
   const active = t.filter(x=>x.status!=='RETURNED');
-  if(!isAdmin()){
-    return `<div class="guest-lock">You're signed in as a guest — issuing and returning titles needs an admin account.</div><div id="mod_circulation"></div>`;
+  if(!isStaff()){
+    return `<div class="guest-lock">You're signed in as a guest — issuing and returning titles needs a staff or admin account.</div><div id="mod_circulation"></div>`;
   }
   return `
   <div class="grid two-col">
@@ -8703,6 +8768,7 @@ function pageCirculationTable(){
     data:()=>DB.circulation.map(x=>({...x, status:txnStatus(x)}))
       .sort((a,b)=> (parseAnyDate(b.dateBorrowed)||0)-(parseAnyDate(a.dateBorrowed)||0)),
     searchKeys:['trxId','acc','title','userId','name'],
+    selectable:true, rowKey:r=>r.trxId,
     filters:[{key:'status', label:'Status', options:['BORROWED','OVERDUE','RETURNED','MISSING']}],
     columns:[
       {key:'trxId', label:'Transaction', render:r=>`<span style="font-size:10.5px">${esc(r.trxId.slice(0,22))}</span>`},
@@ -8735,10 +8801,50 @@ function pageCirculationTable(){
     hidePrint:true,
     extraActions:[
       {label:'🖨 Print transactions', onClick:openCirculationPrintModal, alwaysShow:true, primary:true},
+      {label:'↩ Return selected', onClick:()=> bulkReturnCirculation()},
+      {label:'🗑 Delete selected', onClick:()=> bulkDeleteCirculation(), danger:true},
       {label:'🗑 Clear all', onClick:clearAllCirculation, danger:true},
     ],
   });
   return circulationModule.render();
+}
+/* Bulk return: takes whatever's ticked in the transactions table, skips anything already
+   returned, and runs each through the same doReturnOne() core the single-loan Return form uses —
+   so fines, reservations-fulfilled, strikes and WhatsApp receipts all still fire per loan. */
+function bulkReturnCirculation(){
+  if(!isStaff()) return requireStaff('return titles');
+  const ids = [...(circulationModuleState.selected||[])];
+  if(!ids.length){ toast('Tick one or more transactions first'); return; }
+  const targets = DB.circulation.filter(t=> ids.includes(t.trxId) && !t.returnDate);
+  if(!targets.length){ toast('None of the selected transactions are currently active'); return; }
+  confirmModal(`Return ${targets.length} loan(s) now, all marked condition GOOD?`, ()=>{
+    let overdueCount = 0;
+    targets.forEach(trx=>{ const {wasOverdue} = doReturnOne(trx, 'GOOD', {quiet:true}); if(wasOverdue) overdueCount++; });
+    circulationModuleState.selected.clear();
+    logActivity('circulation', 'return', `Returned ${targets.length} loan(s) in bulk`);
+    saveDB(); render();
+    toast(`${targets.length} loan(s) returned${overdueCount? ` — ${overdueCount} were overdue, strikes added`:''}`);
+  });
+}
+function bulkDeleteCirculation(){
+  if(!isAdmin()) return requireAdmin('delete transactions');
+  const ids = [...(circulationModuleState.selected||[])];
+  if(!ids.length){ toast('Tick one or more transactions first'); return; }
+  confirmDelete(`Permanently delete ${ids.length} transaction(s)? Any still active will be marked available again and the member's active-loan count adjusted.`, ()=>{
+    ids.forEach(trxId=>{
+      const trx = DB.circulation.find(x=>x.trxId===trxId); if(!trx) return;
+      if(!trx.returnDate){
+        const book = DB.catalogue.find(b=>b.acc===trx.acc);
+        const user = DB.users.find(u=>u.id===trx.userId);
+        if(book && book.available==='ISSUED') book.available = 'AVAILABLE';
+        if(user) user.borrowed = Math.max(0, user.borrowed-1);
+      }
+    });
+    DB.circulation = DB.circulation.filter(x=>!ids.includes(x.trxId));
+    circulationModuleState.selected.clear();
+    logActivity('circulation', 'delete', `Deleted ${ids.length} transaction(s) in bulk`);
+    saveDB(); render(); toast(`${ids.length} transaction(s) deleted`);
+  });
 }
 /* Queue position for a WAITING/READY reservation: 1-based rank among all active (non-fulfilled,
    non-cancelled) reservations on the same accession number, oldest request first. Used on the
@@ -8800,8 +8906,8 @@ function pageReservations(){
       ${r.status!=='FULFILLED'? `<button class="btn danger small" onclick="cancelReservation('${esc(r.id)}')">Cancel</button>`:''}
     `,
   });
-  if(!isAdmin()){
-    return `<div class="guest-lock">You're signed in as a guest — placing reservations needs an admin account.</div>${reservationsModule.render()}`;
+  if(!isStaff()){
+    return `<div class="guest-lock">You're signed in as a guest — placing reservations needs a staff or admin account.</div>${reservationsModule.render()}`;
   }
   return `
   <div class="card panel">
@@ -8936,7 +9042,7 @@ function warnIfStrikes(user, cb){
   confirmModal(`${user.name} already has ${user.strike} strike(s) on record for past overdue returns.\n\nAnother strike could lead to borrowing privileges being suspended. Continue issuing this title?`, cb, {confirmLabel:'Continue issuing', danger:false});
 }
 function issueBook(){
-  if(!isAdmin()) return requireAdmin('issue titles');
+  if(!isStaff()) return requireStaff('issue titles');
   const userPick = issuePicker && issuePicker.value;
   const bookPick = window.__issueBookPicker && window.__issueBookPicker.value;
   if(!userPick || !bookPick){ toast('Pick a member and a title from the suggestions'); return; }
@@ -8953,7 +9059,7 @@ function issueBook(){
 /* ---- batch borrow: stage several titles for one member, capped at their max allowed ---- */
 let issueStaging = []; // {acc, title}
 function addIssueToStaging(){
-  if(!isAdmin()) return requireAdmin('issue titles');
+  if(!isStaff()) return requireStaff('issue titles');
   const userPick = issuePicker && issuePicker.value;
   const bookPick = window.__issueBookPicker && window.__issueBookPicker.value;
   if(!userPick){ toast('Pick a member first'); return; }
@@ -8987,7 +9093,7 @@ function renderIssueStaging(){
   ` : '';
 }
 function issueStagedBooks(){
-  if(!isAdmin()) return requireAdmin('issue titles');
+  if(!isStaff()) return requireStaff('issue titles');
   const userPick = issuePicker && issuePicker.value;
   if(!userPick || !issueStaging.length) return;
   const user = DB.users.find(u=>u.id===userPick.id);
@@ -9056,7 +9162,7 @@ function doReturnOne(trx, condition, opts={}){
   return {wasOverdue, isMissing, book, consequences};
 }
 function returnBook(){
-  if(!isAdmin()) return requireAdmin('return titles');
+  if(!isStaff()) return requireStaff('return titles');
   const pick = returnPicker && returnPicker.value;
   const condition = $('#returnCondition') ? $('#returnCondition').value : 'GOOD';
   if(!pick){ toast('Pick a loan from the suggestions'); return; }
@@ -9073,7 +9179,7 @@ function returnBook(){
 /* ---- batch return: stage several active loans and return them together ---- */
 let returnStaging = []; // {trxId, acc, title}
 function addReturnToStaging(){
-  if(!isAdmin()) return requireAdmin('return titles');
+  if(!isStaff()) return requireStaff('return titles');
   const pick = returnPicker && returnPicker.value;
   if(!pick){ toast('Pick a loan to add'); return; }
   if(returnStaging.some(s=>s.trxId===pick.id)){ toast('That loan is already staged'); return; }
@@ -9095,7 +9201,7 @@ function renderReturnStaging(){
   ` : '';
 }
 function returnStagedBooks(){
-  if(!isAdmin()) return requireAdmin('return titles');
+  if(!isStaff()) return requireStaff('return titles');
   if(!returnStaging.length) return;
   const condition = $('#returnCondition') ? $('#returnCondition').value : 'GOOD';
   let count = 0, csqCount = 0;
@@ -9134,7 +9240,7 @@ function totalOutstandingFines(userId){
    "mark paid" toggle. Waiving requires a reason and is logged to the Register, same as any other
    discipline/finance exception, so there's an audit trail for why a fine was let go. */
 function openFinePaymentModal(trxId){
-  if(!isAdmin()) return requireAdmin('record fine payments');
+  if(!isStaff()) return requireStaff('record fine payments');
   const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
   const st = fineStatus(t);
   const wrap = document.createElement('div');
@@ -9533,7 +9639,7 @@ function userRecipient(user){
   return null;
 }
 function requestReservation(acc, userId){
-  if(!isAdmin()) return requireAdmin('place a reservation');
+  if(!isStaff()) return requireStaff('place a reservation');
   const book = DB.catalogue.find(b=>b.acc===acc);
   const user = DB.users.find(u=>u.id===userId);
   if(!book || !user){ toast('Pick a member and a title'); return; }
@@ -9545,14 +9651,14 @@ function requestReservation(acc, userId){
   saveDB(); render(); toast(`Reservation placed for ${user.name} — they'll be notified when it's returned`);
 }
 function cancelReservation(id){
-  if(!isAdmin()) return requireAdmin('cancel a reservation');
+  if(!isStaff()) return requireStaff('cancel a reservation');
   const r = DB.reservations.find(x=>x.id===id);
   DB.reservations = DB.reservations.filter(r=>r.id!==id);
   if(r) logActivity('reservations', 'delete', `Reservation cancelled — "${r.title}" for ${r.name}`);
   saveDB(); render(); toast('Reservation cancelled');
 }
 function fulfillReservation(id){
-  if(!isAdmin()) return requireAdmin('fulfil a reservation');
+  if(!isStaff()) return requireStaff('fulfil a reservation');
   const r = DB.reservations.find(x=>x.id===id); if(!r) return;
   r.status = 'FULFILLED';
   logActivity('reservations', 'edit', `Reservation fulfilled — "${r.title}" for ${r.name}`);
@@ -9576,7 +9682,7 @@ function fulfillReservationsForReturn(acc, book){
 
 /* ================= RENEWALS ================= */
 function renewLoan(trxId){
-  if(!isAdmin()) return requireAdmin('renew a loan');
+  if(!isStaff()) return requireStaff('renew a loan');
   const t = DB.circulation.find(x=>x.trxId===trxId); if(!t) return;
   if(t.returnDate){ toast('This loan is already returned'); return; }
   const max = DB.setup.maxRenewals ?? 2;
@@ -10936,12 +11042,12 @@ function logReminderEntry(trxId, opts={}){
   });
 }
 function sendReminder(trxId, opts={}){
-  if(!isAdmin()) return requireAdmin('log reminders');
+  if(!isStaff()) return requireStaff('log reminders');
   logReminderEntry(trxId, opts);
   saveDB(); render(); toast('Reminder logged');
 }
 function sendReminderViaWhatsApp(trxId, kind){
-  if(!isAdmin()) return requireAdmin('log reminders');
+  if(!isStaff()) return requireStaff('log reminders');
   const trx = DB.circulation.find(x=>x.trxId===trxId);
   if(!trx) return toast('Transaction not found');
   const recipient = reminderRecipient(trx);
@@ -10958,7 +11064,7 @@ function sendReminderViaWhatsApp(trxId, kind){
    Profile page (Loans tab) rather than one WhatsApp send per loan. Logs one reminder-history entry
    per active loan, same as the per-transaction path, just without a toast/re-render for each. */
 function sendBulkReminderViaWhatsApp(userId){
-  if(!isAdmin()) return requireAdmin('log reminders');
+  if(!isStaff()) return requireStaff('log reminders');
   const u = DB.users.find(x=>x.id===userId);
   if(!u) return toast('Member not found');
   const active = DB.circulation.filter(t=>t.userId===userId && !t.returnDate);
@@ -11082,7 +11188,7 @@ let batchStaging = []; // {id,name,cls,category}
 let batchChecked = {}; // id -> bool
 let batchPicker;
 function renderBatchStagingHtml(){
-  if(!isAdmin()) return `<div class="guest-lock">Batch check-in needs an admin account.</div>`;
+  if(!isStaff()) return `<div class="guest-lock">Batch check-in needs a staff or admin account.</div>`;
   const selectedCount = Object.values(batchChecked).filter(Boolean).length;
   return `
   <div class="stage-toolbar">
@@ -11130,7 +11236,7 @@ function renderBatchStagingHtml(){
   `;
 }
 function addClassToBatch(){
-  if(!isAdmin()) return requireAdmin('stage check-ins');
+  if(!isStaff()) return requireStaff('stage check-ins');
   const cls = document.getElementById('batchClassSelect').value;
   if(!cls){ toast('Select a class first'); return; }
   const members = DB.users.filter(u=>u.cls===cls);
@@ -11144,7 +11250,7 @@ function addClassToBatch(){
 function removeFromBatch(id){ batchStaging = batchStaging.filter(s=>s.id!==id); delete batchChecked[id]; mountBatchStaging(); }
 function clearBatch(){ batchStaging=[]; batchChecked={}; mountBatchStaging(); }
 function submitBatch(){
-  if(!isAdmin()) return requireAdmin('submit check-ins');
+  if(!isStaff()) return requireStaff('submit check-ins');
   const purpose = document.getElementById('batchPurpose').value;
   if(!purpose){ toast('Select a purpose first'); return; }
   const timeIn = document.getElementById('batchTimeIn').value;
@@ -11181,7 +11287,7 @@ function currentlyInLibrary(){
   return DB.registerLog.filter(r=> r.source==='DESK' && (r.date||'').slice(0,10)===today && r.timeIn && !r.timeOut);
 }
 function renderCheckoutHtml(){
-  if(!isAdmin()) return `<div class="guest-lock">Batch check-out needs an admin account.</div>`;
+  if(!isStaff()) return `<div class="guest-lock">Batch check-out needs a staff or admin account.</div>`;
   const inLib = currentlyInLibrary();
   if(!inLib.length) return `<div class="stage-empty">Nobody is currently signed in at the desk.</div>`;
   const selectedCount = inLib.filter(r=>checkoutChecked[r.entryId]).length;
@@ -11211,7 +11317,7 @@ function mountCheckoutStaging(){
   });
 }
 function submitCheckout(){
-  if(!isAdmin()) return requireAdmin('check students out');
+  if(!isStaff()) return requireStaff('check students out');
   const now = new Date().toTimeString().slice(0,5);
   const selected = currentlyInLibrary().filter(r=>checkoutChecked[r.entryId]);
   if(!selected.length){ toast('Select at least one person to check out'); return; }
@@ -11513,7 +11619,7 @@ function openFeedbackForm(entryId){
   });
 }
 function setFeedbackStatus(entryId, status){
-  if(!isAdmin()) return requireAdmin('update feedback status');
+  if(!isStaff()) return requireStaff('update feedback status');
   const f = DB.feedback.find(x=>x.entryId===entryId); if(f){ f.status=status; saveDB(); }
   toast('Status updated to '+status);
 }
@@ -14175,7 +14281,7 @@ function pageSecurity(){
   </div>
   <div class="card panel">
     <div class="panel-head"><h3>Session</h3><div class="hint">Signed in right now</div></div>
-    <p style="font-size:12.5px;color:var(--muted)">${esc(SESSION.fullName)} (${esc(SESSION.username)}) · <span class="badge ${SESSION.role==='ADMIN'?'gold':'grey'}">${esc(SESSION.role)}</span></p>
+    <p style="font-size:12.5px;color:var(--muted)">${esc(SESSION.fullName)} (${esc(SESSION.username)}) · <span class="badge ${SESSION.role==='ADMIN'?'gold':SESSION.role==='STAFF'?'blue':'grey'}">${esc(SESSION.role)}</span></p>
     <p class="field-hint" style="margin-top:6px">A page refresh always signs everyone out and returns to the sign-in screen — sessions never persist silently across reloads.</p>
   </div>
   <div class="card panel">
@@ -14480,7 +14586,7 @@ function render(){
     if(mainEl) mainEl.scrollTop = 0;
     lastRenderedRoute = route;
   }
-  renderNav(); setHeader(); renderAccountChip();
+  renderNav(); renderBottomNav(); setHeader(); renderAccountChip();
   const el = $('#content');
   let html = '';
   switch(route){
