@@ -2813,7 +2813,7 @@ body[data-topbar-style="blank"] .topbar-search-input::placeholder{ color:var(--m
 .clock-chip .time{ font-size:15px; font-weight:700; letter-spacing:.5px; font-family:var(--clock-font);}
 .clock-chip .date{ font-size:10.5px; color:rgba(239,232,211,.62); text-transform:uppercase; letter-spacing:.4px; font-family:var(--date-font);}
 .account-chip{ display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:30px; padding:5px 14px 5px 5px; cursor:pointer;}
-.account-chip .av{ width:30px;height:30px;border-radius:50%; background:var(--brass-light); color:var(--forest-dark); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; font-family:Georgia,serif;}
+.account-chip .av{ width:30px;height:30px;border-radius:50%; flex:0 0 30px; background:var(--brass-light); color:var(--forest-dark); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; font-family:Georgia,serif;}
 .account-chip .nm{ font-size:12.5px; font-weight:600; line-height:1.2; color:#fff;}
 .account-chip .rl{ font-size:10px; color:rgba(239,232,211,.6); text-transform:uppercase; letter-spacing:.4px;}
 .content{ padding:22px 26px 60px; flex:1;}
@@ -2855,7 +2855,7 @@ html[data-theme="dark"] body[data-section-style="image"] .card{
 html[data-theme="dark"] body[data-section-style="image"] .modal{
   background-image:linear-gradient(rgba(var(--modal-bg-rgb-dark,var(--section-bg-rgb-dark,20,22,20)),var(--section-opacity,0.7)),rgba(var(--modal-bg-rgb-dark,var(--section-bg-rgb-dark,20,22,20)),var(--section-opacity,0.7))), var(--section-bg-image,none);
 }
-body[data-topbar-style="blank"] .topbar{ background:transparent; border-bottom:1px solid var(--line); box-shadow:none;}
+body[data-topbar-style="blank"] .topbar{ background:transparent; border-bottom:1px solid var(--line); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none;}
 body[data-topbar-style="blank"] .topbar .titles h2, body[data-topbar-style="blank"] .topbar .titles p, body[data-topbar-style="blank"] .clock-chip .time{ color:var(--ink);}
 body[data-topbar-style="glassy"] .topbar{ background:rgba(var(--topbar-bg-rgb,31,58,46),var(--section-opacity,0.7)); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,.15);}
 .kpi{ padding:16px 18px; position:relative; overflow:hidden;}
@@ -3320,7 +3320,7 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   font-size:12px; cursor:pointer; box-shadow:var(--shadow);
 }
 .avatar-camera-badge:hover{ background:var(--forest);}
-.account-chip .av img{ width:100%;height:100%;object-fit:cover; border-radius:50%;}
+.account-chip .av img{ width:100%;height:100%;object-fit:cover; border-radius:50%; flex-shrink:0;}
 .img-lightbox-backdrop{ position:fixed; inset:0; background:rgba(10,15,12,.82); z-index:1000; display:flex; align-items:center; justify-content:center; cursor:zoom-out; animation:modalBackdropIn .18s ease;}
 .img-lightbox-backdrop.closing{ animation:modalBackdropOut .16s ease forwards;}
 .img-lightbox-backdrop img{ max-width:88vw; max-height:86vh; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,.5);}
@@ -3354,7 +3354,7 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
 /* ===== mobile floating action button ===== */
 .mobile-fab{
   display:none; position:fixed; right:18px; z-index:46;
-  bottom:calc(64px + env(safe-area-inset-bottom,0) + 14px);
+  bottom:calc(72px + env(safe-area-inset-bottom,0) + 14px);
   width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
   background:var(--brass); color:#221704; font-size:24px; line-height:1;
   align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28);
@@ -3370,17 +3370,18 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   box-shadow:0 -6px 20px rgba(0,0,0,.18);
   padding-bottom:env(safe-area-inset-bottom,0);
 }
-.bottom-nav-inner{ display:flex; align-items:stretch; justify-content:space-around; }
+.bottom-nav-inner{ display:flex; align-items:stretch; justify-content:space-around; padding:10px 4px 12px; }
 .bottom-nav button{
   flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:2px; padding:7px 2px 6px; background:transparent; border:none; cursor:pointer;
-  color:rgba(255,255,255,.62); font-size:9.5px; font-family:var(--app-font); letter-spacing:.1px;
+  gap:4px; padding:6px 2px; background:transparent; border:none; border-radius:12px; cursor:pointer;
+  color:rgba(255,255,255,.62); font-size:11px; font-family:var(--app-font); letter-spacing:.1px;
   transition:color .15s; position:relative; white-space:nowrap;
 }
-.bottom-nav button .ico{ font-size:18px; line-height:1;}
+.bottom-nav button .ico{ font-size:23px; line-height:1;}
 .bottom-nav button.active{ color:#fff;}
 .bottom-nav button.active .ico{ color:var(--brass-light);}
-.bottom-nav button .nav-badge{ position:absolute; top:2px; right:calc(50% - 20px);}
+.bottom-nav button:active{ background:rgba(255,255,255,.08);}
+.bottom-nav button .nav-badge{ position:absolute; top:0; right:calc(50% - 22px);}
 
 @media (max-width:900px){
   .hamburger{ display:none;}
@@ -3392,10 +3393,13 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   /* ===== modern mobile header: slim frosted bar, bigger bold title, icon-only actions ===== */
   .topbar{
     padding:9px 14px; padding-top:calc(9px + env(safe-area-inset-top,0));
-    flex-wrap:nowrap; gap:8px; background:rgba(18,36,25,.86);
+    flex-wrap:nowrap; gap:8px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%),
+      linear-gradient(135deg, var(--sidebar-bg) 0%, var(--sidebar-bg-dark) 120%);
     backdrop-filter:saturate(160%) blur(14px); -webkit-backdrop-filter:saturate(160%) blur(14px);
-    border-bottom:1px solid rgba(255,255,255,.08);
-    box-shadow:0 2px 16px rgba(0,0,0,.16);
+    border-bottom:1px solid rgba(184,134,62,.35);
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 4px 18px rgba(0,0,0,.2);
   }
   .topbar .titles h2{ font-size:18px; font-weight:700; letter-spacing:-.2px;}
   .topbar .titles p{ font-size:11px; margin-top:0;}
@@ -3409,9 +3413,9 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .account-chip{
     background:none; border:none; padding:0 0 0 4px; gap:0; min-width:0;
   }
-  .account-chip .av{ width:32px; height:32px; box-shadow:0 0 0 2px rgba(255,255,255,.18);}
+  .account-chip .av{ width:32px; height:32px; flex:0 0 32px; box-shadow:0 0 0 2px rgba(255,255,255,.18);}
   .account-chip > div:last-child{ display:none;} /* name/role text — Account tab already covers this on mobile */
-  .content{ padding:14px 12px 84px;}
+  .content{ padding:14px 12px 96px;}
   .grid.kpis{ grid-template-columns:repeat(2,1fr); gap:10px;}
   .kpi{ padding:12px 12px;}
   .kpi .val{ font-size:22px;}
@@ -3504,7 +3508,7 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .chart-data-table{ border-left:none; border-top:1px solid var(--line); padding-left:0; padding-top:10px; max-height:160px;}
 }
 @media (max-width:480px){
-  .content{ padding:12px 10px 80px;}
+  .content{ padding:12px 10px 92px;}
   .kpi{ padding:10px;}
   .grid.kpis{ grid-template-columns:repeat(2,1fr); gap:8px;}
   .quicklinks{ grid-template-columns:1fr 1fr;}
