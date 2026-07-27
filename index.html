@@ -2970,6 +2970,7 @@ table.datatable td{ padding:8px 10px; border-bottom:1px solid #efe8d4; vertical-
 table.datatable tr:hover td{ background:#fbf8ee;}
 .table-wrap{ overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:8px;}
 .table-count{ font-size:11.5px; color:var(--muted); margin-top:8px;}
+.mobile-selall{ display:none;}
 
 .badge{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;}
 .badge.green{ background:#E4EEE1; color:var(--ok);}
@@ -3372,17 +3373,18 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
 .bottom-nav-inner{ display:flex; align-items:stretch; justify-content:space-around; }
 .bottom-nav button{
   flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:3px; padding:8px 4px 7px; background:transparent; border:none; cursor:pointer;
-  color:rgba(255,255,255,.62); font-size:10.5px; font-family:var(--app-font); letter-spacing:.2px;
-  transition:color .15s; position:relative;
+  gap:2px; padding:7px 2px 6px; background:transparent; border:none; cursor:pointer;
+  color:rgba(255,255,255,.62); font-size:9.5px; font-family:var(--app-font); letter-spacing:.1px;
+  transition:color .15s; position:relative; white-space:nowrap;
 }
-.bottom-nav button .ico{ font-size:19px; line-height:1;}
+.bottom-nav button .ico{ font-size:18px; line-height:1;}
 .bottom-nav button.active{ color:#fff;}
 .bottom-nav button.active .ico{ color:var(--brass-light);}
 .bottom-nav button .nav-badge{ position:absolute; top:2px; right:calc(50% - 20px);}
 
 @media (max-width:900px){
   .hamburger{ display:none;}
+  #topHomeBtn{ display:none !important;}
   .sidebar{ display:none;}
   .sidebar-overlay{ display:none !important;}
   .bottom-nav{ display:block;}
@@ -3429,6 +3431,37 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .home-hero .accession-stamp{ transform:none; padding:8px 12px;}
   .stage-toolbar{ flex-direction:column; align-items:stretch;}
   table.datatable{ font-size:12px;}
+  /* Card-list layout for the shared list-page tables (Catalogue, Members, Equipment, Reminders,
+     Reservations, Activity log, Register, Feedback, Roster…) — each row becomes a labeled card
+     instead of a side-scrolling row, which reads far better on a narrow screen. Tables that
+     don't carry this marker class keep the original horizontal-scroll behavior untouched. */
+  table.datatable.cards-on-mobile{ display:block; border:none;}
+  table.datatable.cards-on-mobile thead{ display:none;}
+  table.datatable.cards-on-mobile tbody{ display:block;}
+  table.datatable.cards-on-mobile tr{
+    display:block; margin:10px; border:1px solid var(--line); border-radius:10px;
+    padding:4px 12px; background:var(--card);
+  }
+  table.datatable.cards-on-mobile tr:first-child{ margin-top:10px;}
+  table.datatable.cards-on-mobile td{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:8px 0; border:none; border-bottom:1px solid var(--line);
+    text-align:right; font-size:13px;
+  }
+  table.datatable.cards-on-mobile td:last-child{ border-bottom:none;}
+  table.datatable.cards-on-mobile td::before{
+    content:attr(data-label); font-weight:600; color:var(--muted-label); text-align:left;
+    flex:0 0 auto; margin-right:auto; font-size:10.5px; text-transform:uppercase; letter-spacing:.3px;
+  }
+  table.datatable.cards-on-mobile td:not([data-label]){ display:block; text-align:left;}
+  table.datatable.cards-on-mobile td:not([data-label])::before{ content:none;}
+  table.datatable.cards-on-mobile td[data-label="Actions"]{ flex-wrap:wrap; justify-content:flex-end;}
+  .table-wrap:has(table.cards-on-mobile){ max-height:none; border:none; background:none;}
+  .mobile-selall{
+    display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:12.5px;
+    color:var(--forest); font-weight:600;
+  }
+  .mobile-selall input{ width:16px; height:16px;}
   .table-wrap{
     position:relative; -webkit-overflow-scrolling:touch;
     background:
@@ -3446,6 +3479,7 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .id-card-grid, .print-id-card-grid{ grid-template-columns:1fr;}
   .stage-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   .grid.charts-row .chart-box{ min-width:0;}
+  .two-col > .card{ min-width:0;}
   .chart-box-body{ flex-direction:column;}
   .chart-box.has-table .chart-canvas-wrap{ height:220px; flex:none;}
   .chart-data-table{ border-left:none; border-top:1px solid var(--line); padding-left:0; padding-top:10px; max-height:160px;}
@@ -3741,6 +3775,23 @@ function firstNameOf(name){
   if(!name) return '';
   const first = name.trim().split(/\s+/)[0] || '';
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+// For the header account chip on narrow screens: keeps the first name whole and reduces any
+// other names to initials ("Adaeze N. Okafor" -> "Adaeze N.O."), so the chip doesn't get cut
+// off. If that's still too wide (a long first name), the first name itself is trimmed with an
+// ellipsis to fit within maxLen.
+function compactAccountName(name, maxLen){
+  name = String(name||'').trim();
+  if(!name) return '';
+  if(name.length <= maxLen) return name;
+  const parts = name.split(/\s+/);
+  if(parts.length === 1) return name.slice(0, Math.max(1,maxLen-1)) + '…';
+  const first = parts[0];
+  const otherInitials = parts.slice(1).map(p=>p[0]?p[0].toUpperCase()+'.':'').join('');
+  let compact = otherInitials ? `${first} ${otherInitials}` : first;
+  if(compact.length <= maxLen) return compact;
+  const budget = Math.max(1, maxLen - otherInitials.length - 2);
+  return `${first.slice(0,budget)}… ${otherInitials}`.trim();
 }
 const EYE_ICON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="eye-outline" d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"></path><circle class="eye-pupil" cx="12" cy="12" r="3"></circle><line class="eye-slash" x1="3" y1="3" x2="21" y2="21"></line></svg>`;
 function pwFieldHtml(id, placeholder){
@@ -5062,7 +5113,7 @@ function renderAccountChip(){
   if(!SESSION) return;
   const pos = SESSION.avatarPos || {x:50,y:50};
   $('#accountAv').innerHTML = SESSION.avatar ? `<img src="${SESSION.avatar}" style="object-position:${pos.x}% ${pos.y}%">` : esc(initials(SESSION.fullName));
-  $('#accountName').textContent = SESSION.fullName;
+  $('#accountName').textContent = compactAccountName(SESSION.fullName, window.innerWidth<=900 ? 16 : 200);
   $('#accountRole').textContent = SESSION.role;
 }
 
@@ -5485,7 +5536,8 @@ const NAV = [
 const BOTTOM_NAV = [
   {id:'home', label:'Home', ico:'⌂'},
   {id:'dashboard', label:'Dashboard', ico:'▤'},
-  {id:'analytics', label:'Analytics', ico:'◔'},
+  {id:'circulation', label:'Circulation', ico:'⇄'},
+  {id:'register', label:'Register', ico:'✎'},
   {id:'account', label:'Account', ico:'👤', action:'openAccountPanel'},
 ];
 function renderBottomNav(){
@@ -6250,14 +6302,14 @@ function GenericModule(cfg){
     if(capped) rows = rows.slice(0, CAP);
     const selCount = cfg.selectable ? rows.filter(r=>state.selected.has(keyOf(r))).length : 0;
     return `
-      <div class="table-wrap"><table class="datatable">
+      <div class="table-wrap"><table class="datatable cards-on-mobile">
         <thead><tr>${cfg.selectable?`<th style="width:28px"><input type="checkbox" id="selall_${cfg.key}" ${rows.length && selCount===rows.length?'checked':''}></th>`:''}${cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}${cfg.rowActions?'<th></th>':''}</tr></thead>
         <tbody>
-        ${rows.length? rows.map(r=>`<tr>${cfg.selectable?`<td><input type="checkbox" class="rowsel_${cfg.key}" data-k="${esc(keyOf(r))}" ${state.selected.has(keyOf(r))?'checked':''}></td>`:''}${cfg.columns.map(c=>`<td>${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td>${isAdmin()? cfg.rowActions(r):''}</td>`:''}</tr>`).join('')
+        ${rows.length? rows.map(r=>`<tr>${cfg.selectable?`<td data-label="Select"><input type="checkbox" class="rowsel_${cfg.key}" data-k="${esc(keyOf(r))}" ${state.selected.has(keyOf(r))?'checked':''}></td>`:''}${cfg.columns.map(c=>`<td data-label="${esc(c.label)}">${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td data-label="Actions">${isAdmin()? cfg.rowActions(r):''}</td>`:''}</tr>`).join('')
           : `<tr><td colspan="${cfg.columns.length+(cfg.rowActions?1:0)+(cfg.selectable?1:0)}"><div class="empty"><div class="big">·</div>No matching records</div></td></tr>`}
         </tbody>
       </table></div>
-      <div class="table-count">${capped? `Showing first ${CAP} of ${total} matches — refine your search to narrow it down` : `${total} of ${cfg.data().length} records`}${cfg.selectable && selCount? ` · ${selCount} selected`:''}</div>`;
+      <div class="table-count">${cfg.selectable? `<label class="mobile-selall"><input type="checkbox" id="selallmobile_${cfg.key}" ${rows.length && selCount===rows.length?'checked':''}> Select all</label>`:''}${capped? `Showing first ${CAP} of ${total} matches — refine your search to narrow it down` : `${total} of ${cfg.data().length} records`}${cfg.selectable && selCount? ` · ${selCount} selected`:''}</div>`;
   }
   return {
     resultsHtml,
@@ -6398,11 +6450,14 @@ function GenericModule(cfg){
       function bindRowSelection(){
         if(!cfg.selectable) return;
         const selAll = document.getElementById('selall_'+cfg.key);
-        if(selAll) selAll.onchange = e=>{
+        const toggleAll = e=>{
           let rows = filteredRows(); const CAP = cfg.cap || 250; if(rows.length>CAP) rows = rows.slice(0,CAP);
           rows.forEach(r=> e.target.checked ? state.selected.add(keyOf(r)) : state.selected.delete(keyOf(r)));
           updateResultsOnly();
         };
+        if(selAll) selAll.onchange = toggleAll;
+        const selAllMobile = document.getElementById('selallmobile_'+cfg.key);
+        if(selAllMobile) selAllMobile.onchange = toggleAll;
         document.querySelectorAll('.rowsel_'+cfg.key).forEach(cb=>{
           cb.onchange = e=>{
             if(e.target.checked) state.selected.add(e.target.dataset.k); else state.selected.delete(e.target.dataset.k);
