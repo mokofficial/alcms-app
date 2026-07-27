@@ -3476,6 +3476,14 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
      so columns stay aligned — only the outer <table> becomes a scrollable block). */
   table.datatable{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;}
   .account-chip .nm{ max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* .topbar-right was flex:none (fixed to its content's natural width), so once the search
+     icon, notification bell, clock, and account chip were all present their combined minimum
+     width didn't fit a phone screen and pushed the whole page wide. Letting it shrink — and
+     dropping the clock, which just duplicates the device's own status-bar clock — fixes it. */
+  .topbar-right{ flex:1 1 auto; min-width:0; justify-content:flex-end; gap:8px;}
+  .clock-chip{ display:none;}
+  .account-chip{ min-width:0; padding-right:10px;}
+  .account-chip > div:last-child{ min-width:0;}
   .id-card-grid, .print-id-card-grid{ grid-template-columns:1fr;}
   .stage-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   .grid.charts-row .chart-box{ min-width:0;}
