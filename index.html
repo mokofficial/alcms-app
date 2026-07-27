@@ -2996,6 +2996,8 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .modal.confirm-modal{ max-width:420px;}
 .modal-backdrop.closing .modal{ animation:modalScaleOut .16s ease forwards;}
 @keyframes modalBackdropIn{ from{ opacity:0;} to{ opacity:1;} }
+@keyframes modalSheetIn{ from{ opacity:0; transform:translateY(60px);} to{ opacity:1; transform:translateY(0);} }
+@keyframes modalSheetOut{ from{ opacity:1; transform:translateY(0);} to{ opacity:0; transform:translateY(50px);} }
 @keyframes modalBackdropOut{ from{ opacity:1;} to{ opacity:0;} }
 @keyframes modalScaleIn{ from{ opacity:0; transform:scale(.94) translateY(8px);} to{ opacity:1; transform:scale(1) translateY(0);} }
 @keyframes modalScaleOut{ from{ opacity:1; transform:scale(1) translateY(0);} to{ opacity:0; transform:scale(.96) translateY(6px);} }
@@ -3348,6 +3350,18 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
 .color-swatch:hover{ transform:scale(1.1);}
 .color-swatch.active{ border-color:var(--forest); box-shadow:0 0 0 2px var(--forest), 0 1px 3px rgba(0,0,0,.15);}
 
+/* ===== mobile floating action button ===== */
+.mobile-fab{
+  display:none; position:fixed; right:18px; z-index:46;
+  bottom:calc(64px + env(safe-area-inset-bottom,0) + 14px);
+  width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
+  background:var(--brass); color:#221704; font-size:24px; line-height:1;
+  align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28);
+  transition:transform .12s ease;
+}
+.mobile-fab:active{ transform:scale(.92);}
+@media (min-width:901px){ .mobile-fab{ display:none !important;} }
+
 /* ===== mobile bottom navigation ===== */
 .bottom-nav{
   display:none; position:fixed; left:0; right:0; bottom:0; z-index:45;
@@ -3388,9 +3402,26 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .panel-head{ flex-direction:column; align-items:stretch;}
   .panel-head > div[style]{ display:flex; gap:8px; flex-wrap:wrap;}
   .panel-head-actions{ width:100%;}
-  .modal{ max-width:calc(100% - 24px); width:100%; max-height:calc(100% - 48px); border-radius:12px;}
-  .modal-backdrop{ padding:12px;}
-  .btn, .btn.small{ min-height:38px;}
+  .modal-backdrop{ align-items:flex-end; padding:0;}
+  .modal{
+    max-width:100%; width:100%; max-height:calc(100% - 40px); border-radius:18px 18px 0 0;
+    margin:0; padding-top:6px;
+  }
+  .modal-backdrop.closing .modal{ animation:modalSheetOut .16s ease forwards !important;}
+  .modal,
+  body[data-transition="slide"] .modal-backdrop .modal,
+  body[data-transition="fade"] .modal-backdrop .modal,
+  body[data-transition="drop"] .modal-backdrop .modal,
+  body[data-transition="flip"] .modal-backdrop .modal,
+  body[data-transition="blur"] .modal-backdrop .modal,
+  body[data-transition="bounce"] .modal-backdrop .modal{ animation:modalSheetIn .22s cubic-bezier(.2,.9,.3,1) !important;}
+  .modal-head{ position:relative; padding-top:20px; touch-action:none;}
+  .modal-head::before{
+    content:''; position:absolute; top:8px; left:50%; transform:translateX(-50%);
+    width:36px; height:4px; border-radius:3px; background:var(--line);
+  }
+  .btn, .btn.small{ min-height:42px;}
+  select, input[type="date"], .dropdown-menu a{ min-height:42px;}
   input, select, textarea{ font-size:16px !important; } /* prevents iOS auto-zoom on focus */
   .home-hero{ padding:20px 18px; padding-top:20px;}
   .home-hero h1{ font-size:20px;}
@@ -3398,6 +3429,15 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .home-hero .accession-stamp{ transform:none; padding:8px 12px;}
   .stage-toolbar{ flex-direction:column; align-items:stretch;}
   table.datatable{ font-size:12px;}
+  .table-wrap{
+    position:relative; -webkit-overflow-scrolling:touch;
+    background:
+      linear-gradient(to right, var(--card) 0, transparent 24px) left / 24px 100% no-repeat,
+      linear-gradient(to left, var(--card) 0, transparent 24px) right / 24px 100% no-repeat local,
+      linear-gradient(to right, rgba(19,32,25,.16), transparent 24px) left / 24px 100% no-repeat,
+      linear-gradient(to left, rgba(19,32,25,.16), transparent 24px) right / 24px 100% no-repeat;
+    background-attachment:local, local, scroll, scroll;
+  }
   /* Safety net: any table not already inside a .table-wrap scroller gets its own horizontal
      scroll instead of pushing the whole page wide (thead/tbody keep their default table display
      so columns stay aligned — only the outer <table> becomes a scrollable block). */
@@ -3545,6 +3585,7 @@ html, body{ overflow-x:hidden;}
     </div>
     <div class="content" id="content"></div>
   </div>
+  <button class="mobile-fab" id="mobileFab" style="display:none" aria-label="Add"><span>+</span></button>
   <nav class="bottom-nav" id="bottomNav">
     <div class="bottom-nav-inner" id="bottomNavInner"></div>
   </nav>
@@ -5462,6 +5503,58 @@ function renderBottomNav(){
     el.appendChild(b);
   });
 }
+// Mobile floating action button — a single shared element that any page can point at its own
+// primary "add" action, so the most-used button on a list page is always one thumb-reach away
+// instead of buried in a scrolling toolbar. Hidden on desktop by CSS; hidden by default on every
+// route change and only shown by pages that opt in (see GenericModule.bind()).
+function showMobileFab(label, onClick){
+  const fab = document.getElementById('mobileFab'); if(!fab) return;
+  fab.setAttribute('aria-label', label.replace(/^[^A-Za-z0-9]+/, '').trim() || 'Add');
+  fab.title = label;
+  fab.onclick = onClick;
+  fab.style.display = 'flex';
+}
+function hideMobileFab(){
+  const fab = document.getElementById('mobileFab'); if(!fab) return;
+  fab.style.display = 'none';
+  fab.onclick = null;
+}
+// Swipe-down-to-dismiss for the mobile bottom-sheet modal. Only the drag handle strip at the
+// top of the modal (.modal-head) starts a drag, so normal scrolling inside the modal body is
+// untouched. A real click is dispatched on the backdrop itself so every modal's existing
+// "click outside closes" handler (wrap.onclick = e=>{ if(e.target===wrap) close(); }) fires
+// exactly as if the person had tapped outside — including any unsaved-changes confirmation.
+(function(){
+  let startY=0, dragging=false, modalEl=null, backdropEl=null;
+  function onStart(e){
+    if(window.innerWidth>900) return;
+    const head = e.target.closest && e.target.closest('.modal-head');
+    if(!head) return;
+    const modal = head.closest('.modal'); if(!modal) return;
+    const backdrop = modal.closest('.modal-backdrop'); if(!backdrop) return;
+    modalEl = modal; backdropEl = backdrop;
+    startY = e.touches[0].clientY; dragging = true;
+    modalEl.style.transition = 'none';
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if(dy<=0){ modalEl.style.transform=''; return; }
+    modalEl.style.transform = `translateY(${dy}px)`;
+  }
+  function onEnd(e){
+    if(!dragging) return;
+    dragging = false;
+    modalEl.style.transition = '';
+    const dy = (e.changedTouches[0].clientY - startY);
+    if(dy>90) backdropEl.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+    else modalEl.style.transform = '';
+    modalEl = null; backdropEl = null;
+  }
+  document.addEventListener('touchstart', onStart, {passive:true});
+  document.addEventListener('touchmove', onMove, {passive:true});
+  document.addEventListener('touchend', onEnd, {passive:true});
+})();
 const ICON_PACKS = {
   minimal: {label:'Minimal (default)', icons:{
     // Every glyph here is a plain geometric/symbol character (no emoji mixed in), so the pack
@@ -6266,6 +6359,10 @@ function GenericModule(cfg){
       }
       const addBtn = document.querySelector(`[data-act="add-${cfg.key}"]`);
       if(addBtn) addBtn.onclick = ()=> cfg.onAdd();
+      // Mobile FAB mirrors whatever the "+ Add" button does for this module — one shared
+      // floating button instead of hunting for the toolbar action on a small screen.
+      if(cfg.onAdd && isAdmin()) showMobileFab(cfg.addLabel||'+ Add', cfg.onAdd);
+      else hideMobileFab();
       const importBtn = document.querySelector(`[data-act="import-${cfg.key}"]`);
       if(importBtn) importBtn.onclick = ()=> cfg.onImport();
       (cfg.extraActions||[]).forEach((a,i)=>{
@@ -14615,6 +14712,7 @@ function render(){
   }
   const __scrollSnapshot = snapshotScrollPositions(el);
   el.innerHTML = html;
+  hideMobileFab();
 
   if(route==='catalogue' && catalogueModule){ $('#mod_catalogue').innerHTML = catalogueModule.render(); MODULE_CONTAINERS.catalogue={host:{render:()=>{ $('#mod_catalogue').innerHTML=catalogueModule.render(); catalogueModule.bind(); }}}; catalogueModule.bind(); }
   if(route==='circulation' && circulationModule){ circulationModule.bind(); }
