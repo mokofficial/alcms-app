@@ -3389,8 +3389,28 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
   .sidebar-overlay{ display:none !important;}
   .bottom-nav{ display:block;}
   .main{ width:100%;}
-  .topbar{ padding:12px 14px; flex-wrap:wrap; gap:8px;}
-  .topbar .titles h2{ font-size:17px;}
+  /* ===== modern mobile header: slim frosted bar, bigger bold title, icon-only actions ===== */
+  .topbar{
+    padding:9px 14px; padding-top:calc(9px + env(safe-area-inset-top,0));
+    flex-wrap:nowrap; gap:8px; background:rgba(18,36,25,.86);
+    backdrop-filter:saturate(160%) blur(14px); -webkit-backdrop-filter:saturate(160%) blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    box-shadow:0 2px 16px rgba(0,0,0,.16);
+  }
+  .topbar .titles h2{ font-size:18px; font-weight:700; letter-spacing:-.2px;}
+  .topbar .titles p{ font-size:11px; margin-top:0;}
+  .topbar-right{ flex:1 1 auto; min-width:0; justify-content:flex-end; gap:2px;}
+  .clock-chip{ display:none;}
+  .topbar .icon-btn{
+    background:none; border:none; width:38px; height:38px; padding:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+  }
+  .topbar .icon-btn:active{ background:rgba(255,255,255,.1);}
+  .account-chip{
+    background:none; border:none; padding:0 0 0 4px; gap:0; min-width:0;
+  }
+  .account-chip .av{ width:32px; height:32px; box-shadow:0 0 0 2px rgba(255,255,255,.18);}
+  .account-chip > div:last-child{ display:none;} /* name/role text — Account tab already covers this on mobile */
   .content{ padding:14px 12px 84px;}
   .grid.kpis{ grid-template-columns:repeat(2,1fr); gap:10px;}
   .kpi{ padding:12px 12px;}
@@ -3475,15 +3495,6 @@ body.pdf-capturing #printArea{ display:block !important; position:fixed; left:-1
      scroll instead of pushing the whole page wide (thead/tbody keep their default table display
      so columns stay aligned — only the outer <table> becomes a scrollable block). */
   table.datatable{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;}
-  .account-chip .nm{ max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  /* .topbar-right was flex:none (fixed to its content's natural width), so once the search
-     icon, notification bell, clock, and account chip were all present their combined minimum
-     width didn't fit a phone screen and pushed the whole page wide. Letting it shrink — and
-     dropping the clock, which just duplicates the device's own status-bar clock — fixes it. */
-  .topbar-right{ flex:1 1 auto; min-width:0; justify-content:flex-end; gap:8px;}
-  .clock-chip{ display:none;}
-  .account-chip{ min-width:0; padding-right:10px;}
-  .account-chip > div:last-child{ min-width:0;}
   .id-card-grid, .print-id-card-grid{ grid-template-columns:1fr;}
   .stage-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   .grid.charts-row .chart-box{ min-width:0;}
