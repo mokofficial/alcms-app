@@ -2446,6 +2446,7 @@ html[data-theme="dark"]{
 }
 html[data-theme="dark"] body{ background:var(--parchment); }
 html[data-theme="dark"] .stamp.missing{ background:#3a1f1f; color:#f0a08c;}
+html[data-theme="dark"] .stamp.withdrawn{ background:#2c2c2c; color:#a8a8a8; border-color:#6b6b6b;}
 html[data-theme="dark"] table.datatable tr:hover td{ background:rgba(255,255,255,.05);}
 html[data-theme="dark"] .field input,html[data-theme="dark"] .field select,html[data-theme="dark"] .field textarea,
 html[data-theme="dark"] .toolbar input,html[data-theme="dark"] .toolbar select{ background:rgba(255,255,255,.06); color:var(--ink);}
@@ -2971,6 +2972,8 @@ table.datatable td{ padding:8px 10px; border-bottom:1px solid #efe8d4; vertical-
 table.datatable tr:hover td{ background:#fbf8ee;}
 .table-wrap{ overflow:auto; max-height:60vh; border:1px solid var(--line); border-radius:8px;}
 .table-count{ font-size:11.5px; color:var(--muted); margin-top:8px;}
+.datatable tr.row-muted{ opacity:.55;}
+.datatable tr.row-muted:hover{ opacity:.85;}
 .mobile-selall{ display:none;}
 
 .badge{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;}
@@ -2989,6 +2992,7 @@ table.datatable tr:hover td{ background:#fbf8ee;}
 .stamp.issued{ color:var(--brass);}
 .stamp.overdue{ color:var(--terracotta);}
 .stamp.missing{ color:#6b1f1f; background:#f8e3e3;}
+.stamp.withdrawn{ color:#6b6b6b; background:#ececec; border-color:#9a9a9a;}
 
 .modal-backdrop{ position:fixed; inset:0; background:rgba(19,32,25,.45); display:flex; align-items:center; justify-content:center; z-index:950; padding:20px;
   animation:modalBackdropIn .18s ease;}
@@ -3138,19 +3142,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
   font-size:12px; box-shadow:var(--shadow); z-index:200; opacity:0; transform:translateY(10px); transition:all .25s; pointer-events:none;}
 .cloud-indicator.show{ opacity:1; transform:translateY(0);}
 .cloud-indicator.error{ background:var(--terracotta);}
-.offline-banner{
-  position:fixed; left:50%; top:12px; z-index:970; transform:translate(-50%,-140%);
-  background:var(--terracotta); color:#fff; font-size:12.5px; font-weight:600;
-  padding:8px 16px; border-radius:20px; box-shadow:var(--shadow); transition:transform .25s ease;
-  white-space:nowrap;
-}
-.offline-banner.show{ transform:translate(-50%,0);}
-@media (max-width:900px){
-  .offline-banner{
-    top:calc(env(safe-area-inset-top,0) + 54px); font-size:11.5px; padding:7px 14px;
-    max-width:calc(100vw - 28px); white-space:normal; text-align:center;
-  }
-}
 
 .notif-center{ position:fixed; top:64px; right:18px; width:340px; max-width:90vw; max-height:70vh; overflow:auto;
   background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 16px 40px rgba(0,0,0,.22); z-index:400;}
@@ -3712,7 +3703,6 @@ html, body{ overflow-x:hidden;}
   </nav>
 </div>
 <div id="modalRoot"></div>
-<div id="offlineBanner" class="offline-banner">📶 You're offline — changes are still saved on this device</div>
 <div id="toast" class="toast"></div>
 <div id="printArea"></div>
 
@@ -5350,53 +5340,6 @@ async function saveNow(){
   }
 }
 let cloudIndicatorTimer = null;
-let offlineConfirmTimer = null;
-let offlineRecheckTimer = null;
-// navigator.onLine only reflects whether the device has *a* network interface up — plenty of
-// real setups (captive portals, some VPNs/proxies, certain routers) leave it reporting false
-// while the connection genuinely works. Rather than trust it outright, treat an "offline" signal
-// as a hint to double-check with an actual request before showing anything.
-async function reallyOffline(){
-  if(location.protocol==='file:') return false; // nothing to verify against when run from disk
-  try{
-    const ctrl = new AbortController();
-    const t = setTimeout(()=>ctrl.abort(), 4000);
-    await fetch(location.href, {method:'HEAD', cache:'no-store', signal:ctrl.signal});
-    clearTimeout(t);
-    return false;
-  }catch(e){ return true; }
-}
-function setOfflineBanner(show){
-  const el = document.getElementById('offlineBanner'); if(!el) return;
-  el.classList.toggle('show', show);
-}
-async function updateOfflineBanner(){
-  clearTimeout(offlineConfirmTimer);
-  if(navigator.onLine){
-    // The browser itself says we're connected — good enough, no need to double-check.
-    setOfflineBanner(false);
-    clearInterval(offlineRecheckTimer); offlineRecheckTimer = null;
-    return;
-  }
-  // Give transient blips (e.g. a brief wifi handoff) a few seconds to resolve on their own,
-  // then actively verify before showing anything distracting.
-  offlineConfirmTimer = setTimeout(async ()=>{
-    const stillOffline = await reallyOffline();
-    setOfflineBanner(stillOffline);
-    if(stillOffline && !offlineRecheckTimer){
-      // Keep quietly re-checking in the background so the banner clears itself the moment a
-      // real connection comes back, even if the browser never fires its own "online" event.
-      offlineRecheckTimer = setInterval(async ()=>{
-        if(navigator.onLine || !(await reallyOffline())){
-          setOfflineBanner(false);
-          clearInterval(offlineRecheckTimer); offlineRecheckTimer = null;
-        }
-      }, 12000);
-    }
-  }, 5000);
-}
-window.addEventListener('online', ()=>{ updateOfflineBanner(); toast('Back online'); });
-window.addEventListener('offline', updateOfflineBanner);
 function showCloudIndicator(state){
   let el = document.getElementById('cloudIndicator');
   if(!el){
@@ -6612,7 +6555,7 @@ function GenericModule(cfg){
       <div class="table-wrap"><table class="datatable cards-on-mobile">
         <thead><tr>${cfg.selectable?`<th style="width:28px"><input type="checkbox" id="selall_${cfg.key}" ${rows.length && selCount===rows.length?'checked':''}></th>`:''}${cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}${cfg.rowActions?'<th></th>':''}</tr></thead>
         <tbody>
-        ${rows.length? rows.map(r=>`<tr>${cfg.selectable?`<td data-label="Select"><input type="checkbox" class="rowsel_${cfg.key}" data-k="${esc(keyOf(r))}" ${state.selected.has(keyOf(r))?'checked':''}></td>`:''}${cfg.columns.map(c=>`<td data-label="${esc(c.label)}">${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td data-label="Actions"><div class="actions-collapse">${isAdmin()? cfg.rowActions(r):''}</div></td>`:''}</tr>`).join('')
+        ${rows.length? rows.map(r=>`<tr${cfg.rowClass && cfg.rowClass(r)? ` class="${esc(cfg.rowClass(r))}"`:''}>${cfg.selectable?`<td data-label="Select"><input type="checkbox" class="rowsel_${cfg.key}" data-k="${esc(keyOf(r))}" ${state.selected.has(keyOf(r))?'checked':''}></td>`:''}${cfg.columns.map(c=>`<td data-label="${esc(c.label)}">${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}${cfg.rowActions? `<td data-label="Actions"><div class="actions-collapse">${isAdmin()? cfg.rowActions(r):''}</div></td>`:''}</tr>`).join('')
           : `<tr><td colspan="${cfg.columns.length+(cfg.rowActions?1:0)+(cfg.selectable?1:0)}"><div class="empty"><div class="big">·</div>No matching records</div></td></tr>`}
         </tbody>
       </table></div>
@@ -8240,9 +8183,10 @@ function pageCatalogue(){
     selectable:true, rowKey:r=>r.acc,
     filters:[
       {key:'mainClass', label:'Main class', options:[...new Set(DB.catalogue.map(b=>b.mainClass))].filter(Boolean).sort()},
-      {key:'available', label:'Status', options:['AVAILABLE','ISSUED','MISSING']},
+      {key:'available', label:'Status', options:['AVAILABLE','ISSUED','MISSING','WITHDRAWN']},
       {key:'condition', label:'Condition', options:[...new Set(DB.catalogue.map(b=>b.condition))].filter(Boolean).sort()},
     ],
+    rowClass:r=>r.available==='WITHDRAWN'?'row-muted':'',
     columns:[
       {key:'acc', label:'Acc. No'},
       {key:'title', label:'Title', render:r=>`<strong>${esc(r.title)}</strong><div style="color:var(--muted);font-size:11px">${esc(r.author)}</div>`},
@@ -8250,7 +8194,7 @@ function pageCatalogue(){
       {key:'shelf', label:'Shelf'},
       {key:'year', label:'Year'},
       {key:'condition', label:'Condition', render:r=>`<span class="badge ${r.condition==='GOOD'?'green':r.condition==='FAIR'?'gold':'red'}">${esc(r.condition)}</span>`},
-      {key:'available', label:'Status', render:r=>`<span class="stamp ${r.available==='AVAILABLE'?'available':r.available==='MISSING'?'missing':'issued'}">${esc(r.available)}</span>`},
+      {key:'available', label:'Status', render:r=>`<span class="stamp ${r.available==='AVAILABLE'?'available':r.available==='MISSING'?'missing':r.available==='WITHDRAWN'?'withdrawn':'issued'}">${esc(r.available)}</span>`},
     ],
     exportColumns:[
       {label:'Accession No.', get:r=>r.acc},{label:'Title', get:r=>r.title},{label:'Author', get:r=>r.author},
@@ -8304,7 +8248,7 @@ function pageCatalogue(){
         return {added, skipped};
       }
     }),
-    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">Details</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
+    rowActions:r=>`<button class="btn secondary small" onclick="viewBook('${esc(r.acc)}')">Details</button> ${r.available==='ISSUED'?`<button class="btn secondary small" onclick="goReserveBook('${esc(r.acc)}')">Reserve</button>`:''} <button class="btn secondary small" onclick="openBookForm('${r.acc}')">Edit</button> ${r.available==='WITHDRAWN'?`<button class="btn secondary small" onclick="reinstateBook('${r.acc}')">Reinstate</button>`:r.available==='AVAILABLE'?`<button class="btn secondary small" onclick="withdrawBook('${r.acc}')">Withdraw</button>`:''} <button class="btn danger small" onclick="deleteBook('${r.acc}')">Delete</button>`,
   });
   return `<div id="mod_catalogue"></div>`;
 }
@@ -8609,6 +8553,22 @@ function emptyTrash(){
   confirmDelete(`Permanently delete all ${DB.trash.length} item(s) in Trash? This cannot be undone.`, ()=>{
     DB.trash = []; saveDB(); render(); toast('Trash emptied');
   });
+}
+function withdrawBook(acc){
+  if(!isAdmin()) return requireAdmin('withdraw titles');
+  const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
+  confirmModal(`Withdraw "${esc(b.title)}" from circulation? It stays in the catalogue (greyed out, searchable) but can no longer be issued or reserved — unlike Delete, nothing is lost and there's no 30-day expiry. Use this for weeding; use Delete for entries that shouldn't exist at all.`, ()=>{
+    b.available = 'WITHDRAWN';
+    logActivity('catalogue', 'withdraw', `Withdrew "${b.title}" (${b.acc}) from circulation`);
+    saveDB(); render(); toast('Title withdrawn — still in the catalogue, greyed out');
+  }, {confirmLabel:'Withdraw', danger:false});
+}
+function reinstateBook(acc){
+  if(!isAdmin()) return requireAdmin('reinstate titles');
+  const b = DB.catalogue.find(x=>x.acc===acc); if(!b) return;
+  b.available = 'AVAILABLE';
+  logActivity('catalogue', 'reinstate', `Reinstated "${b.title}" (${b.acc}) to circulation`);
+  saveDB(); render(); toast('Title reinstated — available again');
 }
 function deleteBook(acc){
   if(!isAdmin()) return requireAdmin('delete titles');
@@ -10103,6 +10063,7 @@ function requestReservation(acc, userId){
   const user = DB.users.find(u=>u.id===userId);
   if(!book || !user){ toast('Pick a member and a title'); return; }
   if(book.available==='AVAILABLE'){ toast('This title is available right now — no need to reserve, just issue it'); return; }
+  if(book.available==='WITHDRAWN'){ toast('This title has been withdrawn from circulation and can\'t be reserved'); return; }
   if(DB.reservations.some(r=>r.acc===acc && r.userId===userId && (r.status==='WAITING'||r.status==='READY'))){ toast(`${user.name} already has a reservation on this title`); return; }
   DB.reservations.push({id:'RSV-'+Date.now(), acc, title:book.title, userId:user.id, name:user.name, cls:user.cls,
     dateRequested:todayISO(), status:'WAITING', notifiedAt:null});
@@ -15117,7 +15078,6 @@ async function enterApp(){
   renderAccountChip();
   applyAppBackground();
   applyIconPack();
-  updateOfflineBanner();
   try{
     DB = await loadDB();
     if(DB.setup){
