@@ -5350,9 +5350,50 @@ async function saveNow(){
   }
 }
 let cloudIndicatorTimer = null;
-function updateOfflineBanner(){
+let offlineConfirmTimer = null;
+let offlineRecheckTimer = null;
+// navigator.onLine only reflects whether the device has *a* network interface up — plenty of
+// real setups (captive portals, some VPNs/proxies, certain routers) leave it reporting false
+// while the connection genuinely works. Rather than trust it outright, treat an "offline" signal
+// as a hint to double-check with an actual request before showing anything.
+async function reallyOffline(){
+  if(location.protocol==='file:') return false; // nothing to verify against when run from disk
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 4000);
+    await fetch(location.href, {method:'HEAD', cache:'no-store', signal:ctrl.signal});
+    clearTimeout(t);
+    return false;
+  }catch(e){ return true; }
+}
+function setOfflineBanner(show){
   const el = document.getElementById('offlineBanner'); if(!el) return;
-  el.classList.toggle('show', !navigator.onLine);
+  el.classList.toggle('show', show);
+}
+async function updateOfflineBanner(){
+  clearTimeout(offlineConfirmTimer);
+  if(navigator.onLine){
+    // The browser itself says we're connected — good enough, no need to double-check.
+    setOfflineBanner(false);
+    clearInterval(offlineRecheckTimer); offlineRecheckTimer = null;
+    return;
+  }
+  // Give transient blips (e.g. a brief wifi handoff) a few seconds to resolve on their own,
+  // then actively verify before showing anything distracting.
+  offlineConfirmTimer = setTimeout(async ()=>{
+    const stillOffline = await reallyOffline();
+    setOfflineBanner(stillOffline);
+    if(stillOffline && !offlineRecheckTimer){
+      // Keep quietly re-checking in the background so the banner clears itself the moment a
+      // real connection comes back, even if the browser never fires its own "online" event.
+      offlineRecheckTimer = setInterval(async ()=>{
+        if(navigator.onLine || !(await reallyOffline())){
+          setOfflineBanner(false);
+          clearInterval(offlineRecheckTimer); offlineRecheckTimer = null;
+        }
+      }, 12000);
+    }
+  }, 5000);
 }
 window.addEventListener('online', ()=>{ updateOfflineBanner(); toast('Back online'); });
 window.addEventListener('offline', updateOfflineBanner);
