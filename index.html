@@ -6676,6 +6676,10 @@ const STANDARD_ICONS = {
   home: SVG_ICONS.home,   // Home - line-icon house
   lock: SVG_ICONS.logout, // Lock/Signout - door + exit arrow line icon
   close: SVG_ICONS.close, // Close - line-icon X
+  // Search is pinned here (rather than left to vary per icon pack) so the Windows-taskbar-style
+  // glyph always shows up the same way everywhere, regardless of which icon pack a saved
+  // preference has selected. STANDARD_ICONS is checked before ICON_PACKS in navIcon() below.
+  search: SVG_ICONS.search,
 };
 
 /* Dynamic theme icon - returns sun in light mode, moon in dark mode */
