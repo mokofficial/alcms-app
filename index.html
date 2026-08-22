@@ -2970,6 +2970,7 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
   .topbar-search-input::placeholder{ color:rgba(239,232,211,.55);}
   .topbar-search-input:focus{ outline:none; border-color:var(--brass-light); background:rgba(255,255,255,.14);}
   .topbar-search .topbar-search-icon{ display:none;} /* Full search bar replaces the icon on desktop — extra .topbar-search selector needed to outrank the later .icon-btn display rule */
+  .topbar-search .search-icon-decor{ display:flex; color:rgba(239,232,211,.55);} /* matches .topbar-search-input::placeholder colour */
   /* The desktop sidebar (.sidebar, siblings with .main under #app) takes 230px away from .main
      whenever it's expanded — i.e. NOT .desktop-collapsed. Left alone, flexbox would shrink the
      title and the search bar roughly together as that room disappears. Capping the title/subtitle
@@ -2980,6 +2981,7 @@ nav.navlist button.active .nav-badge{ background:#221704; color:#fff;}
 }
 body[data-topbar-style="blank"] .topbar-search-input{ color:var(--ink); border-color:var(--line);}
 body[data-topbar-style="blank"] .topbar-search-input::placeholder{ color:var(--muted);}
+body[data-topbar-style="blank"] .topbar-search .search-icon-decor{ color:var(--muted);}
 .topbar .hamburger{ color:#EFE8D3;}
 .topbar .icon-btn{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#EFE8D3;}
 @media (min-width:901px){ #themeToggleMobile{ display:none;} }
@@ -3220,7 +3222,15 @@ input[type="color"]::-webkit-color-swatch-wrapper{ padding:0;}
 input[type="color"]::-webkit-color-swatch{ border:none; border-radius:6px;}
 input[type="color"]::-moz-color-swatch{ border:none; border-radius:6px;}
 .search-input-wrap{ position:relative; display:inline-flex;}
-.search-input-wrap input[type=text]{ padding:9px 28px 9px 12px;}
+.search-input-wrap input[type=text]{ padding:9px 28px 9px 32px;}
+/* Real inline search-glyph icon (Windows-taskbar-search style: a plain magnifying glass sitting
+   inside the field, left of the typed text) — replaces the old approach of typing a "◎" character
+   as the first character of the placeholder, which vanished the instant the field had a value or
+   was focused-with-text, unlike a proper icon which stays put. Non-interactive/decorative, so it
+   never intercepts clicks meant for the input beneath it. */
+.search-icon-decor{ position:absolute; left:10px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--muted); pointer-events:none; display:flex;}
+.search-icon-decor svg{ width:100%; height:100%; display:block;}
+.topbar-search-decor{ display:none;} /* shown again on desktop, once the full input replaces the icon-only button — see the min-width:901px rule above */
 .search-clear-btn{
   position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:none; cursor:pointer;
   color:var(--muted); font-size:13px; line-height:1; padding:4px; border-radius:50%;
@@ -3470,7 +3480,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button, input[type="passwo
 .notif-row-close:hover{ color:var(--terracotta);}
 
 .gsearch-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:500; display:flex; align-items:flex-start; justify-content:center; padding-top:10vh;}
-.gsearch-box{ width:560px; max-width:92vw; max-height:70vh; background:var(--card); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;}
+.gsearch-box{ position:relative; width:560px; max-width:92vw; max-height:70vh; background:var(--card); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column;}
+.gsearch-box .search-icon-decor{ left:14px;}
 .gsearch-input{ width:100%; border:none; border-bottom:1px solid var(--line); padding:16px 18px 16px 36px; font-size:15px; background:transparent; color:var(--ink);}
 .gsearch-input:focus{ outline:none;}
 .gsearch-results{ overflow:auto; padding:4px 6px; display:flex; flex-direction:column; gap:0;}
@@ -4229,7 +4240,7 @@ html[data-theme="dark"] .note-modal{ background:#2E2B31; border-color:rgba(203,1
         <button type="button" class="auth-mobile-back" onclick="mobileAuthBack()">← Back</button>
         <div class="lock-loan-search">
           <span class="lls-ic" id="lockLoanSearchIcon">🔎</span>
-          <input type="text" id="lockLoanSearchInput" placeholder="◎ Search titles, members, loans, reminders, reservations…" autocomplete="off" oninput="renderLockLoanSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault();lockLoanSearchSubmit();}else if(event.key==='Escape'){if(this.value){this.value='';renderLockLoanSuggest();}else{this.blur();}}">
+          <input type="text" id="lockLoanSearchInput" placeholder="Search titles, members, loans, reminders, reservations…" autocomplete="off" oninput="renderLockLoanSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault();lockLoanSearchSubmit();}else if(event.key==='Escape'){if(this.value){this.value='';renderLockLoanSuggest();}else{this.blur();}}">
           <button type="button" class="icon-btn" id="lockLoanSearchBtn" onclick="lockLoanSearchSubmit()" title="Search the library" aria-label="Search the library">🔎</button>
           <div id="lockLoanSuggest" class="scan-suggest lock-search-suggest"></div>
         </div>
@@ -4290,7 +4301,8 @@ html[data-theme="dark"] .note-modal{ background:#2E2B31; border-color:rgba(203,1
       <div class="topbar-right">
         <div class="topbar-search" id="topbarSearch">
           <button class="icon-btn topbar-search-icon" id="globalSearchBtn" onclick="openGlobalSearch()" title="Search everything (Ctrl/Cmd+K)" aria-label="Search everything">🔎</button>
-          <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="◎ Search titles, members, transactions…" autocomplete="off"
+          <span class="search-icon-decor topbar-search-decor" id="topbarSearchIconDecor" aria-hidden="true"></span>
+          <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="Search titles, members, transactions…" autocomplete="off"
             oninput="debouncedTopbarSearch(this.value)" onfocus="renderTopbarSearchResults(this.value)"
             onkeydown="if(event.key==='Escape'){this.value=''; this.blur(); closeTopbarSearch();}">
           <div class="topbar-search-results" id="topbarSearchResults"></div>
@@ -6953,6 +6965,7 @@ function applyIconPack(){
   setIcon('globalSearchBtn', 'search', '🔎');
   setIcon('lockLoanSearchBtn', 'search', '🔎');
   setIcon('lockLoanSearchIcon', 'search', '🔎');
+  setIcon('topbarSearchIconDecor', 'search', '🔎');
   setIcon('installHintDismissBtn', 'close', '✕');
 
   // Buttons that keep a trailing label/badge <span> alongside the icon — only the leading icon
@@ -7746,7 +7759,7 @@ function fieldHtml(f,values){
     // long enough (e.g. "copy from an existing title") that jumping by first letter isn't useful.
     const opts = f.options||[];
     const usePlaceholder = f.placeholder !== false;
-    const placeholderText = typeof f.placeholder==='string' ? f.placeholder : ('◎ Search '+String(f.label||'').replace(/\s*\*$/,''));
+    const placeholderText = typeof f.placeholder==='string' ? f.placeholder : ('Search '+String(f.label||'').replace(/\s*\*$/,''));
     input = `<div class="quickpick fieldSearchSelect" id="ss_${f.key}" data-options-count="${opts.length}">
       <input type="text" id="f_${f.key}__search" autocomplete="off" placeholder="${esc(placeholderText)}" value="${esc(val)}">
       <input type="hidden" id="f_${f.key}" value="${esc(val)}">
@@ -8079,7 +8092,8 @@ function GenericModule(cfg){
         </div>
         <div class="toolbar">
           <div class="search-input-wrap">
-            <input type="text" placeholder="◎ Search…" id="q_${cfg.key}" value="${esc(state.q)}" autocomplete="off">
+            <span class="search-icon-decor" aria-hidden="true">${SVG_ICONS.search}</span>
+            <input type="text" placeholder="Search…" id="q_${cfg.key}" value="${esc(state.q)}" autocomplete="off">
             <button type="button" class="search-clear-btn" id="qclear_${cfg.key}" style="${state.q?'':'display:none'}" title="Clear search" aria-label="Clear search">✕</button>
           </div>
           ${(cfg.filters||[]).map(f=>`
@@ -9847,7 +9861,7 @@ function viewBook(acc){
 function bookFields(b={}, isNew){
   return [
     ...(isNew && DB.catalogue.length ? [
-      {key:'_copyFrom', label:'Copy details from an existing title (optional)', type:'searchselect', placeholder:'◎ Search a title to copy from…',
+      {key:'_copyFrom', label:'Copy details from an existing title (optional)', type:'searchselect', placeholder:'Search a title to copy from…',
         options: [...DB.catalogue].sort((a,b2)=>(a.title||'').localeCompare(b2.title||'')).map(x=>`${x.title} — ${x.acc}`),
         subHint:'Fills in everything below from that title — the accession number stays fresh, and you can still edit anything before saving.'}
     ] : []),
@@ -12276,11 +12290,13 @@ function openGlobalSearch(){
   wrap.id = 'gsearchBackdrop';
   wrap.innerHTML = `
     <div class="gsearch-box">
-      <input type="text" class="gsearch-input" id="gsearchInput" placeholder="◎ Search titles, members, transactions…" autocomplete="off">
+      <span class="search-icon-decor" id="gsearchIconDecor" aria-hidden="true"></span>
+      <input type="text" class="gsearch-input" id="gsearchInput" placeholder="Search titles, members, transactions…" autocomplete="off">
       <div class="gsearch-results" id="gsearchResults"></div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.onclick = e=>{ if(e.target===wrap) closeGlobalSearch(); };
+  const iconEl = document.getElementById('gsearchIconDecor'); if(iconEl) iconEl.innerHTML = navIcon('search', '🔎');
   const input = document.getElementById('gsearchInput');
   input.oninput = ()=> renderGlobalSearchResults(input.value);
   input.onkeydown = e=>{ if(e.key==='Escape') closeGlobalSearch(); };
