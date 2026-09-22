@@ -9485,6 +9485,11 @@ function pageDashboard(){
   const recent = [...t].sort((a,b)=>(parseAnyDate(b.dateBorrowed)||0)-(parseAnyDate(a.dateBorrowed)||0)).slice(0,6);
   const weekday = new Date().toLocaleDateString('en-GB',{weekday:'long'}).toUpperCase();
   const todaysPeriods = DB.scheduleDays.filter(r=>r[0]===weekday);
+  // For staff/admin, work out each period's individually-free members today and whether the
+  // register shows them checked in during that period's time range, or skipped.
+  const today = todayISO();
+  DASHBOARD_TODAY_PERIODS = todaysPeriods;
+  DASHBOARD_TODAY_FREE_STATUS = isStaff() ? todaysPeriods.map(r=>freeStatusForScheduleRow(r, today)) : [];
   return `
   <div class="panel-head" style="margin-bottom:14px">
     <div></div>
@@ -9517,7 +9522,19 @@ function pageDashboard(){
     </div>
     <div class="card panel">
       <div class="panel-head"><h3>Today's schedule — ${esc(weekday)}</h3></div>
-      ${todaysPeriods.length? todaysPeriods.map(r=>`<div class="activity-row"><div style="flex:1"><strong>${esc(r[1])}</strong> · ${esc(r[3]||'')}<div class="meta">${esc((r[2]||'').slice(0,5))} ${esc(r[4]||'')}</div></div></div>`).join('') : '<div class="empty">No periods scheduled today</div>'}
+      ${todaysPeriods.length? todaysPeriods.map((r,i)=>{
+        const freeRows = DASHBOARD_TODAY_FREE_STATUS[i]||[];
+        const checkedIn = freeRows.filter(x=>x.status==='CHECKED IN').length;
+        const skipped = freeRows.length - checkedIn;
+        return `<div class="activity-row"><div style="flex:1"><strong>${esc(r[1])}</strong> · ${esc(r[3]||'')}<div class="meta">${esc((r[2]||'').slice(0,5))} ${esc(r[4]||'')}</div>
+          ${freeRows.length? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="badge grey">${freeRows.length} free</span>
+            <span class="badge green">${checkedIn} checked in</span>
+            <span class="badge red">${skipped} skipped</span>
+            <button class="btn secondary small" onclick="showTodayFreePeriodStatus(${i})">View</button>
+          </div>` : ''}
+        </div></div>`;
+      }).join('') : '<div class="empty">No periods scheduled today</div>'}
     </div>
   </div>`;
 }
@@ -13778,6 +13795,13 @@ function pageRegister(){
     </div>
     <div id="checkoutStagingArea"></div>
   </div>
+  <div class="card panel">
+    <div class="panel-head">
+      <div><h3>Free period library check</h3><div class="sub">Members with an individual free period, checked against the register for that period's time range</div></div>
+      ${isStaff()? `<button class="btn secondary" onclick="openFreePeriodCheckModal()">🔍 Run check</button>` : ''}
+    </div>
+    <div id="freePeriodCheckArea"></div>
+  </div>
   <div id="mod_register"></div>`;
 }
 function openRegisterEdit(entryId){
@@ -14001,6 +14025,218 @@ function bindBatchStagingEvents(){
       if(countEl) countEl.textContent = Object.values(batchChecked).filter(Boolean).length;
     };
   });
+}
+
+/* ================= FREE PERIOD LIBRARY CHECK (Register) =================
+   For each student, works out which periods are "free" for them individually — their class is
+   expected in the period, but a subject in their own personal combination (studentSubjects — an
+   override, or their class default) is one of the codes ticked as "not offered to this class"
+   for that slot (see scheduleFields()'s note field) — then checks the register to see whether
+   they actually visited the library sometime during that period's time window. */
+function timeToMinutes(t){
+  const m = String(t||'').match(/^(\d{1,2}):(\d{2})/);
+  return m ? (+m[1])*60 + (+m[2]) : null;
+}
+function minutesToTime(m){
+  if(m==null) return '';
+  return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+}
+const SCHEDULE_DAY_NAMES = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+/* Every period scheduled on a given weekday, sorted by time, each with a computed end time (the
+   next period's start that day, or +45min for the day's last period / when times are blank) so
+   every period's "range" always has a start and an end to check a visit against. */
+function dayPeriodsSorted(day){
+  const rows = DB.scheduleDays
+    .filter(r=>r[0]===day)
+    .map(r=>({
+      orig:r, day:r[0], period:r[1], time:(r[2]||'').slice(0,5),
+      classes:String(r[3]||'').split(',').map(s=>s.trim()).filter(Boolean),
+      notes:String(r[4]||'').split(',').map(s=>s.trim()).filter(Boolean),
+    }));
+  rows.sort((a,b)=> (timeToMinutes(a.time)??9999) - (timeToMinutes(b.time)??9999));
+  rows.forEach((r,i)=>{
+    r.startMin = timeToMinutes(r.time);
+    const nextStart = i+1<rows.length ? timeToMinutes(rows[i+1].time) : null;
+    r.endMin = nextStart!=null ? nextStart : (r.startMin!=null ? r.startMin+45 : null);
+  });
+  return rows;
+}
+/* Every student with an individual free period during one specific scheduleDays row (e.g. one row
+   of "today's schedule"), checked against the register for that same date. r must be a raw row
+   from DB.scheduleDays (the identical array reference dayPeriodsSorted() filtered from). */
+function freeStatusForScheduleRow(r, dateStr){
+  const sorted = dayPeriodsSorted(r[0]);
+  const match = sorted.find(x=>x.orig===r);
+  if(!match) return [];
+  const knownCodes = new Set(DB.scheduleSubjects||[]);
+  const rows = [];
+  DB.users.filter(u=>u.category==='STUDENT' && match.classes.includes(u.cls)).forEach(u=>{
+    const subs = new Set(studentSubjects(u));
+    const causeCodes = match.notes.filter(code=>knownCodes.has(code) && subs.has(code));
+    if(!causeCodes.length) return;
+    const visit = libraryVisitDuring(u, dateStr, match.startMin, match.endMin);
+    rows.push({id:u.id, name:u.name, cls:u.cls, causeCodes, status: visit?'CHECKED IN':'SKIPPED', timeIn: visit?visit.timeIn:''});
+  });
+  rows.sort((a,b)=>a.name.localeCompare(b.name));
+  return rows;
+}
+/* This student's individual free periods on a given weekday. */
+function studentFreePeriodsOnDay(u, day){
+  const knownCodes = new Set(DB.scheduleSubjects||[]);
+  const subs = new Set(studentSubjects(u));
+  return dayPeriodsSorted(day)
+    .filter(r=> r.classes.includes(u.cls) && r.notes.some(code=>knownCodes.has(code) && subs.has(code)))
+    .map(r=>({...r, causeCodes: r.notes.filter(code=>knownCodes.has(code) && subs.has(code))}));
+}
+/* The first desk sign-in for this student, on this date, whose time-in falls inside the
+   [startMin, endMin) window — i.e. within the range of that free period. */
+function libraryVisitDuring(u, dateStr, startMin, endMin){
+  const dateKey = (dateStr||'').slice(0,10);
+  return DB.registerLog.find(r=>{
+    if(r.source!=='DESK' || r.id!==u.id) return false;
+    if((r.date||'').slice(0,10)!==dateKey) return false;
+    const tIn = timeToMinutes(r.timeIn);
+    if(tIn==null) return false;
+    if(startMin==null) return true;
+    if(endMin==null) return tIn>=startMin;
+    return tIn>=startMin && tIn<endMin;
+  });
+}
+/* Every (date × free period × student) combination in range, each marked Checked in (a matching
+   desk sign-in was found) or Skipped (it wasn't). */
+function buildFreePeriodCheck(fromDate, toDate, clsFilter){
+  const rows = [];
+  const from = parseAnyDate(fromDate), to = parseAnyDate(toDate||fromDate);
+  if(!from || !to) return rows;
+  const students = DB.users.filter(u=>u.category==='STUDENT' && (!clsFilter || u.cls===clsFilter));
+  const knownCodes = new Set(DB.scheduleSubjects||[]);
+  const dayCache = {};
+  for(let d=new Date(from); d<=to; d.setDate(d.getDate()+1)){
+    const dateStr = d.toISOString().slice(0,10);
+    const day = SCHEDULE_DAY_NAMES[d.getDay()];
+    if(!dayCache[day]) dayCache[day] = dayPeriodsSorted(day);
+    const periods = dayCache[day];
+    if(!periods.length) continue;
+    students.forEach(u=>{
+      const subs = new Set(studentSubjects(u));
+      periods.filter(r=>r.classes.includes(u.cls)).forEach(r=>{
+        const causeCodes = r.notes.filter(code=>knownCodes.has(code) && subs.has(code));
+        if(!causeCodes.length) return; // not a free period for this student
+        const visit = libraryVisitDuring(u, dateStr, r.startMin, r.endMin);
+        rows.push({
+          date:dateStr, day, period:r.period, time:r.time, endTime: minutesToTime(r.endMin),
+          id:u.id, name:u.name, cls:u.cls, causeCodes,
+          status: visit? 'CHECKED IN' : 'SKIPPED', timeIn: visit? visit.timeIn : '', purpose: visit? visit.purpose : '',
+        });
+      });
+    });
+  }
+  rows.sort((a,b)=> (parseAnyDate(a.date)-parseAnyDate(b.date)) || String(a.period).localeCompare(b.period) || a.name.localeCompare(b.name));
+  return rows;
+}
+let freePeriodCheckRows = null;
+let freePeriodCheckMeta = null;
+/* Populated by pageDashboard() for the "Today's schedule" panel — per-row (index-matched to
+   DASHBOARD_TODAY_PERIODS) lists of today's individually-free members and their register status. */
+let DASHBOARD_TODAY_PERIODS = [];
+let DASHBOARD_TODAY_FREE_STATUS = [];
+function showTodayFreePeriodStatus(i){
+  const r = DASHBOARD_TODAY_PERIODS[i];
+  const rows = DASHBOARD_TODAY_FREE_STATUS[i]||[];
+  const checkedIn = rows.filter(x=>x.status==='CHECKED IN').length;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'mb';
+  wrap.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>${esc(r? r[1]+' period':'Free period status')} — today</h3><button id="mClose" aria-label="Close">✕</button></div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge grey">${rows.length} free</span>
+          <span class="badge green">${checkedIn} checked in</span>
+          <span class="badge red">${rows.length-checkedIn} skipped</span>
+        </div>
+        <div class="table-wrap"><table class="datatable">
+          <thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Free because</th><th>Status</th><th>Time in</th></tr></thead>
+          <tbody>${rows.length? rows.map(x=>`<tr>
+            <td>${esc(x.id)}</td><td>${esc(x.name)}</td><td>${esc(x.cls)}</td>
+            <td>${x.causeCodes.map(c=>`<span class="pill">${esc(c)}</span>`).join(' ')}</td>
+            <td><span class="badge ${x.status==='CHECKED IN'?'green':'red'}">${x.status==='CHECKED IN'?'Checked in':'Skipped'}</span></td>
+            <td>${x.timeIn? esc(fmtTime(x.timeIn)) : '—'}</td>
+          </tr>`).join('') : `<tr><td colspan="6">No members with an individual free period this period</td></tr>`}</tbody>
+        </table></div>
+      </div>
+      <div class="modal-foot"><button class="btn secondary" id="mCancel">Close</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=> animatedCloseModal(wrap, ()=> wrap.remove());
+  wrap.onclick = e=>{ if(e.target===wrap) close(); };
+  wrap.querySelector('#mClose').onclick = close;
+  wrap.querySelector('#mCancel').onclick = close;
+}
+function openFreePeriodCheckModal(){
+  if(!isStaff()) return requireStaff('run the free period library check');
+  openModal({
+    title:'Free period library check',
+    fields:[
+      {row:[
+        {key:'from', label:'From date', type:'date', required:true, default:todayISO()},
+        {key:'to', label:'To date', type:'date', required:true, default:todayISO()},
+      ]},
+      {key:'cls', label:'Class (optional)', type:'select', options:['', ...sortedClasses()], default:''},
+      {key:'status', label:'Show', type:'select', options:['ALL','CHECKED IN ONLY','SKIPPED ONLY'], default:'ALL'},
+    ],
+    onSave:(vals)=>{
+      if(!vals.from || !vals.to){ toast('Pick a from and to date'); return; }
+      if(parseAnyDate(vals.to) < parseAnyDate(vals.from)){ toast('"To date" must be on or after "From date"'); return; }
+      let rows = buildFreePeriodCheck(vals.from, vals.to, vals.cls);
+      if(vals.status==='CHECKED IN ONLY') rows = rows.filter(r=>r.status==='CHECKED IN');
+      if(vals.status==='SKIPPED ONLY') rows = rows.filter(r=>r.status==='SKIPPED');
+      freePeriodCheckRows = rows;
+      freePeriodCheckMeta = {from:vals.from, to:vals.to, cls:vals.cls, status:vals.status};
+      renderFreePeriodCheckResults();
+      $('#modalRoot').innerHTML='';
+      toast(`${rows.length} free period record(s) found`);
+    }
+  });
+}
+function renderFreePeriodCheckResults(){
+  const el = document.getElementById('freePeriodCheckArea');
+  if(!el) return;
+  const rows = freePeriodCheckRows;
+  if(!rows){ el.innerHTML = ''; return; }
+  if(!rows.length){ el.innerHTML = `<div class="empty">No individual free periods matched this selection.</div>`; return; }
+  const checkedIn = rows.filter(r=>r.status==='CHECKED IN').length;
+  const skipped = rows.length - checkedIn;
+  el.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <span class="badge grey">${rows.length} free period(s)</span>
+      <span class="badge green">${checkedIn} checked in</span>
+      <span class="badge red">${skipped} skipped</span>
+    </div>
+    <div class="table-wrap"><table class="datatable">
+      <thead><tr><th>Date</th><th>Day</th><th>Period</th><th>Time</th><th>ID</th><th>Name</th><th>Class</th><th>Free because</th><th>Status</th><th>Time in</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td>${esc(fmtDate(r.date))}</td><td>${esc(r.day)}</td><td>${esc(r.period)}</td>
+        <td>${esc(r.time||'—')}${r.endTime?' – '+esc(r.endTime):''}</td>
+        <td>${esc(r.id)}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td>
+        <td>${r.causeCodes.map(c=>`<span class="pill">${esc(c)}</span>`).join(' ')}</td>
+        <td><span class="badge ${r.status==='CHECKED IN'?'green':'red'}">${r.status==='CHECKED IN'?'Checked in':'Skipped'}</span></td>
+        <td>${r.timeIn? esc(fmtTime(r.timeIn)) : '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div style="margin-top:10px"><button class="btn secondary" onclick="printFreePeriodCheck()">🖶 Print</button></div>
+  `;
+}
+function printFreePeriodCheck(){
+  const rows = freePeriodCheckRows||[];
+  const meta = freePeriodCheckMeta||{};
+  const subtitle = `${meta.from?fmtDate(meta.from):''} to ${meta.to?fmtDate(meta.to):''}${meta.cls?' · '+meta.cls:''} — ${rows.length} record(s)`;
+  printReport('Free Period Library Check', subtitle, [
+    {label:'Date', get:r=>fmtDate(r.date)}, {label:'Day', get:r=>r.day}, {label:'Period', get:r=>r.period}, {label:'Time', get:r=>r.time},
+    {label:'ID', get:r=>r.id}, {label:'Name', get:r=>r.name}, {label:'Class', get:r=>r.cls},
+    {label:'Free because', get:r=>r.causeCodes.join(', ')}, {label:'Status', get:r=>r.status==='CHECKED IN'?'Checked in':'Skipped'},
+    {label:'Time in', get:r=>r.timeIn?fmtTime(r.timeIn):'—'},
+  ], rows);
 }
 
 /* ================= PAGE: SCHEDULE ================= */
